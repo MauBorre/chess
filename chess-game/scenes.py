@@ -183,19 +183,19 @@ class MatchSCENE(Scene):
 
         '''
         >> Necesitamos saber si el rey esta en un casillero kill-position, y si
-        su movimiento también es un kill-position (o lo dejaría en kill-position digamos...)
+        sus casillas de movimiento también estan bajo kill-position.
         '''
-        # Cada vez que una pieza se mueva, debemos actualizar
-        # esta lista (si corresponde).
-        # Cada vez que querramos mover una pieza, debemos revisar
-        # su relación del movimiento con la exposición ante la amaneaza de su rey
-        self.invalid_movement_positions: list[int] = [] # mmm... no me suena a que sea una variable,
-                                                        # sino un mecanismo deducido en los movimientos.
-        '''De hecho los movimientos inválidos no son otra cosa que
-        anular por completo el movimiento de otras piezas ya que no incercepta
-        de cualquier forma la amenaza a su rey, no es un grupo de posiciones en particular,
-        sino TODAS las posiciones que no eviten la amenaza kill-position 
-        al rey.'''
+        # Luego de mover una pieza debemos actualizar esta lista (si corresponde), para el enemigo.
+        # Cada vez que querramos mover una pieza, debemos revisar si podemos hacer o no el 
+        # movimiento teniendo en cuenta estos impedimentos.
+        # Pero es una variable o un mecanismo deducido? Debemos realmente registrar estos movimientos?
+        self.invalid_movement_positions: list[int] = [] # Lista de piezas que no pueden moverse 
+                                                        # Únicos movimientos que puede hacer X pieza
+
+        # Movimientos inválidos son aquellos que expongan al rey a un kill-movement, o que
+        # no lo salven en caso de estar el rey ya expuesto a un kill-movement.
+        # Dependiendo la situación, algunas piezas no podrán moverse en absoluto, mientras
+        # otras podrán moverse parcialmente.
 
         self.move_here: int | None = None
 
@@ -272,6 +272,8 @@ class MatchSCENE(Scene):
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         kill_positions: list[int] = []
         if piece_color == 'Black': #target: white | turn associated evaluation
+            #si nuestro rey esta amenazado y nuestro movimiento no lo impide: no hacer nada de esto
+            #si nuestra intención de movimiento dejaría a nuestro rey amenazado: no hacer nada de esto
             # SUR
             movement: int = piece_standpoint+SUR
             # piece block condition
@@ -541,7 +543,7 @@ class MatchSCENE(Scene):
                            SQUARE_RECT.top + self.square_height -17,
                            center=False, font_size='medium')
             
-            # Diccionarios de posiciónes --------------------------
+            # Diccionarios de posiciones --------------------------
             if board_index in self.black_positions.keys():
                 SQUARE_SUBTYPE = "kill-movement" if board_index in self.kill_validPositions.keys() else ""
                 SQUARE_TYPE =  self.black_positions[board_index]
@@ -558,7 +560,7 @@ class MatchSCENE(Scene):
                 P_COLOR = ""
 
             else: SQUARE_TYPE = "EMPTY"; P_COLOR = ""; SQUARE_SUBTYPE = ""
-            # Diccionarios de posiciónes --------------------------
+            # ----------------------------------------------------
 
             # draw piece
             if SQUARE_TYPE != "EMPTY":
@@ -653,18 +655,17 @@ class MatchSCENE(Scene):
                 if self.killing:
                     self.white_positions.pop(self.move_here)
                 self.black_positions.update({self.move_here:_piece})
-                #actualizando posiciones_inválidas del otro jugador...
-                #self.invalid_positions.append(targeting_king(self.white_positions))
 
-                #revisando jaque al otro jugador...
+                #actualizando posiciones_inválidas del otro jugador...
+                #esta pieza no puede moverse | esta pieza solo puede moverse así
+
+                #revisando jaque/jaque-mate al otro jugador...
                     #revisar posiciones válidas, inválidas y posibles del jugador *target*
-                    #si king está amenazado:
+                    #si king está amenazado: (en casilla kill-movement)
                         # si tiene escapatoria o aliado puede interceder/matar una amenaza
                             # jaque -> alertar al jugador
                         # si no tiene escapatoria y ningun aliado puede interceder/matar la amenaza
                             # jaque-mate -> self.winner = True (automaticamente repercutirá draw() - 29/09 NO TESTEADA)
-                #revisando jaque-mate al otro jugador... (if king rodeado de no_escape_positions = JAQUEMATE)
-                    #revisar posiciones válidas, inválidas y posibles del jugador *target*
                 
             if self.turn_color == 'White':
                 _piece = self.white_positions.pop(ex_value)
