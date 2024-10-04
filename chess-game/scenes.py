@@ -185,6 +185,10 @@ class MatchSCENE(Scene):
         >> Necesitamos saber si el rey esta en un casillero kill-position, y si
         sus casillas de movimiento también estan bajo kill-position.
         '''
+        # Movimientos inválidos son aquellos que expongan al rey a un kill-movement, o que
+        # no lo salven en caso de estar el rey ya expuesto a un kill-movement.
+        # Dependiendo la situación, algunas piezas no podrán moverse en absoluto, mientras
+        # otras podrán moverse parcialmente.
         # Luego de mover una pieza debemos actualizar esta lista (si corresponde), para el enemigo.
         # Cada vez que querramos mover una pieza, debemos revisar si podemos hacer o no el 
         # movimiento teniendo en cuenta estos impedimentos.
@@ -192,11 +196,18 @@ class MatchSCENE(Scene):
         self.invalid_movement_positions: list[int] = [] # Lista de piezas que no pueden moverse 
                                                         # Únicos movimientos que puede hacer X pieza
 
-        # Movimientos inválidos son aquellos que expongan al rey a un kill-movement, o que
-        # no lo salven en caso de estar el rey ya expuesto a un kill-movement.
-        # Dependiendo la situación, algunas piezas no podrán moverse en absoluto, mientras
-        # otras podrán moverse parcialmente.
+        # podríamos tener un dict de movimientos impedidos para cada jugador, y en él "detallaríamos"
+        # cual pieza y qué movimiento está impedido. Por ejemplo:
+        # white_invalid = {peon : [2,4], alfil : 'all'} -> el peon no puede moverse a casillero 2 y 4.
+        #                                                  el alfil no puede moverse en absoluto.
 
+        '''La siguiente lista puede contener la posición actual del rey también'''
+        self.king_jaqued_positions: list[int] = [] # si todas las intenciones de movimiento de king 
+                                                   # se encuentran en estas posiciones: entonces JAQUE
+                                                   # y cuando testeamos las kill positions de otra
+                                                   # pieza debemos appendear aca lo que sea amenaza
+                                                   # al rey enemigo.
+        
         self.move_here: int | None = None
 
         self.turn_color: str = 'White'
@@ -272,10 +283,15 @@ class MatchSCENE(Scene):
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         kill_positions: list[int] = []
         if piece_color == 'Black': #target: white | turn associated evaluation
-            #si nuestro rey esta amenazado y nuestro movimiento no lo impide: no hacer nada de esto
-            #si nuestra intención de movimiento dejaría a nuestro rey amenazado: no hacer nada de esto
+            
             # SUR
             movement: int = piece_standpoint+SUR
+
+            #si nuestro rey esta amenazado y nuestro movimiento no lo impide: no puedo hacer nada de esto
+            '''Cómo saber si nuestro movimiento corta una amenaza? Hago la prueba directamente?'''
+            #si nuestra intención de movimiento dejaría a nuestro rey amenazado: no puedo hacer nada de esto
+            '''Cómo saber si nuestro movimiento dejaría atrás una amenaza? Hago la prueba directamente?'''
+
             # piece block condition
             if movement <= 63: # SUR LIMIT
                 if movement not in self.black_positions and movement not in self.white_positions:
@@ -657,15 +673,17 @@ class MatchSCENE(Scene):
                 self.black_positions.update({self.move_here:_piece})
 
                 #actualizando posiciones_inválidas del otro jugador...
-                #esta pieza no puede moverse | esta pieza solo puede moverse así
+                #*esta pieza* no puede moverse | *esta pieza* solo puede moverse así
+                #actualizar king_jaqued_positions 
 
-                #revisando jaque/jaque-mate al otro jugador...
-                    #revisar posiciones válidas, inválidas y posibles del jugador *target*
-                    #si king está amenazado: (en casilla kill-movement)
-                        # si tiene escapatoria o aliado puede interceder/matar una amenaza
-                            # jaque -> alertar al jugador
-                        # si no tiene escapatoria y ningun aliado puede interceder/matar la amenaza
-                            # jaque-mate -> self.winner = True (automaticamente repercutirá draw() - 29/09 NO TESTEADA)
+                '''revisando jaque/jaque-mate al otro jugador'''
+                #si king está amenazado: (en casilla kill-movement)
+                if self.king_jaqued_positions: ... #obtener movimientos del rey y comparar con king_jaqued_positions
+                    #debo comprobar aquí en este bloque si el rey puede aún moverse
+                    # si tiene escapatoria o aliado puede interceder/matar una amenaza
+                        # jaque -> alertar al jugador
+                    # si no tiene escapatoria y ningun aliado puede interceptar/matar la amenaza
+                        # jaque-mate -> self.winner = True (automaticamente repercutirá draw() - 29/09 NO TESTEADA)
                 
             if self.turn_color == 'White':
                 _piece = self.white_positions.pop(ex_value)
