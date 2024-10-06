@@ -155,23 +155,23 @@ class MatchSCENE(Scene):
         
         # board defaults
         self.pieces_readable_starting_positions: dict[dict[str,list[int]]] = { # forma no ideal para render, pero sí para leer
-                            'negras': {
-                                'Torre':[0,7],
-                                'Caballo':[1,6],
-                                'Alfil':[2,5],
-                                'Reina':[3],
-                                'Rey':[4],
-                                'Peón':[8,9,10,11,12,13,14,15]
-                                },
-                            'blancas': {
-                                'Torre':[63,56],
-                                'Caballo':[62,57],
-                                'Alfil':[61,58],
-                                'Reina':[59],
-                                'Rey':[60],
-                                'Peón':[55,54,53,52,51,50,49,48]
-                                }
-                            }
+            'negras': {
+                'Torre':[0,7],
+                'Caballo':[1,6],
+                'Alfil':[2,5],
+                'Reina':[3],
+                'Rey':[4],
+                'Peón':[8,9,10,11,12,13,14,15]
+                },
+            'blancas': {
+                'Torre':[63,56],
+                'Caballo':[62,57],
+                'Alfil':[61,58],
+                'Reina':[59],
+                'Rey':[60],
+                'Peón':[55,54,53,52,51,50,49,48]
+                }
+            }
         self.in_base_Bpawns: list[int] = []
         self.in_base_Wpawns: list[int] = []
         self.black_positions: dict[int,str] = {}
