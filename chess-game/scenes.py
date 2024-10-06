@@ -138,7 +138,7 @@ class MatchSCENE(Scene):
     def __init__(self,master):
         super().__init__(master)
         # position utils
-        self.midScreen = (self.screen.get_width()/2,self.screen.get_height()/2)
+        self.midScreen = (self.screen.get_width()/2, self.screen.get_height()/2)
         self.midScreen_pos = pygame.Vector2(self.midScreen)
 
         # board config
@@ -154,7 +154,7 @@ class MatchSCENE(Scene):
         self.boardRects: list[pygame.Rect] = self.make_boardRects()
         
         # board defaults
-        self.pieces_readable_starting_positions: dict[dict[str,list[int]]] = { # forma no ideal para render, pero sí para leer
+        self.pieces_legible_initial_positions: dict[dict[str,list[int]]] = { # forma no ideal para render, pero sí para leer
             'negras': {
                 'Torre':[0,7],
                 'Caballo':[1,6],
@@ -205,9 +205,9 @@ class MatchSCENE(Scene):
         self.killing: bool = False
         
     def make_board(self): # also used for restarting match
-        self.in_base_Bpawns: list[int] = [bpawn for bpawn in self.pieces_readable_starting_positions['negras']['Peón']]
-        self.in_base_Wpawns: list[int] = [wpawn for wpawn in self.pieces_readable_starting_positions['blancas']['Peón']]
-        self.black_positions, self.white_positions = self.reverse_expand_team_positions(self.pieces_readable_starting_positions)
+        self.in_base_Bpawns: list[int] = [bpawn for bpawn in self.pieces_legible_initial_positions['negras']['Peón']]
+        self.in_base_Wpawns: list[int] = [wpawn for wpawn in self.pieces_legible_initial_positions['blancas']['Peón']]
+        self.black_positions, self.white_positions = self.reverse_expand_team_positions(self.pieces_legible_initial_positions)
         self.turn_color: str = 'White'
         self.winner: bool = False
 
@@ -227,7 +227,10 @@ class MatchSCENE(Scene):
             _rows.append(list(range(start,end)))
         return _rows
 
-    def reverse_expand_team_positions(self,piece_start_positions: dict[dict[str,list[int]]]):
+    def reverse_expand_team_positions(
+        self,
+        pieces_legible_origins: dict[dict[str,list[int]]]
+        ) -> dict[int,str]:
         '''Transforma dict={'color...': {'peon':[0,1,2]}}
         En color-A_dict={0:peon,1:peon,2:peon}
            color-B_dict={0:peon,1:peon,2:peon}
@@ -236,11 +239,11 @@ class MatchSCENE(Scene):
         de leer para el sistema.'''
         _black_positions, _white_positions = {}, {}
         dict_list = []
-        for color in piece_start_positions.keys():
+        for color in pieces_legible_origins.keys():
             key_val_reverse = []
             aux_d={}
-            for piece in piece_start_positions[color].keys():
-                key_val_reverse.append({num:piece for num in piece_start_positions[color][piece]})
+            for piece in pieces_legible_origins[color].keys():
+                key_val_reverse.append({num:piece for num in pieces_legible_origins[color][piece]})
             for d in key_val_reverse:
                 aux_d.update(d)
             dict_list.append(aux_d)
@@ -258,7 +261,12 @@ class MatchSCENE(Scene):
                     return row
         else: return []
     
-    def pawn_targets(self, piece_standpoint: int, sq_rect: pygame.Rect, piece_color: str) -> dict[int,pygame.Rect]:
+    def pawn_targets(
+        self,
+        piece_standpoint: int,
+        sq_rect: pygame.Rect,
+        piece_color: str
+        ) -> dict[int,pygame.Rect]:
         '''Movimiento Peón:
         NORTE (white)
         SUR (black)
@@ -331,8 +339,12 @@ class MatchSCENE(Scene):
 
         return mov_target_positions, on_target_kill_positions
 
-    def tower_targets(self, piece_standpoint: int,
-                                sq_rect: pygame.Rect, piece_color: str) -> dict[int,pygame.Rect]:
+    def tower_targets(
+        self,
+        piece_standpoint: int,
+        sq_rect: pygame.Rect,
+        piece_color: str
+        ) -> dict[int,pygame.Rect]:
         '''Movimiento Torre:
         +NORTE
         +SUR
@@ -366,8 +378,11 @@ class MatchSCENE(Scene):
                         break #previene propagación mas allá del primer bloqueo - rompe el mult
         return mov_target_positions, on_target_kill_positions
 
-    def horse_targets(self, piece_standpoint: int,
-                                sq_rect: pygame.Rect, piece_color: str) -> dict[int,pygame.Rect]:
+    def horse_targets(
+        self,
+        piece_standpoint: int,
+        sq_rect: pygame.Rect, piece_color: str
+        ) -> dict[int,pygame.Rect]:
         '''Movimiento Caballo:
         doble-norte + este
         doble-norte + oeste
@@ -409,8 +424,12 @@ class MatchSCENE(Scene):
                             on_target_kill_positions.update({movement:self.boardRects[movement]})
         return mov_target_positions, on_target_kill_positions
 
-    def bishop_targets(self, piece_standpoint: int,
-                                  sq_rect: pygame.Rect, piece_color: str) -> dict[int,pygame.Rect]:
+    def bishop_targets(
+        self,
+        piece_standpoint: int,
+        sq_rect: pygame.Rect,
+        piece_color: str
+        ) -> dict[int,pygame.Rect]:
         '''Movimiento Alfil:
         +NOR_OESTE
         +NOR_ESTE
@@ -445,8 +464,12 @@ class MatchSCENE(Scene):
                         break #previene propagación mas allá del primer bloqueo - rompe el mult
         return mov_target_positions, on_target_kill_positions
 
-    def king_targets(self,piece_standpoint: int,
-                                sq_rect: pygame.Rect, piece_color: str) -> dict[int,pygame.Rect]:
+    def king_targets(
+        self,
+        piece_standpoint: int,
+        sq_rect: pygame.Rect,
+        piece_color: str
+        ) -> dict[int,pygame.Rect]:
         '''Movimiento Rey:
         +NORTE
         +SUR
@@ -485,9 +508,12 @@ class MatchSCENE(Scene):
                     continue
         return mov_target_positions, on_target_kill_positions
 
-    def queen_targets(self,piece_standpoint: int,
-                                sq_rect: pygame.Rect,
-                                piece_color: str) -> dict[int,pygame.Rect]:
+    def queen_targets(
+        self,
+        piece_standpoint: int,
+        sq_rect: pygame.Rect,
+        piece_color: str
+        ) -> dict[int,pygame.Rect]:
         '''Movimiento Reina:
         +NORTE
         +SUR
@@ -657,33 +683,29 @@ class MatchSCENE(Scene):
                     self.white_positions.pop(self.move_here)
                 self.black_positions.update({self.move_here:_piece})
 
+
                 '''revisando jaque/jaque-mate al otro jugador'''
-                #actualizando posiciones_inválidas del otro jugador (depende exclusivamente de la amenaza al rey)
-
-                #if (relacion enemy-rey & kill-movement's & enemy-movement's):
-                    #Cómo saber si nuestro movimiento corta una amenaza?
-                    #Cómo saber si nuestro movimiento dejaría atrás una amenaza? Hago las pruebas directamente?
-
+                #actualizar Wking_check_positions 
+                self.Wking_check_positions = self.get_all_targets() # black apuntando a king white
+                #
                 ''' >> levantar on_target_kill_positions de TODAS las piezas?
-                    >> levantar *otro tipo de obtencion* de on_kill_target_positions?
+                    >> necesito *otro tipo de obtencion* de on_kill_target_positions?
+                       o debo llamar "una por una"?
                     >> y si en vez de ver "que apunta al rey", lo hacemos desde la perspectiva
                        del rey?
                 '''
-
-                    #self.white_invalid.update(posición_deducida)
-                    #actualizar Wking_check_positions -> revisar kill-positions
-                
-                
-                if self.Wking_check_positions: ... #si king está amenazado: (en casilla kill-movement)
-                    #comparar posibles-movimientos con Wking_check_positions
-                    #debo comprobar aquí en este bloque si el rey puede aún moverse
-
-                    # si tiene escapatoria o aliado puede interceder/matar una amenaza
+                #actualizando posiciones_inválidas del otro jugador
+                #self.white_invalid.update(posición_deducida)
+                    #Cómo saber si nuestro movimiento corta una amenaza?
+                    #Cómo saber si nuestro movimiento dejaría atrás una amenaza? Hago las pruebas directamente?
+                    
+                # si tiene escapatoria o aliado puede interceder/matar una amenaza
                         # jaque -> alertar al jugador
-
-                    # si no tiene escapatoria y ningún aliado puede interceptar/matar la amenaza
+                
+                # si no tiene escapatoria y ningún aliado puede interceptar/matar la amenaza
                         # jaque-mate -> self.winner = True (automaticamente repercutirá draw() - 29/09 NO TESTEADA)
                 
+
             if self.turn_color == 'White':
                 _piece = self.white_positions.pop(ex_value)
                 if self.killing:
@@ -701,6 +723,8 @@ class MatchSCENE(Scene):
                 pygame.draw.rect(self.screen,'GREEN',valid_mov_RECT,width=2)
         for valid_kill_RECT in self.kill_validPositions.values():
             pygame.draw.rect(self.screen,'RED',valid_kill_RECT,width=2)
+
+    def get_all_targets(self) -> dict: ... # revisar kill-positions ...
 
     def draw(self):
         #hud
@@ -815,4 +839,3 @@ class MatchSCENE(Scene):
                 x+=self.square_width
             y+=self.square_height
         return _boardRects
-
