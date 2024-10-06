@@ -567,9 +567,8 @@ class MatchSCENE(Scene):
             # draw piece
             if SQUARE_TYPE != "EMPTY":
                 if P_COLOR == 'Black':
-                    self.draw_text(SQUARE_TYPE,'black', 
-                                SQUARE_RECT.left + self.square_width/2,
-                                SQUARE_RECT.top + self.square_height/2)
+                    self.draw_text(SQUARE_TYPE,'black', SQUARE_RECT.left + self.square_width/2,
+                                                        SQUARE_RECT.top + self.square_height/2)
                 if P_COLOR == 'White':
                     self.draw_text(SQUARE_TYPE,(120,120,120),
                                                       SQUARE_RECT.left + self.square_width/2,
@@ -665,10 +664,11 @@ class MatchSCENE(Scene):
                     #Cómo saber si nuestro movimiento corta una amenaza?
                     #Cómo saber si nuestro movimiento dejaría atrás una amenaza? Hago las pruebas directamente?
 
-                    #>> levantar on_target_kill_positions de TODAS las piezas?
-
-                    #si nuestro rey esta amenazado y nuestro movimiento no lo impide: no puedo moverme
-                    #si nuestra intención de movimiento dejaría a nuestro rey amenazado: no puedo moverme
+                ''' >> levantar on_target_kill_positions de TODAS las piezas?
+                    >> levantar *otro tipo de obtencion* de on_kill_target_positions?
+                    >> y si en vez de ver "que apunta al rey", lo hacemos desde la perspectiva
+                       del rey?
+                '''
 
                     #self.white_invalid.update(posición_deducida)
                     #actualizar Wking_check_positions -> revisar kill-positions
@@ -816,4 +816,3 @@ class MatchSCENE(Scene):
             y+=self.square_height
         return _boardRects
 
-        
