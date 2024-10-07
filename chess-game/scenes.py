@@ -680,7 +680,7 @@ class MatchSCENE(Scene):
         if self.move_here != None:
             ex_value: int = list(self.movement_validPositions.items())[0][0]
 
-            if self.turn_color == 'Black':
+            if self.turn_color == 'Black': # target:white
                 _piece = self.black_positions.pop(ex_value)
                 if self.killing:
                     self.white_positions.pop(self.move_here)
@@ -688,7 +688,7 @@ class MatchSCENE(Scene):
 
 
                 '''revisando jaque/jaque-mate al otro jugador''' 
-                self.W_check_state = self.make_check_targets(self.turn_color) # black apuntando a king white
+                self.W_check_state = self.make_check_targets(target='White') # piezas black contra king white
 
                 #actualizando posiciones_inválidas del otro jugador
                 if self.W_check_state == 'jaque': ...
@@ -717,14 +717,8 @@ class MatchSCENE(Scene):
         for valid_kill_RECT in self.kill_validPositions.values():
             pygame.draw.rect(self.screen,'RED',valid_kill_RECT,width=2)
 
-    def get_king_positions(self,color:str) -> int:
-        '''Iteramos el diccionario del equipo elegido
-        hasta encontrar el VALOR 'Rey',
-        la posición será su KEY
-        
-        Podemos deducir aquí mismo sus posiciones de movimiento,
-        pero es esto correcto o le compete a otra parte del mecanismo
-        de jaque/jaque-mate?'''
+    def get_king_standpoint(self,color:str) -> int:
+        '''Devuelve la posición actual del rey'''
         act_pos: int
         if color == 'Black':
             for k,v in self.black_positions.items():
@@ -753,7 +747,7 @@ class MatchSCENE(Scene):
         El tema con la otra función es que trabaja con un pygame.Rect
         que solo compete a asuntos visuales
         '''
-        
+        _current_king_pos: int = self.get_king_standpoint(self.turn_color)
         move_positions: list[int] = []
         if color == 'Black':
             move_positions = self.king_targets()[0] #requiere square_rect y
@@ -761,14 +755,11 @@ class MatchSCENE(Scene):
         if color == 'White': ...
         return move_positions
 
-    def make_check_targets(self) -> str:
-        '''Buscamos deducir jaque/jaque-mate contra
-        el target a través de comparar las on_target_kill_positions
-        de todas las piezas con la posicion actual+movimientos del rey.
+    def make_check_targets(self, target: str) -> str:
+        '''deducir jaque/jaque-mate de piezas self.turn_color contra target
 
-        El target es lo contrario de self.turn_color
-
-        Entonces debo buscar, amenaza de self.turn_color contra rey de target
+        comparar las on_target_kill_positions de self.turn
+        contra la posicion actual+movimientos del rey target.
 
         Para hacer esto debemos llamar a todas las funciones "...targets()" antes
         usadas, pero "usándolas de otra forma".
@@ -782,12 +773,12 @@ class MatchSCENE(Scene):
                 -> repercutirá fuera de esta función mermando el movimiento del target
 
             devuelve "jaque-mate" si encontró que el target king NO puede escapar
-                -> finaliza la partida
+                -> repercutirá fuera de esta función finalizando la partida
         '''
-        _current_king_pos: int = self.get_king_positions(self.turn_color)
-        _king_movement_pos: int = self.get_king_movements(self.turn_color,
-                                                        _current_king_pos) 
-        on_target_kill_positions: dict = {}
+        
+        target_king_movements: int = self.get_king_movements(target) #movimientos de TARGET
+        on_target_kill_positions: dict = {} #si la cantidad de elementos aqui es la misma
+                                            #que en target_king_movements entonces es jaque-mate
         if self.turn_color == 'Black': # target: white
             #revisar qué piezas black dejan en kill-position a rey white
             '''if movement == _current_king_pos'''
@@ -805,15 +796,18 @@ class MatchSCENE(Scene):
             #horse_targets(rey_standpoint,'white')
             #bishop_targets(rey_standpoint,'white')            
             ...
-        if 0:
-            # si tiene escapatoria o aliado puede interceder/matar una amenaza
+
+        if len(target_king_movements) > len(on_target_kill_positions):
+            # El rey puede escapar por si solo a la posición que no coincida
+            # debemos obtener esta posición para NO-NEGARLA de las NEGADAS posiciones en jaque
             
-            #Cómo saber si nuestro movimiento corta una amenaza?
-            #Cómo saber si nuestro movimiento dejaría atrás una amenaza? Hago las pruebas directamente?
+            
             return 'jaque'
-        if 1: 
-            # si no tiene escapatoria y ningún aliado puede interceptar/matar la amenaza
-            #si kill-positions llena Wking_check_positions -> jaquemate
+        if len(target_king_movements) == len(on_target_kill_positions):
+            # !! puede aún tener escapatoria con ayuda aliada !!
+            '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
+            > Cómo saber si un movimiento corta una amenaza?
+            > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?'''
             return 'jaque-mate'
 
     def draw(self):
