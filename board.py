@@ -1,0 +1,8 @@
+NORTE = -8
+NOR_ESTE = -8+1
+NOR_OESTE = -8-1
+SUR = +8
+SUR_OESTE = +8-1
+SUR_ESTE = +8+1
+ESTE = +1
+OESTE = -1
