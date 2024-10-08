@@ -181,12 +181,12 @@ class MatchSCENE(Scene):
         self.movement_validPositions: dict[int, pygame.Rect] = {} 
         self.kill_validPositions: dict[int, pygame.Rect] = {}
 
-        # Movimientos que no pueden realizarse porque exponen al rey a un kill-movement, o que
-        # no lo salvan en caso de estar el rey ya expuesto a un kill-movement.
+        # Movimientos que no pueden realizarse porque exponen al rey a un kill-movement, o que --> DOS TIPOS DE INVALID
+        # no lo salvan en caso de estar el rey ya expuesto a un kill-movement. ------------------> MOV. DISTINTOS?
         # Algunas piezas no podrán moverse en absoluto, otras podrán moverse parcialmente.
         #
         # Estos conjuntos son actualizados luego de mover una pieza (si corresponde).
-        # Son tambien revisados en cada movimiento de pieza.
+        # Son tambien revisados en cada movimiento de pieza. -> Expone rey // No-salva rey
         self.white_invalid_positions: dict[str, list[int]] = {} # {'peon': [2,4], 'alfil': [12,18,24]}
         self.black_invalid_positions: dict[str, list[int]] = {}
         
@@ -197,8 +197,8 @@ class MatchSCENE(Scene):
         self.Wking_check_positions: list[int] = []
         self.Bking_check_positions: list[int] = []
 
-        self.W_check_state: str #jaque o jaque-mate
-        self.B_check_state: str #jaque o jaque-mate
+        self.W_check_state: str #jaque o jaque-mate o None
+        self.B_check_state: str #jaque o jaque-mate o None
 
         self.move_here: int | None = None
 
@@ -762,12 +762,12 @@ class MatchSCENE(Scene):
         correcta revision categórica de "qué" pieza estoy tocando y si su movimiento
         "me puede comer"
 
-        Esta función:
-            devuelve "jaque" si encontró que el target king puede escapar
-                -> repercutirá fuera de esta función mermando el movimiento del target
+        
+        ::devuelve:-> "jaque" si encontró que el target king puede escapar
+            -> repercutirá fuera de esta función mermando el movimiento del target
 
-            devuelve "jaque-mate" si encontró que el target king NO puede escapar
-                -> repercutirá fuera de esta función finalizando la partida
+        ::devuelve:-> "jaque-mate" si encontró que el target king NO puede escapar
+            -> repercutirá fuera de esta función finalizando la partida
         '''
         
         target_king_movements: int = self.get_king_movements(target) #movimientos de TARGET
