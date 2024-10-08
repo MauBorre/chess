@@ -637,34 +637,38 @@ class MatchSCENE(Scene):
                             if SQUARE_TYPE == 'Peón':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.pawn_targets(board_index,
-                                                                                                               SQUARE_RECT,
-                                                                                                               interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.pawn_targets(
+                                        board_index,SQUARE_RECT,interacted_PColor)
 
                             if SQUARE_TYPE == 'Torre':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.tower_targets(board_index, SQUARE_RECT, interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.tower_targets(
+                                        board_index, SQUARE_RECT, interacted_PColor)
                             
                             if SQUARE_TYPE == 'Caballo':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.horse_targets(board_index, SQUARE_RECT, interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.horse_targets(
+                                        board_index, SQUARE_RECT, interacted_PColor)
                         
                             if SQUARE_TYPE == 'Alfil':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.bishop_targets(board_index, SQUARE_RECT, interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.bishop_targets(
+                                        board_index, SQUARE_RECT, interacted_PColor)
 
                             if SQUARE_TYPE == 'Rey':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.king_targets(board_index, SQUARE_RECT, interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.king_targets(
+                                        board_index,SQUARE_RECT,interacted_PColor)
 
                             if SQUARE_TYPE == 'Reina':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.queen_targets(board_index, SQUARE_RECT, interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.queen_targets(
+                                        board_index, SQUARE_RECT, interacted_PColor)
                                 
                             if SQUARE_TYPE == "EMPTY":
                                 self.movement_validPositions.clear()
@@ -732,7 +736,7 @@ class MatchSCENE(Scene):
         move_positions, _ = self.king_targets(
             _current_king_pos,
             self.boardRects[_current_king_pos],
-            self.turn_attacker)
+            target_color)
         return list(move_positions.keys())
 
     def decide_check(self, target: str) -> str:
