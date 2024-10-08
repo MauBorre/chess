@@ -202,7 +202,8 @@ class MatchSCENE(Scene):
 
         self.move_here: int | None = None
 
-        self.turn_color: str = 'White'
+        self.turn_attacker: str = 'White'
+        self.turn_target: str = 'Black'
         self.winner: bool = False
         self.player_deciding_match = False
         self.killing: bool = False
@@ -211,15 +212,17 @@ class MatchSCENE(Scene):
         self.in_base_Bpawns: list[int] = [bpawn for bpawn in self.pieces_legible_initial_positions['negras']['Peón']]
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in self.pieces_legible_initial_positions['blancas']['Peón']]
         self.black_positions, self.white_positions = self.reverse_expand_team_positions(self.pieces_legible_initial_positions)
-        self.turn_color: str = 'White'
+        self.turn_attacker: str = 'White'
         self.winner: bool = False
 
-    def change_turn(self):
-        if self.turn_color == 'White':
-            self.turn_color = 'Black'
+    def turn_swap(self):
+        if self.turn_attacker == 'White':
+            self.turn_attacker = 'Black'
+            self.turn_target = 'White'
             return
-        if self.turn_color == 'Black':
-            self.turn_color = 'White'
+        if self.turn_attacker == 'Black':
+            self.turn_attacker = 'White'
+            self.turn_target = 'Black'
             return
 
     def make_nested_rows(self,row_count: int) -> list[list[int]]:
@@ -268,7 +271,7 @@ class MatchSCENE(Scene):
         self,
         piece_standpoint: int,
         sq_rect: pygame.Rect,
-        piece_color: str
+        clicked_piece_color: str
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Peón:
         NORTE (white)
@@ -282,7 +285,7 @@ class MatchSCENE(Scene):
         mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:sq_rect} # standpoint is always first pos 
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         kill_positions: list[int] = []
-        if piece_color == 'Black': #target: white | turn associated evaluation
+        if clicked_piece_color == 'Black': #target: white | turn associated evaluation
             
             # SUR
             movement: int = piece_standpoint+SUR
@@ -313,7 +316,7 @@ class MatchSCENE(Scene):
                 if kp in self.white_positions:
                     on_target_kill_positions.update({kp:self.boardRects[kp]})
 
-        if piece_color == 'White': #target: black | turn associated evaluation
+        if clicked_piece_color == 'White': #target: black
             # NORTE
             movement: int = piece_standpoint+NORTE
             # piece block condition
@@ -346,7 +349,7 @@ class MatchSCENE(Scene):
         self,
         piece_standpoint: int,
         sq_rect: pygame.Rect,
-        piece_color: str
+        clicked_piece_color: str
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Torre:
         +NORTE
@@ -370,11 +373,11 @@ class MatchSCENE(Scene):
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
                     else:
-                        if piece_color == 'Black':
+                        if clicked_piece_color == 'Black':
                             if movement in self.white_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
-                        if piece_color == 'White':
+                        if clicked_piece_color == 'White':
                             if movement in self.black_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
@@ -384,7 +387,8 @@ class MatchSCENE(Scene):
     def horse_targets(
         self,
         piece_standpoint: int,
-        sq_rect: pygame.Rect, piece_color: str
+        sq_rect: pygame.Rect,
+        clicked_piece_color: str
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Caballo:
         doble-norte + este
@@ -419,10 +423,10 @@ class MatchSCENE(Scene):
                 if movement not in self.black_positions and movement not in self.white_positions:
                     mov_target_positions.update({movement:self.boardRects[movement]})
                 else:
-                    if piece_color == 'Black':
-                        if movement in self.white_positions:
+                    if clicked_piece_color == 'Black':
+                        if movement in self.white_positions: #if movement in white_positions
                             on_target_kill_positions.update({movement:self.boardRects[movement]})
-                    if piece_color == 'White':
+                    if clicked_piece_color == 'White':
                         if movement in self.black_positions:
                             on_target_kill_positions.update({movement:self.boardRects[movement]})
         return mov_target_positions, on_target_kill_positions
@@ -431,7 +435,7 @@ class MatchSCENE(Scene):
         self,
         piece_standpoint: int,
         sq_rect: pygame.Rect,
-        piece_color: str
+        clicked_piece_color: str
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Alfil:
         +NOR_OESTE
@@ -456,11 +460,11 @@ class MatchSCENE(Scene):
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
                     else:
-                        if piece_color == 'Black':
+                        if clicked_piece_color == 'Black':
                             if movement in self.white_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
-                        if piece_color == 'White':
+                        if clicked_piece_color == 'White':
                             if movement in self.black_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
@@ -471,7 +475,7 @@ class MatchSCENE(Scene):
         self,
         piece_standpoint: int,
         sq_rect: pygame.Rect,
-        piece_color: str
+        clicked_piece_color: str
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Rey:
         +NORTE
@@ -502,10 +506,10 @@ class MatchSCENE(Scene):
                 if movement not in self.black_positions and movement not in self.white_positions:
                     mov_target_positions.update({movement:self.boardRects[movement]}) 
                 else:
-                    if piece_color == 'Black':
+                    if clicked_piece_color == 'Black':
                         if movement in self.white_positions:
                             on_target_kill_positions.update({movement:self.boardRects[movement]})
-                    if piece_color == 'White':
+                    if clicked_piece_color == 'White':
                         if movement in self.black_positions:
                             on_target_kill_positions.update({movement:self.boardRects[movement]})
                     continue
@@ -515,7 +519,7 @@ class MatchSCENE(Scene):
         self,
         piece_standpoint: int,
         sq_rect: pygame.Rect,
-        piece_color: str
+        clicked_piece_color: str
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Reina:
         +NORTE
@@ -547,11 +551,11 @@ class MatchSCENE(Scene):
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]}) 
                     else:
-                        if piece_color == 'Black':
+                        if clicked_piece_color == 'Black':
                             if movement in self.white_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
-                        if piece_color == 'White':
+                        if clicked_piece_color == 'White':
                             if movement in self.black_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
@@ -578,27 +582,27 @@ class MatchSCENE(Scene):
             if board_index in self.black_positions.keys():
                 SQUARE_SUBTYPE = "kill-movement" if board_index in self.kill_validPositions.keys() else ""
                 SQUARE_TYPE =  self.black_positions[board_index]
-                P_COLOR = "Black"
+                interacted_PColor = "Black"
 
             elif board_index in self.white_positions.keys():
                 SQUARE_SUBTYPE = "kill-movement" if board_index in self.kill_validPositions.keys() else ""
                 SQUARE_TYPE = self.white_positions[board_index]
-                P_COLOR = "White"
+                interacted_PColor = "White"
 
             elif board_index in self.movement_validPositions.keys():
                 SQUARE_SUBTYPE = "valid-movement"
                 SQUARE_TYPE = ""
-                P_COLOR = ""
+                interacted_PColor = ""
 
-            else: SQUARE_TYPE = "EMPTY"; P_COLOR = ""; SQUARE_SUBTYPE = ""
+            else: SQUARE_TYPE = "EMPTY"; interacted_PColor = ""; SQUARE_SUBTYPE = ""
             # ----------------------------------------------------
 
             # draw piece
             if SQUARE_TYPE != "EMPTY":
-                if P_COLOR == 'Black':
+                if interacted_PColor == 'Black':
                     self.draw_text(SQUARE_TYPE,'black', SQUARE_RECT.left + self.square_width/2,
                                                         SQUARE_RECT.top + self.square_height/2)
-                if P_COLOR == 'White':
+                if interacted_PColor == 'White':
                     self.draw_text(SQUARE_TYPE,(120,120,120),
                                                       SQUARE_RECT.left + self.square_width/2,
                                                       SQUARE_RECT.top + self.square_height/2)
@@ -608,7 +612,7 @@ class MatchSCENE(Scene):
                 if SQUARE_RECT.collidepoint((self.master.mx,self.master.my)):
 
                     # Hover -----------------------
-                    if P_COLOR == self.turn_color:
+                    if interacted_PColor == self.turn_attacker:
                         pygame.draw.rect(self.screen,'GREEN',SQUARE_RECT,width=2) # PIECE hover
                     else:
                         pygame.draw.rect(self.screen,(150,150,150),SQUARE_RECT,width=2) # EMPTY hover
@@ -636,7 +640,7 @@ class MatchSCENE(Scene):
                         else: 
                             if SQUARE_TYPE == 'Peón':
                                 self.movement_validPositions.clear()
-                                if P_COLOR == self.turn_color:
+                                if interacted_PColor == self.turn_attacker:
 
                                     # puedo descartar posiciones (invalid_positions) al llamar a 
                                     # la funcion _targets(), pero DEBO ALMACENAR
@@ -646,32 +650,32 @@ class MatchSCENE(Scene):
                                     # por lo que va a hacer y por su situación actual.
                                     self.movement_validPositions, self.kill_validPositions = self.pawn_targets(board_index,
                                                                                                                SQUARE_RECT,
-                                                                                                               P_COLOR)
+                                                                                                               interacted_PColor)
 
                             if SQUARE_TYPE == 'Torre':
                                 self.movement_validPositions.clear()
-                                if P_COLOR == self.turn_color:
-                                    self.movement_validPositions, self.kill_validPositions = self.tower_targets(board_index, SQUARE_RECT, P_COLOR)
+                                if interacted_PColor == self.turn_attacker:
+                                    self.movement_validPositions, self.kill_validPositions = self.tower_targets(board_index, SQUARE_RECT, interacted_PColor)
                             
                             if SQUARE_TYPE == 'Caballo':
                                 self.movement_validPositions.clear()
-                                if P_COLOR == self.turn_color:
-                                    self.movement_validPositions, self.kill_validPositions = self.horse_targets(board_index, SQUARE_RECT, P_COLOR)
+                                if interacted_PColor == self.turn_attacker:
+                                    self.movement_validPositions, self.kill_validPositions = self.horse_targets(board_index, SQUARE_RECT, interacted_PColor)
                         
                             if SQUARE_TYPE == 'Alfil':
                                 self.movement_validPositions.clear()
-                                if P_COLOR == self.turn_color:
-                                    self.movement_validPositions, self.kill_validPositions = self.bishop_targets(board_index, SQUARE_RECT, P_COLOR)
+                                if interacted_PColor == self.turn_attacker:
+                                    self.movement_validPositions, self.kill_validPositions = self.bishop_targets(board_index, SQUARE_RECT, interacted_PColor)
 
                             if SQUARE_TYPE == 'Rey':
                                 self.movement_validPositions.clear()
-                                if P_COLOR == self.turn_color:
-                                    self.movement_validPositions, self.kill_validPositions = self.king_targets(board_index, SQUARE_RECT, P_COLOR)
+                                if interacted_PColor == self.turn_attacker:
+                                    self.movement_validPositions, self.kill_validPositions = self.king_targets(board_index, SQUARE_RECT, interacted_PColor)
 
                             if SQUARE_TYPE == 'Reina':
                                 self.movement_validPositions.clear()
-                                if P_COLOR == self.turn_color:
-                                    self.movement_validPositions, self.kill_validPositions = self.queen_targets(board_index, SQUARE_RECT, P_COLOR)
+                                if interacted_PColor == self.turn_attacker:
+                                    self.movement_validPositions, self.kill_validPositions = self.queen_targets(board_index, SQUARE_RECT, interacted_PColor)
                                 
                             if SQUARE_TYPE == "EMPTY":
                                 self.movement_validPositions.clear()
@@ -680,7 +684,7 @@ class MatchSCENE(Scene):
         if self.move_here != None:
             ex_value: int = list(self.movement_validPositions.items())[0][0]
 
-            if self.turn_color == 'Black': # target:white
+            if self.turn_attacker == 'Black': # target:white
                 _piece = self.black_positions.pop(ex_value)
                 if self.killing:
                     self.white_positions.pop(self.move_here)
@@ -688,7 +692,7 @@ class MatchSCENE(Scene):
 
 
                 '''revisando jaque/jaque-mate al otro jugador''' 
-                self.W_check_state = self.make_check_targets(target='White') # piezas black contra king white
+                self.W_check_state = self.decide_check(target=self.turn_target) # piezas black contra king white
 
                 #actualizando posiciones_inválidas del otro jugador
                 if self.W_check_state == 'jaque': ...
@@ -699,13 +703,13 @@ class MatchSCENE(Scene):
                 if self.W_check_state == 'jaque-mate':
                     self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA                
 
-            if self.turn_color == 'White':
+            if self.turn_attacker == 'White':
                 _piece = self.white_positions.pop(ex_value)
                 if self.killing:
                     self.black_positions.pop(self.move_here) 
                 self.white_positions.update({self.move_here:_piece})
 
-            self.change_turn()
+            self.turn_swap()
             self.movement_validPositions.clear()
             self.move_here = None
             self.killing = False
@@ -747,7 +751,7 @@ class MatchSCENE(Scene):
         El tema con la otra función es que trabaja con un pygame.Rect
         que solo compete a asuntos visuales
         '''
-        _current_king_pos: int = self.get_king_standpoint(self.turn_color)
+        _current_king_pos: int = self.get_king_standpoint(self.turn_attacker)
         move_positions: list[int] = []
         if color == 'Black':
             move_positions = self.king_targets()[0] #requiere square_rect y
@@ -755,7 +759,7 @@ class MatchSCENE(Scene):
         if color == 'White': ...
         return move_positions
 
-    def make_check_targets(self, target: str) -> str:
+    def decide_check(self, target: str) -> str:
         '''deducir jaque/jaque-mate de piezas self.turn_color contra target
 
         comparar las on_target_kill_positions de self.turn
@@ -779,7 +783,7 @@ class MatchSCENE(Scene):
         target_king_movements: int = self.get_king_movements(target) #movimientos de TARGET
         on_target_kill_positions: dict = {} #si la cantidad de elementos aqui es la misma
                                             #que en target_king_movements entonces es jaque-mate
-        if self.turn_color == 'Black': # target: white
+        if self.turn_attacker == 'Black': # target: white
             #revisar qué piezas black dejan en kill-position a rey white
             '''if movement == _current_king_pos'''
             '''if movement in _king_mov_pos'''
@@ -789,7 +793,7 @@ class MatchSCENE(Scene):
             #bishop_targets(rey_standpoint,'black')
             ...
 
-        if self.turn_color == 'White': # target: black
+        if self.turn_attacker == 'White': # target: black
             #revisar que piezas white dejan en kill-position a rey black
             #pawn_targets(rey_standpoint,'white')
             #tower_targets(rey_standpoint,'white')
@@ -815,7 +819,7 @@ class MatchSCENE(Scene):
         self.draw_text('Match scene','black',20,20,center=False)
         self.draw_text(f'{self.master.match_mode}','black',200,20,center=False)
         self.draw_board()
-        self.draw_text(self.turn_color,'black',self.midScreen_pos.x - 25, self.board_height+70,center=False)
+        self.draw_text(self.turn_attacker,'black',self.midScreen_pos.x - 25, self.board_height+70,center=False)
         if self.master.paused:
             if not self.player_deciding_match:
                 self.draw_pause_menu()
