@@ -207,6 +207,20 @@ class MatchSCENE(Scene):
         self.winner: bool = False
         self.player_deciding_match = False
         self.killing: bool = False
+
+    def make_boardRects(self) -> list[pygame.Rect]:
+        _boardRects = []
+        startx = self.board_begin.x
+        starty = self.board_begin.y
+        y = starty
+        for r in range(self.board_rows):
+            x = startx
+            for c in range(self.board_columns):
+                rect = pygame.Rect(x,y,self.square_width,self.square_height)
+                _boardRects.append(rect)
+                x+=self.square_width
+            y+=self.square_height
+        return _boardRects
         
     def make_board(self): # also used for restarting match
         self.in_base_Bpawns: list[int] = [bpawn for bpawn in self.pieces_legible_initial_positions['negras']['Peón']]
@@ -898,17 +912,3 @@ class MatchSCENE(Scene):
             pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
             if self.master.click:
                 self.player_deciding_match = True
-
-    def make_boardRects(self) -> list[pygame.Rect]:
-        _boardRects = []
-        startx = self.board_begin.x
-        starty = self.board_begin.y
-        y = starty
-        for r in range(self.board_rows):
-            x = startx
-            for c in range(self.board_columns):
-                rect = pygame.Rect(x,y,self.square_width,self.square_height)
-                _boardRects.append(rect)
-                x+=self.square_width
-            y+=self.square_height
-        return _boardRects
