@@ -146,7 +146,7 @@ class MatchSCENE(Scene):
         self.square_height = self.square_width
         self.board_rows = 8
         self.board_columns = self.board_rows
-        self.nested_rows = self.make_nested_rows(self.board_rows)
+        self.nested_rows = self.make_nested_rows(self.board_rows) # Fijar rows ayuda a validar movimientos.
         self.board_width = self.square_width * self.board_rows
         self.board_height = self.board_width
         self.board_begin = pygame.Vector2((self.midScreen_pos.x - self.board_width/2,
@@ -259,7 +259,7 @@ class MatchSCENE(Scene):
 
     def row_of_(self, position: int) -> list[int]:
         '''Devuelve el row al que corresponda la posición ingresada.
-        Necesitamos rows para delimitar posiciones del tablero.
+        
         '''
         for row in self.nested_rows:
             for num in row:
@@ -626,11 +626,7 @@ class MatchSCENE(Scene):
                             self.killing = True
                             self.move_here = board_index
 
-                        elif SQUARE_SUBTYPE == "valid-movement":
-                            #yo quiero mover acá, pero dejo a mi rey expuesto?
-                            #self.check_exposed_king()
-                            #o desde antes ni siquiera declaramos una valid position
-                            #si evaluamos esto en la generacion de valid_movements
+                        elif SQUARE_SUBTYPE == "valid-movement": # movimientos inválidos nunca llegan a este estado
                             self.move_here = board_index
                             if board_index in self.in_base_Bpawns:
                                 self.in_base_Bpawns.remove(board_index)
@@ -641,13 +637,6 @@ class MatchSCENE(Scene):
                             if SQUARE_TYPE == 'Peón':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-
-                                    # puedo descartar posiciones (invalid_positions) al llamar a 
-                                    # la funcion _targets(), pero DEBO ALMACENAR
-                                    # INVALID_POSITIONS para revisar JAQUE-JAQUE/MATE
-
-                                    # ..._targets() debe evaluar si puede hacer lo que quiere hacer
-                                    # por lo que va a hacer y por su situación actual.
                                     self.movement_validPositions, self.kill_validPositions = self.pawn_targets(board_index,
                                                                                                                SQUARE_RECT,
                                                                                                                interacted_PColor)
@@ -734,29 +723,26 @@ class MatchSCENE(Scene):
                     act_pos = k
         return act_pos
     
-    def get_king_movements(self,color:str,piece_standpoint:int) -> list[int]:
+    def get_king_movements(self, target_color:str) -> list[int]:
         '''
-        Para obtener solo las posiciones (en número) acaso debemos repetir
-        la misma acción que ya hacemos en king_targets()?
-        O sea sí, pero no huele bien.
+        Para obtener las posiciones debemos repetir parte de la misma
+        acción que ya está hecha en king_targets().
 
-        Lo ideal sería poder llamar a king_targets y obtener solo
-        la lista de ints que buscamos, y esta función es un extractor
-        de aquella funcion.
+        La diferencia radica en que aquella función fue pensada para
+        utilizarse cuando se clickea una pieza (incl. pygame.Rect), no 
+        a un nivel mas fundamental del sistema.
 
-        El problema de aquella función es que solo es llamada cuando es
-        clickeada, entonces estamos computando los movimientos de forma
-        bastante "en el aire", no es un registro "tan constante" del juego.
-
-        El tema con la otra función es que trabaja con un pygame.Rect
-        que solo compete a asuntos visuales
+        En favor de revisar los jaques, solo necesitamos una lista de
+        ints que correspondan a las posiciones del TARGET-rey.
         '''
-        _current_king_pos: int = self.get_king_standpoint(self.turn_attacker)
+        _current_king_pos: int = self.get_king_standpoint(target_color) # a partir de acá computar movements
         move_positions: list[int] = []
-        if color == 'Black':
+
+        if target_color == 'Black':
+            #revisar límites de tablero, colisiones, etc.
             move_positions = self.king_targets()[0] #requiere square_rect y
-                                            #acá realmente eso no nos importa.. no?
-        if color == 'White': ...
+                                                    #acá realmente eso no nos importa
+        if target_color == 'White': ...
         return move_positions
 
     def decide_check(self, target: str) -> str:
@@ -766,11 +752,15 @@ class MatchSCENE(Scene):
         contra la posicion actual+movimientos del rey target.
 
         Para hacer esto debemos llamar a todas las funciones "...targets()" antes
-        usadas, pero "usándolas de otra forma".
+        usadas, pero "usándolas de otra forma". -> cuidado que todas estas funciones usan
+                                                   pygame.Rect...
 
         Puede que haya una interesante interacción invirtiendo el hecho de que
         son las piezas buscando al rey, haciendo que sea el rey quien busca a las
-        piezas.
+        piezas. -> Excelente opción? Sólo con obtener los posibles movimientos del
+        rey podría deducir esto, sin llamar a todos los targets(), pero sí con una
+        correcta revision categórica de "qué" pieza estoy tocando y si su movimiento
+        "me puede comer"
 
         Esta función:
             devuelve "jaque" si encontró que el target king puede escapar
@@ -781,6 +771,8 @@ class MatchSCENE(Scene):
         '''
         
         target_king_movements: int = self.get_king_movements(target) #movimientos de TARGET
+
+        #lista o dict?:
         on_target_kill_positions: dict = {} #si la cantidad de elementos aqui es la misma
                                             #que en target_king_movements entonces es jaque-mate
         if self.turn_attacker == 'Black': # target: white
@@ -803,12 +795,11 @@ class MatchSCENE(Scene):
 
         if len(target_king_movements) > len(on_target_kill_positions):
             # El rey puede escapar por si solo a la posición que no coincida
-            # debemos obtener esta posición para NO-NEGARLA de las NEGADAS posiciones en jaque
-            
-            
+            # debemos obtener esta posición de escape para NO-NEGARLA de las 
+            # posiciones inválidas en jaque
             return 'jaque'
         if len(target_king_movements) == len(on_target_kill_positions):
-            # !! puede aún tener escapatoria con ayuda aliada !!
+            # !! puede aún tener escapatoria si ayuda un aliado !!
             '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
             > Cómo saber si un movimiento corta una amenaza?
             > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?'''
