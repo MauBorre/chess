@@ -474,7 +474,7 @@ class MatchSCENE(Scene):
     def king_targets(
         self,
         piece_standpoint: int,
-        sq_rect: pygame.Rect,
+        sq_standing_rect: pygame.Rect,
         clicked_piece_color: str
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Rey:
@@ -488,7 +488,7 @@ class MatchSCENE(Scene):
         +SUR_ESTE
         1 casillero a la vez hasta limite tablero o pieza aliada/enemiga
         '''
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:sq_rect} # standpoint is always first pos
+        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint: sq_standing_rect} # standpoint is always first pos
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         king_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         for direction in king_directions:
@@ -725,28 +725,19 @@ class MatchSCENE(Scene):
     
     def get_king_movements(self, target_color:str) -> list[int]:
         '''
-        Para obtener las posiciones debemos repetir parte de la misma
-        acción que ya está hecha en king_targets().
-
-        La diferencia radica en que aquella función fue pensada para
-        utilizarse cuando se clickea una pieza (incl. pygame.Rect), no 
-        a un nivel mas fundamental del sistema.
-
-        En favor de revisar los jaques, solo necesitamos una lista de
-        ints que correspondan a las posiciones del TARGET-rey.
+        Extrayendo sólo posiciones de movimiento del rey target desde
+        king_targets().
         '''
-        _current_king_pos: int = self.get_king_standpoint(target_color) # a partir de acá computar movements
-        move_positions: list[int] = []
-
-        if target_color == 'Black':
-            #revisar límites de tablero, colisiones, etc.
-            move_positions = self.king_targets()[0] #requiere square_rect y
-                                                    #acá realmente eso no nos importa
-        if target_color == 'White': ...
-        return move_positions
+        _current_king_pos: int = self.get_king_standpoint(target_color)
+        move_positions, _ = self.king_targets(
+            _current_king_pos,
+            self.boardRects[_current_king_pos],
+            self.turn_attacker)
+        return list(move_positions.keys())
 
     def decide_check(self, target: str) -> str:
-        '''deducir jaque/jaque-mate de piezas self.turn_color contra target
+        '''
+        deducir jaque/jaque-mate de piezas self.turn_color contra target
 
         comparar las on_target_kill_positions de self.turn
         contra la posicion actual+movimientos del rey target.
@@ -762,7 +753,6 @@ class MatchSCENE(Scene):
         correcta revision categórica de "qué" pieza estoy tocando y si su movimiento
         "me puede comer"
 
-        
         ::devuelve:-> "jaque" si encontró que el target king puede escapar
             -> repercutirá fuera de esta función mermando el movimiento del target
 
@@ -770,7 +760,7 @@ class MatchSCENE(Scene):
             -> repercutirá fuera de esta función finalizando la partida
         '''
         
-        target_king_movements: int = self.get_king_movements(target) #movimientos de TARGET
+        target_king_movements: list[int] = self.get_king_movements(target) #movimientos de TARGET
 
         #lista o dict?:
         on_target_kill_positions: dict = {} #si la cantidad de elementos aqui es la misma
