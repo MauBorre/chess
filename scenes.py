@@ -725,10 +725,8 @@ class MatchSCENE(Scene):
         return act_pos
     
     def get_king_movements(self, target_color:str) -> list[int]:
-        '''
-        Extrayendo sólo posiciones de movimiento del rey target desde
-        king_targets().
-        '''
+        '''Extrayendo sólo posiciones de movimiento del rey target desde
+        king_targets().'''
         _current_king_pos: int = self.get_king_standpoint(target_color)
         move_positions, _ = self.king_targets(
             _current_king_pos,
@@ -761,40 +759,56 @@ class MatchSCENE(Scene):
             -> repercutirá fuera de esta función finalizando la partida
         '''
         
-        target_king_movements: list[int] = self.get_king_movements(target) #movimientos de TARGET
+        target_king_movements: list[int] = self.get_king_movements(target)
 
         #lista o dict?:
         on_target_kill_positions: dict = {} #si la cantidad de elementos aqui es la misma
                                             #que en target_king_movements entonces es jaque-mate
+
         if self.turn_attacker == 'Black': # target: white
-            #revisar qué piezas black dejan en kill-position a rey white
-            '''if movement == _current_king_pos'''
-            '''if movement in _king_mov_pos'''
-            #pawn_targets(rey_standpoint,'black')
-            #tower_targets(rey_standpoint,'black')
-            #horse_targets(rey_standpoint,'black')
-            #bishop_targets(rey_standpoint,'black')
-            ...
+            #levantar ataque de todas las piezas BLACK
+            all_attacks = ... #pawn_targets(rey_standpoint,'black')
+                              #tower_targets(rey_standpoint,'black')
+                              #horse_targets(rey_standpoint,'black')
+                              #bishop_targets(rey_standpoint,'black')
+            for attack in all_attacks: #revisar qué piezas black dejan en kill-position a rey white
+                if attack in target_king_movements:
+                    target_king_movements.pop(attack)
+            if len(target_king_movements) == 0:
+                # !! puede aún tener escapatoria si ayuda un aliado !!
+                '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
+                > Cómo saber si un movimiento corta una amenaza?
+                > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?'''
+                return 'jaque-mate'
+            else:
+                if len(target_king_movements) > len(on_target_kill_positions): ...
+                    # El rey puede escapar por si solo a la posición que no coincida
+                    # debemos obtener esta posición de escape para NO-NEGARLA de las 
+                    # posiciones inválidas en jaque
+                return 'jaque'
+            
 
         if self.turn_attacker == 'White': # target: black
-            #revisar que piezas white dejan en kill-position a rey black
-            #pawn_targets(rey_standpoint,'white')
-            #tower_targets(rey_standpoint,'white')
-            #horse_targets(rey_standpoint,'white')
-            #bishop_targets(rey_standpoint,'white')            
-            ...
-
-        if len(target_king_movements) > len(on_target_kill_positions):
-            # El rey puede escapar por si solo a la posición que no coincida
-            # debemos obtener esta posición de escape para NO-NEGARLA de las 
-            # posiciones inválidas en jaque
-            return 'jaque'
-        if len(target_king_movements) == len(on_target_kill_positions):
-            # !! puede aún tener escapatoria si ayuda un aliado !!
-            '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
-            > Cómo saber si un movimiento corta una amenaza?
-            > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?'''
-            return 'jaque-mate'
+            #levantar ataque de todas las piezas WHITE
+            all_attacks = ... #pawn_targets(rey_standpoint,'white')
+                              #tower_targets(rey_standpoint,'white')
+                              #horse_targets(rey_standpoint,'white')
+                              #bishop_targets(rey_standpoint,'white') 
+            for attack in all_attacks: #revisar que piezas WHITE dejan en kill-position a rey BLACK
+                if attack in target_king_movements:
+                    target_king_movements.pop(attack)
+            if len(target_king_movements) == 0:
+                # !! puede aún tener escapatoria si ayuda un aliado !!
+                '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
+                > Cómo saber si un movimiento corta una amenaza?
+                > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?'''
+                return 'jaque-mate'
+            else:
+                if len(target_king_movements) > len(on_target_kill_positions): ...
+                    # El rey puede escapar por si solo a la posición que no coincida
+                    # debemos obtener esta posición de escape para NO-NEGARLA de las 
+                    # posiciones inválidas en jaque
+                return 'jaque'
 
     def draw(self):
         #hud
