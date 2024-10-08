@@ -2,24 +2,7 @@ import pygame
 from typing import Union
 #estos obj servirían por ahora como keys de configuración, pero servirían para algo mas?
 from entities import Peon, Alfil, Caballo, Torre, Reina, Rey 
-from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE
-'''Movimiento de piezas:
-Las piezas pueden moverse de tres modos:
-    > ADELANTE
-    > ATRAS
-    > IZQUIERDA
-    > DERECHA
-    > DIAGONAL
-Definidos como:
-    > NORTE = -8
-    > NORESTE = -8+1
-    > NOROESTE = -8-1
-    > SUR = +8
-    > SUROESTE = +8-1
-    > SURESTE = +8+1
-    > ESTE = +1
-    > OESTE = -1
-'''
+from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE # piece directions
 
 class Scene:
     def __init__(self,master):
