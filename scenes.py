@@ -750,7 +750,16 @@ class MatchSCENE(Scene):
         piezas. -> Excelente opción? Sólo con obtener los posibles movimientos del
         rey podría deducir esto, sin llamar a todos los targets(), pero sí con una
         correcta revision categórica de "qué" pieza estoy tocando y si su movimiento
-        "me puede comer"
+        "me puede comer"(target invertido?).
+
+        Desde aquí ya resolveremos quién y cómo puede moverse, porque es el paso
+        previo a cantar el jaque. Los movimientos denegados deducidos ya pueden
+        surtir efecto en el sistema sin "tener que retornar nada en particular".
+
+        Los movimientos denegados del rey no deberían simplemente estar incluidos en
+        estos diccionarios? La regla de oro es que si el rey todavía se puede mover,
+        no es jaque-mate, la otra regla de oro es que no pueda moverse pero un aliado
+        lo pueda salvar (MATANDO AMENAZA o TAPANDO CAMINO) -> dos tipos de SALVAR? salvar = square type
 
         ::devuelve:-> "jaque" si encontró que el target king puede escapar
             -> repercutirá fuera de esta función mermando el movimiento del target
@@ -764,9 +773,13 @@ class MatchSCENE(Scene):
         #lista o dict?:
         on_target_kill_positions: dict = {} #si la cantidad de elementos aqui es la misma
                                             #que en target_king_movements entonces es jaque-mate
+        
+        #esto debería ir con un dict distinto por color
+        target_reduced_valid_movements: dict[str, list[int]] = {} # {'peon':[0,1,2],'alfil':[18]}
 
         if self.turn_attacker == 'Black': # target: white
             #levantar ataque de todas las piezas BLACK
+            #appendear las que coincidan en target_king_movements
             all_attacks = ... #pawn_targets(rey_standpoint,'black')
                               #tower_targets(rey_standpoint,'black')
                               #horse_targets(rey_standpoint,'black')
