@@ -678,26 +678,28 @@ class MatchSCENE(Scene):
                 _piece = self.black_positions.pop(ex_value)
                 if self.killing:
                     self.white_positions.pop(self.move_here)
-                self.black_positions.update({self.move_here:_piece})
-
-
-                '''revisando jaque/jaque-mate al otro jugador''' 
-                self.W_check_state = self.decide_check(target=self.turn_target) # piezas black contra king white
-
-                #actualizando posiciones_inválidas del otro jugador
-                if self.W_check_state == 'jaque': ...
-                    # >> alertar al jugador <<
-                    #limitar posiciones de target
-                    #self.white_invalid.update(posición_deducida)
-
-                if self.W_check_state == 'jaque-mate':
-                    self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA                
+                self.black_positions.update({self.move_here:_piece})               
 
             if self.turn_attacker == 'White':
                 _piece = self.white_positions.pop(ex_value)
                 if self.killing:
                     self.black_positions.pop(self.move_here) 
                 self.white_positions.update({self.move_here:_piece})
+
+            self.decide_check()
+            if self.B_check_state == 'jaque':
+                #alertar al jugador -los movimientos inválidos ya fueron computados-
+                ...
+            if self.B_check_state == 'jaque-mate':
+                self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                #color_winner...
+
+            if self.W_check_state == 'jaque':
+                #alertar al jugador -los movimientos inválidos ya fueron computados-
+                ...
+            if self.W_check_state == 'jaque-mate': 
+                self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                #color_winner...
 
             self.turn_swap()
             self.movement_validPositions.clear()
@@ -728,47 +730,52 @@ class MatchSCENE(Scene):
         '''Extrayendo sólo posiciones de movimiento del rey target desde
         king_targets().'''
         _current_king_pos: int = self.get_king_standpoint(target_color)
-        move_positions, _ = self.king_targets(
+        move_positions, _ = self.king_targets( #descartamos el retorno de on_target_kill_positions
             _current_king_pos,
             self.boardRects[_current_king_pos],
             target_color)
         return list(move_positions.keys())
 
-    def decide_check(self, target: str) -> str:
+    def decide_check(self) -> str:
         '''
-        deducir jaque/jaque-mate de piezas self.turn_color contra target
+        evaluar jaque/jaque-mate de piezas self.turn_color contra target
 
-        comparar las on_target_kill_positions de self.turn
+        para ello, comparar *todas* las on_target_kill_positions de self.turn
         contra la posicion actual+movimientos del rey target.
 
-        Para hacer esto debemos llamar a todas las funciones "...targets()" antes
-        usadas, pero "usándolas de otra forma". -> cuidado que todas estas funciones usan
-                                                   pygame.Rect...
+            >> Llamar a todas las funciones "...targets()" antes
+               usadas, pero "usándolas de otra forma". -> cuidado que todas estas funciones usan
+                                                          pygame.Rect -> self.boardRects[standpoint]
 
         Puede que haya una interesante interacción invirtiendo el hecho de que
         son las piezas buscando al rey, haciendo que sea el rey quien busca a las
         piezas. -> Excelente opción? Sólo con obtener los posibles movimientos del
-        rey podría deducir esto, sin llamar a todos los targets(), pero sí con una
-        correcta revision categórica de "qué" pieza estoy tocando y si su movimiento
-        "me puede comer"(target invertido?).
+                   rey podría deducir esto, sin llamar a todos los targets(), pero sí con una
+                   correcta revisión categórica de "qué" pieza estoy tocando y si su movimiento
+                   "me puede comer"(target invertido?).
+                   -----
+                   Realmente con una sola pasada a boardRects podría registrar *todas* estas
+                   posiciones, pero actualmente solo las levanto al clickear piezas.
 
         Desde aquí ya resolveremos quién y cómo puede moverse, porque es el paso
-        previo a cantar el jaque. Los movimientos denegados deducidos ya pueden
-        surtir efecto en el sistema sin "tener que retornar nada en particular".
+        previo a cantar el jaque.
+        Los movimientos denegados deducidos serán registrados en los correspondientes
+        diccionarios *de color* (presentes globalmente en la clase)
 
-        Los movimientos denegados del rey no deberían simplemente estar incluidos en
-        estos diccionarios? La regla de oro es que si el rey todavía se puede mover,
-        no es jaque-mate, la otra regla de oro es que no pueda moverse pero un aliado
-        lo pueda salvar (MATANDO AMENAZA o TAPANDO CAMINO) -> dos tipos de SALVAR? salvar = square type
+        >>white_invalid_positions = {'peon': [2,4], 'alfil': [12,18,24], 'rey':[5,6]}
 
-        ::devuelve:-> "jaque" si encontró que el target king puede escapar
-            -> repercutirá fuera de esta función mermando el movimiento del target
-
-        ::devuelve:-> "jaque-mate" si encontró que el target king NO puede escapar
-            -> repercutirá fuera de esta función finalizando la partida
+        Los movimientos denegados del rey en estos diccionarios son la clave para deducir
+        para lo que nos compete resolver:
+        ::RESUELVE:-> "jaque"
+            -Si encontró que el target king puede escapar (invalid pos no iguala a valid pos).
+            -O si encontró que el king no puede escapar PERO puede ser salvado por un aliado.
+                (MATANDO AMENAZA o TAPANDO CAMINO) -> dos "tipos" de SALVAR? salvar = SQUARE_TYPE
+            
+        ::RESUELVE:-> "jaque-mate"
+            Si encontró que el target king NO puede escapar
         '''
         
-        target_king_movements: list[int] = self.get_king_movements(target)
+        target_king_movements: list[int] = self.get_king_movements(self.turn_target)
 
         #lista o dict?:
         on_target_kill_positions: dict = {} #si la cantidad de elementos aqui es la misma
@@ -787,18 +794,20 @@ class MatchSCENE(Scene):
             for attack in all_attacks: #revisar qué piezas black dejan en kill-position a rey white
                 if attack in target_king_movements:
                     target_king_movements.pop(attack)
-            if len(target_king_movements) == 0:
+
+            if len(target_king_movements) == 0: #jaque-mate
                 # !! puede aún tener escapatoria si ayuda un aliado !!
                 '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
                 > Cómo saber si un movimiento corta una amenaza?
                 > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?'''
-                return 'jaque-mate'
-            else:
+                ...
+
+            else: #jaque
                 if len(target_king_movements) > len(on_target_kill_positions): ...
                     # El rey puede escapar por si solo a la posición que no coincida
                     # debemos obtener esta posición de escape para NO-NEGARLA de las 
                     # posiciones inválidas en jaque
-                return 'jaque'
+                ...
             
 
         if self.turn_attacker == 'White': # target: black
