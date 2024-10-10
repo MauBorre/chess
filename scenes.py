@@ -177,6 +177,8 @@ class MatchSCENE(Scene):
         # están en un casillero kill-position (incl. posición actual)
         # si todas las intenciones de movimiento de king
         # se encuentran en estas posiciones: entonces JAQUE-MATE
+        '''esto tiene pinta de ser usado internamente para revisar jaques, no
+        algo que respecte a la globalidad del juego'''
         self.Wking_check_positions: list[int] = []
         self.Bking_check_positions: list[int] = []
 
@@ -743,9 +745,9 @@ class MatchSCENE(Scene):
         para ello, comparar *todas* las on_target_kill_positions de self.turn
         contra la posicion actual+movimientos del rey target.
 
-            >> Llamar a todas las funciones "...targets()" antes
-               usadas, pero "usándolas de otra forma". -> cuidado que todas estas funciones usan
-                                                          pygame.Rect -> self.boardRects[standpoint]
+            >> Llamar a todas las funciones "...targets()" pero "usándolas de
+               otra forma". -> ATENCION todas estas funciones usan 
+                               pygame.Rect (self.boardRects[standpoint])
 
         Puede que haya una interesante interacción invirtiendo el hecho de que
         son las piezas buscando al rey, haciendo que sea el rey quien busca a las
@@ -757,15 +759,16 @@ class MatchSCENE(Scene):
                    Realmente con una sola pasada a boardRects podría registrar *todas* estas
                    posiciones, pero actualmente solo las levanto al clickear piezas.
 
-        Desde aquí ya resolveremos quién y cómo puede moverse, porque es el paso
+        Aquí resolveremos *quién* y *cómo* puede moverse, porque es el paso
         previo a cantar el jaque.
         Los movimientos denegados deducidos serán registrados en los correspondientes
         diccionarios *de color* (presentes globalmente en la clase)
 
         >>white_invalid_positions = {'peon': [2,4], 'alfil': [12,18,24], 'rey':[5,6]}
+            ^^No necesitamos un RECT para señalar en el mapa invalid pos? mmm...
 
         Los movimientos denegados del rey en estos diccionarios son la clave para deducir
-        para lo que nos compete resolver:
+        nuestro objetivo:
         ::RESUELVE:-> "jaque"
             -Si encontró que el target king puede escapar (invalid pos no iguala a valid pos).
             -O si encontró que el king no puede escapar PERO puede ser salvado por un aliado.
@@ -775,15 +778,12 @@ class MatchSCENE(Scene):
             Si encontró que el target king NO puede escapar
         '''
         
-        target_king_movements: list[int] = self.get_king_movements(self.turn_target)
+        target_king_movements: list[int] = self.get_king_movements(self.turn_target) #OK
 
         #lista o dict?:
-        on_target_kill_positions: dict = {} #si la cantidad de elementos aqui es la misma
-                                            #que en target_king_movements entonces es jaque-mate
+        on_target_kill_positions: dict = {} #si los elementos aqui son iguales a los
+                                            #que hay en target_king_movements, entonces es jaque-mate
         
-        #esto debería ir con un dict distinto por color
-        target_reduced_valid_movements: dict[str, list[int]] = {} # {'peon':[0,1,2],'alfil':[18]}
-
         if self.turn_attacker == 'Black': # target: white
             #levantar ataque de todas las piezas BLACK
             #appendear las que coincidan en target_king_movements
@@ -800,16 +800,16 @@ class MatchSCENE(Scene):
                 '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
                 > Cómo saber si un movimiento corta una amenaza?
                 > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?'''
-                ...
+                return 'jaque-mate'
 
             else: #jaque
                 if len(target_king_movements) > len(on_target_kill_positions): ...
                     # El rey puede escapar por si solo a la posición que no coincida
                     # debemos obtener esta posición de escape para NO-NEGARLA de las 
                     # posiciones inválidas en jaque
-                ...
+                    #self.white_invalid_positions.append(bla bla bla )
+                return 'jaque'
             
-
         if self.turn_attacker == 'White': # target: black
             #levantar ataque de todas las piezas WHITE
             all_attacks = ... #pawn_targets(rey_standpoint,'white')
@@ -830,6 +830,7 @@ class MatchSCENE(Scene):
                     # El rey puede escapar por si solo a la posición que no coincida
                     # debemos obtener esta posición de escape para NO-NEGARLA de las 
                     # posiciones inválidas en jaque
+                #self.black_invalid_positions.append(bla bla bla
                 return 'jaque'
 
     def draw(self):
