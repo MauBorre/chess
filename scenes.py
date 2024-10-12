@@ -172,21 +172,11 @@ class MatchSCENE(Scene):
         # Son tambien revisados en cada movimiento de pieza. -> Expone rey // No-salva rey
         self.white_invalid_positions: dict[str, list[int]] = {} # {'peon': [2,4], 'alfil': [12,18,24]}
         self.black_invalid_positions: dict[str, list[int]] = {}
-        
-        # Necesitamos saber si el rey y/o sus casillas de moviemiento
-        # están en un casillero kill-position (incl. posición actual)
-        # si todas las intenciones de movimiento de king
-        # se encuentran en estas posiciones: entonces JAQUE-MATE
-        '''esto tiene pinta de ser usado internamente para revisar jaques, no
-        algo que respecte a la globalidad del juego'''
-        self.Wking_check_positions: list[int] = []
-        self.Bking_check_positions: list[int] = []
 
         self.W_check_state: str #jaque o jaque-mate o None
         self.B_check_state: str #jaque o jaque-mate o None
 
         self.move_here: int | None = None
-
         self.turn_attacker: str = 'White'
         self.turn_target: str = 'Black'
         self.winner: bool = False
@@ -253,8 +243,7 @@ class MatchSCENE(Scene):
                 aux_d.update(d)
             dict_list.append(aux_d)
         _black_positions, _white_positions = dict_list
-        #SIEMPRE se debe devolver en esta posición, no es muy inseguro esto?
-        return _black_positions, _white_positions
+        return _black_positions, _white_positions #SIEMPRE se debe devolver en esta posición
 
     def row_of_(self, position: int) -> list[int]:
         '''Devuelve el row al que corresponda la posición ingresada.
@@ -762,10 +751,17 @@ class MatchSCENE(Scene):
         Aquí resolveremos *quién* y *cómo* puede moverse, porque es el paso
         previo a cantar el jaque.
         Los movimientos denegados deducidos serán registrados en los correspondientes
-        diccionarios *de color* (presentes globalmente en la clase)
+        diccionarios *de color* (presentes "globalmente" en la clase):
 
-        >>white_invalid_positions = {'peon': [2,4], 'alfil': [12,18,24], 'rey':[5,6]}
-            ^^No necesitamos un RECT para señalar en el mapa invalid pos? mmm...
+            >>white_invalid_positions = {'peon': [2,4], 'alfil': [12,18,24], 'rey':[5,6]}
+                ^^Si queremos un RECT para señalar en el tablero lo deducimos por indice-posición
+        
+        Creo que no todos los movimientos invalidos corresponden teóricamente a la misma categoría,
+        pero debemos definir si se evaluan en el mismo lugar y al mismo tiempo.
+        > INVALID_MOV_T1: Tu rey esta en jaque, solo podrás moverte si eso quita su estado de jaque.
+            Requiere que primero evaluemos el jaque.
+        > INVALID_MOV_T2: Tu rey no esta en jaque, pero *el movimiento que querés hacer* lo deja en jaque. 
+            No requiere evaluar previamente el jaque? Pero y si lo sabemos de antemano y ya?
 
         Los movimientos denegados del rey en estos diccionarios son la clave para deducir
         nuestro objetivo:
@@ -799,7 +795,18 @@ class MatchSCENE(Scene):
                 # !! puede aún tener escapatoria si ayuda un aliado !!
                 '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
                 > Cómo saber si un movimiento corta una amenaza?
-                > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?'''
+                    SI *este movimiento* elimina kill-movement crítico al rey...
+
+                > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?
+                    SI *este movimiento* deja atrás un kill-movement DIRECTO al rey...
+                    ^^^ esta evaluación "corresponde" a decide_check(), pero es EVALUADA
+                        cada vez que querramos mover una pieza.
+                
+                Hay dos tipos de movimientos inválidos? O es todo parte de lo mismo?
+                Un tipo de "movimiento inválido" es -> sólo podes salvar a tu rey
+                Otro tipo de "movimiento inválido" es -> ese mov. expone a tu rey
+                Pero se evalúan de igual forma y al mismo tiempo? se agrupan en el mismo dict?
+                '''
                 return 'jaque-mate'
 
             else: #jaque
