@@ -1,28 +1,40 @@
 import pygame
+import font
 import board
 import pieces
 from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE # piece directions
 from board import row_of_
 
 class Scene:
+    '''Deberíamos abstraer mas a los draws, quizás haciendo por ej. una clase 
+    que herede de Scene llamada MainMenuDrawer, y MainMenu hereda de MainMenuDrawer
+    llamando de esta forma a todos sus draws al alcance de un self.- 
+    Es curiosamente parte de lo que esta aquí ya hecho, pero este concepto sienta mejor.
+    
+    Lo que Scene y "sus dibujos" nos interesa que tengan son una buena relacion con el
+    *screen* actual y los controles presionados.
+
+    Pero realmente busco que el contenido de la "Escena final" sea la lógica de juego.
+    Que sea el mixer de todos los elementos necesarios para dicha escena, sin que estos
+    grandes elementos "choquen tanto". Un poco más prolijo nomá.
+    '''
     def __init__(self,master):
-        #solo usados para dibujar texto?
-        self.master = master
-        self.screen = self.master.screen
+        self.master = master #usado "pelado" para levantar controles
+        self.screen = self.master.screen #puedo prescindir de master para saber mi screen?
+        #self.controles = self.master.controles?
 
     def draw_text(self,text,color,x,y,center=True,font_size='large'):
-        font = self.master.large_font if font_size=='large' else self.master.medium_font
-        # font = pygame.font.Font(None,font_size)
+        _font = font.large_font if font_size=='large' else font.medium_font
         surface = self.master.screen
-        textobj = font.render(text,1,color)
+        textobj = _font.render(text,1,color)
         text_width = textobj.get_width()
         text_height = textobj.get_height()
         textrect = textobj.get_rect()
-        if center: textrect.topleft = (x - text_width/2, y - text_height/2) # points placement at center
+        if center: textrect.topleft = (x - text_width/2, y - text_height/2) # anchors placement at center
         else: textrect.topleft = (x,y)
         surface.blit(textobj,textrect)
 
-class MainMenuSCENE(Scene):
+class MainMenu(Scene):
     '''> Escena MAIN_MENU
 
     Comienza con una pequeña animación
@@ -56,6 +68,35 @@ class MainMenuSCENE(Scene):
     def __init__(self,master):
         super().__init__(master)
         self.view = 'main'
+    
+    def make_mode(self): #Esto correspondería a MainMenuSCENE
+        '''PARTIDA es una colección de ordenes
+        - modo: 1 jugador
+        - j1_color: blancas
+        - je_color: negras
+        - tiempo: desactivado
+        '''
+        '''Las cosas cambian segun el modo q se elija
+        Los modos son J1 vs J2 | J1 vs IA
+
+        El jugador es quien selecciona estos modos
+
+        Deberían los modos ser 'importados' a este programa
+        para trabajarlos mas facilmente?
+
+        >>Son los modos de juego un 'estado complejo' del juego?
+            Modo elegido: j1 vs j2
+            **el ajedrez tiene distintos modos por tiempo**
+                -> entonces
+                    elegir color
+                    darle el control a x jugador
+                        comienza danza de controles
+                        hasta encontrar un ganador
+                            ->al encontrar ganador mostrar
+                            post_game_menu
+        '''
+        set_player_colors = ...#player choice over menu focus
+        return {}
 
     def draw_newMatch_btn(self):
         self.draw_text('Nueva partida','white',50,100,center=False)
@@ -88,7 +129,7 @@ class MainMenuSCENE(Scene):
             pygame.draw.rect(self.master.screen,(255,0,0),j1_vs_j2_rect,width=1)
             if self.master.click: #function_call() master.make_mode?
                 self.master.match_mode = 'j1 vs j2'
-                self.master.scene_manager = MatchSCENE
+                self.master.scene_manager = Match
 
         # J1 VS IA MODE
         self.draw_text('J1 vs IA','white',50,200,center=False)
@@ -98,9 +139,9 @@ class MainMenuSCENE(Scene):
             pygame.draw.rect(self.master.screen,(255,0,0),j1_vs_ia_rect,width=1)
             if self.master.click:
                 self.master.match_mode = 'j1 vs ia'
-                self.master.scene_manager = MatchSCENE
+                self.master.scene_manager = Match
 
-    def draw(self):
+    def render(self):
         #hud
         self.draw_text('Main menu scene','white',20,20,center=False)
         if self.view == 'main':
@@ -111,9 +152,10 @@ class MainMenuSCENE(Scene):
         #if view == 'options':
             #MainMenuSCENE.draw_options()
 
-class MatchSCENE(Scene):
+class Match(Scene):
     '''> Escena JUEGO
-    Es inicializada bajo una 'comanda' por el modo j1vj2 o j1via seleccionado en el menú previo
+    Es inicializada bajo una 'comanda' por el modo j1-VS-j2 o j1-VS-ia seleccionado en el
+    menú previo
     +) contiene:
         2 actores
             cada actor tiene un color y cada color
@@ -158,9 +200,10 @@ class MatchSCENE(Scene):
         self.in_base_Wpawns: list[int] = []
         self.black_positions: dict[int,str] = {}
         self.white_positions: dict[int,str] = {}
-        self.set_board() # also used for restarting match
+        self.set_board()
 
-    def set_board(self): # also used for restarting match
+    def set_board(self):
+        '''Also used for restarting match'''
         self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
         self.black_positions, self.white_positions = pieces.black_positions, pieces.white_positions
@@ -655,15 +698,14 @@ class MatchSCENE(Scene):
             target_color)
         return list(move_positions.keys())
     
-    def get_horses_standpoint(): ...
-    def get_horses_targets(): ...
-    def get_bishops_standpoint(): ...
-    def get_bishops_targets(): ...
-    def get_towers_standpoint(): ...
-    def get_towers_targets(): ...
-    def get_queen_standpoint(): ...
-    def get_queen_targets(): ...
-
+    def get_horses_standpoint(self,color:str) -> list[int]: ...
+    def get_horses_targets(self, target_color:str) -> list[int]: ...
+    def get_bishops_standpoint(self,color:str) -> list[int]: ...
+    def get_bishops_targets(self, target_color:str) -> list[int]: ...
+    def get_towers_standpoint(self,color:str) -> list[int]: ...
+    def get_towers_targets(self, target_color:str) -> list[int]: ...
+    def get_queen_standpoint(self,color:str) -> list[int]: ...
+    def get_queen_targets(self, target_color:str) -> list[int]: ...
 
     def get_pawns_standpoint(self,color:str) -> list[int]:
         '''Devuelve posición actual de *TODOS?* los pawns?'''
@@ -678,7 +720,6 @@ class MatchSCENE(Scene):
                     act_posLIST.append(k)
         return act_posLIST
 
-    
     def get_pawn_targets(self, target_color:str) -> list[int]:
         '''Extrayendo sólo targets de *TODOS LOS PAWNS* contra
         el color indicado'''
@@ -693,7 +734,6 @@ class MatchSCENE(Scene):
             kill_movements_list.append(kill_positions)
         # return list(kill_positions.keys())
         return kill_movements_list
-
 
     def decide_check(self) -> str:
         '''
@@ -819,7 +859,7 @@ class MatchSCENE(Scene):
                 #self.black_invalid_positions.append(bla bla bla
                 return 'jaque'
 
-    def draw(self):
+    def render(self): #Podría ser heredada y ya?
         #hud
         self.draw_text('Match scene','black',20,20,center=False)
         self.draw_text(f'{self.master.match_mode}','black',200,20,center=False)
@@ -879,7 +919,7 @@ class MatchSCENE(Scene):
             pygame.draw.rect(self.screen,(255,0,0),exit_to_main_menu_rect,width=1)
             if self.master.click:
                 self.master.paused = False
-                self.master.scene_manager = MainMenuSCENE
+                self.master.scene_manager = MainMenu
 
     def draw_exit_game_btn(self):
         self.draw_text('Salir del juego','white',self.screen.get_width()-400,320,center=False)
