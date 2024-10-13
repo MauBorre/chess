@@ -19,7 +19,7 @@ class Scene:
     grandes elementos "choquen tanto". Un poco más prolijo nomá.
     '''
     def __init__(self,master):
-        self.master = master #usado "pelado" para levantar controles
+        self.master = master # interfaz para comunicar variables y controles
         self.screen = self.master.screen #puedo prescindir de master para saber mi screen?
         #self.controles = self.master.controles?
 
