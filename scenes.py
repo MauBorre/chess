@@ -1,8 +1,8 @@
 import pygame
-from typing import Union
-#estos obj servirían por ahora como keys de configuración, pero servirían para algo mas?
-from entities import Peon, Alfil, Caballo, Torre, Reina, Rey 
+import board
+import pieces
 from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE # piece directions
+from board import row_of_
 
 class Scene:
     def __init__(self,master):
@@ -120,47 +120,16 @@ class MatchSCENE(Scene):
 
     def __init__(self,master):
         super().__init__(master)
-        # position utils
-        self.midScreen = (self.screen.get_width()/2, self.screen.get_height()/2)
-        self.midScreen_pos = pygame.Vector2(self.midScreen)
 
-        # board config
-        self.square_width = 88
-        self.square_height = self.square_width
-        self.board_rows = 8
-        self.board_columns = self.board_rows
-        self.nested_rows = self.make_nested_rows(self.board_rows) # Fijar rows ayuda a validar movimientos.
-        self.board_width = self.square_width * self.board_rows
-        self.board_height = self.board_width
-        self.board_begin = pygame.Vector2((self.midScreen_pos.x - self.board_width/2,
-                                           self.midScreen_pos.y - self.board_height/2))
-        self.boardRects: list[pygame.Rect] = self.make_boardRects()
-        
-        # board defaults
-        self.pieces_legible_initial_positions: dict[dict[str,list[int]]] = { # forma no ideal para render, pero sí para leer
-            'negras': {
-                'Torre':[0,7],
-                'Caballo':[1,6],
-                'Alfil':[2,5],
-                'Reina':[3],
-                'Rey':[4],
-                'Peón':[8,9,10,11,12,13,14,15]
-                },
-            'blancas': {
-                'Torre':[63,56],
-                'Caballo':[62,57],
-                'Alfil':[61,58],
-                'Reina':[59],
-                'Rey':[60],
-                'Peón':[55,54,53,52,51,50,49,48]
-                }
-            }
-        self.in_base_Bpawns: list[int] = []
-        self.in_base_Wpawns: list[int] = []
-        self.black_positions: dict[int,str] = {}
-        self.white_positions: dict[int,str] = {}
-        self.make_board()
-
+        # game variables
+        self.move_here: int | None = None
+        self.turn_attacker: str = 'White'
+        self.turn_target: str = 'Black'
+        self.winner: bool = False
+        self.player_deciding_match = False
+        self.killing: bool = False
+        self.W_check_state: str #jaque o jaque-mate o None
+        self.B_check_state: str #jaque o jaque-mate o None
         self.movement_validPositions: dict[int, pygame.Rect] = {} 
         self.kill_validPositions: dict[int, pygame.Rect] = {}
 
@@ -173,34 +142,27 @@ class MatchSCENE(Scene):
         self.white_invalid_positions: dict[str, list[int]] = {} # {'peon': [2,4], 'alfil': [12,18,24]}
         self.black_invalid_positions: dict[str, list[int]] = {}
 
-        self.W_check_state: str #jaque o jaque-mate o None
-        self.B_check_state: str #jaque o jaque-mate o None
+        # position utils
+        self.midScreen = (self.screen.get_width()/2, self.screen.get_height()/2)
+        self.midScreen_pos = pygame.Vector2(self.midScreen)
 
-        self.move_here: int | None = None
-        self.turn_attacker: str = 'White'
-        self.turn_target: str = 'Black'
-        self.winner: bool = False
-        self.player_deciding_match = False
-        self.killing: bool = False
-
-    def make_boardRects(self) -> list[pygame.Rect]:
-        _boardRects = []
-        startx = self.board_begin.x
-        starty = self.board_begin.y
-        y = starty
-        for r in range(self.board_rows):
-            x = startx
-            for c in range(self.board_columns):
-                rect = pygame.Rect(x,y,self.square_width,self.square_height)
-                _boardRects.append(rect)
-                x+=self.square_width
-            y+=self.square_height
-        return _boardRects
+        # board config
+        self.board_begin = pygame.Vector2(
+            (self.midScreen_pos.x - board.width/2,
+            self.midScreen_pos.y - board.height/2))
+        self.boardRects: list[pygame.Rect] = board.make_rects(self.board_begin)
         
-    def make_board(self): # also used for restarting match
-        self.in_base_Bpawns: list[int] = [bpawn for bpawn in self.pieces_legible_initial_positions['negras']['Peón']]
-        self.in_base_Wpawns: list[int] = [wpawn for wpawn in self.pieces_legible_initial_positions['blancas']['Peón']]
-        self.black_positions, self.white_positions = self.reverse_expand_team_positions(self.pieces_legible_initial_positions)
+        # board set defaults
+        self.in_base_Bpawns: list[int] = []
+        self.in_base_Wpawns: list[int] = []
+        self.black_positions: dict[int,str] = {}
+        self.white_positions: dict[int,str] = {}
+        self.set_board() # also used for restarting match
+
+    def set_board(self): # also used for restarting match
+        self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
+        self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
+        self.black_positions, self.white_positions = pieces.black_positions, pieces.white_positions
         self.turn_attacker: str = 'White'
         self.winner: bool = False
 
@@ -213,47 +175,6 @@ class MatchSCENE(Scene):
             self.turn_attacker = 'White'
             self.turn_target = 'Black'
             return
-
-    def make_nested_rows(self,row_count: int) -> list[list[int]]:
-        _rows = []
-        for i in range(row_count):
-            start = i*row_count
-            end = start+row_count
-            _rows.append(list(range(start,end)))
-        return _rows
-
-    def reverse_expand_team_positions(
-        self,
-        pieces_legible_origins: dict[dict[str,list[int]]]
-        ) -> dict[int,str]:
-        '''Transforma dict={'color...': {'peon':[0,1,2]}}
-        En color-A_dict={0:peon,1:peon,2:peon}
-           color-B_dict={0:peon,1:peon,2:peon}
-
-        Uno es fácil de leer para nosotros, el otro es fácil
-        de leer para el sistema.'''
-        _black_positions, _white_positions = {}, {}
-        dict_list = []
-        for color in pieces_legible_origins.keys():
-            key_val_reverse = []
-            aux_d={}
-            for piece in pieces_legible_origins[color].keys():
-                key_val_reverse.append({num:piece for num in pieces_legible_origins[color][piece]})
-            for d in key_val_reverse:
-                aux_d.update(d)
-            dict_list.append(aux_d)
-        _black_positions, _white_positions = dict_list
-        return _black_positions, _white_positions #SIEMPRE se debe devolver en esta posición
-
-    def row_of_(self, position: int) -> list[int]:
-        '''Devuelve el row al que corresponda la posición ingresada.
-        
-        '''
-        for row in self.nested_rows:
-            for num in row:
-                if num == position:
-                    return row
-        else: return []
     
     def pawn_targets(
         self,
@@ -294,9 +215,9 @@ class MatchSCENE(Scene):
 
             # kill positions
             # Verificamos que el movimiento no rompa los límites del tablero
-            if piece_standpoint+OESTE not in self.row_of_(piece_standpoint):
+            if piece_standpoint+OESTE not in row_of_(piece_standpoint):
                 kill_positions.append(piece_standpoint+SUR_ESTE)
-            if piece_standpoint+ESTE not in self.row_of_(piece_standpoint):
+            if piece_standpoint+ESTE not in row_of_(piece_standpoint):
                 kill_positions.append(piece_standpoint+SUR_OESTE)
             elif len(kill_positions) == 0:
                 kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
@@ -321,9 +242,9 @@ class MatchSCENE(Scene):
             
             # kill positions
             # Verificamos que el movimiento no rompa los límites del tablero
-            if piece_standpoint+OESTE not in self.row_of_(piece_standpoint):
+            if piece_standpoint+OESTE not in row_of_(piece_standpoint):
                 kill_positions.append(piece_standpoint+NOR_ESTE)
-            if piece_standpoint+ESTE not in self.row_of_(piece_standpoint):
+            if piece_standpoint+ESTE not in row_of_(piece_standpoint):
                 kill_positions.append(piece_standpoint+NOR_OESTE)
             elif len(kill_positions) == 0:
                 kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
@@ -355,7 +276,7 @@ class MatchSCENE(Scene):
             for mult in range(1,8): # 1 to board size
                 movement = piece_standpoint+direction*mult
                 if direction == ESTE or direction == OESTE:
-                    if movement not in self.row_of_(piece_standpoint):
+                    if movement not in row_of_(piece_standpoint):
                         break
                 if 0 <= movement <= 63:
                     if movement not in self.black_positions and movement not in self.white_positions:
@@ -393,16 +314,16 @@ class MatchSCENE(Scene):
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         horse_movements = []
         # ESTE / OESTE LIMITS
-        if piece_standpoint+ESTE in self.row_of_(piece_standpoint):
+        if piece_standpoint+ESTE in row_of_(piece_standpoint):
             horse_movements.extend([piece_standpoint+NORTE+NOR_ESTE,
                                     piece_standpoint+SUR+SUR_ESTE])
-            if piece_standpoint+ESTE*2 in self.row_of_(piece_standpoint):
+            if piece_standpoint+ESTE*2 in row_of_(piece_standpoint):
                 horse_movements.extend([piece_standpoint+ESTE+NOR_ESTE,
                                         piece_standpoint+ESTE+SUR_ESTE])
-        if piece_standpoint+OESTE in self.row_of_(piece_standpoint):
+        if piece_standpoint+OESTE in row_of_(piece_standpoint):
             horse_movements.extend([piece_standpoint+NORTE+NOR_OESTE,
                                     piece_standpoint+SUR+SUR_OESTE])
-            if piece_standpoint+OESTE*2 in self.row_of_(piece_standpoint):
+            if piece_standpoint+OESTE*2 in row_of_(piece_standpoint):
                 horse_movements.extend([piece_standpoint+OESTE+NOR_OESTE,
                                         piece_standpoint+OESTE+SUR_OESTE])
         
@@ -439,10 +360,10 @@ class MatchSCENE(Scene):
             for mult in range(1,8):
                 movement = piece_standpoint+direction*mult
                 if direction == NOR_ESTE or direction == NOR_OESTE:
-                    if movement not in self.row_of_(piece_standpoint+NORTE*mult):
+                    if movement not in row_of_(piece_standpoint+NORTE*mult):
                         break
                 if direction == SUR_ESTE or direction == SUR_OESTE:
-                    if movement not in self.row_of_(piece_standpoint+SUR*mult):
+                    if movement not in row_of_(piece_standpoint+SUR*mult):
                         break
                 if 0 <= movement <= 63:
                     if movement not in self.black_positions and movement not in self.white_positions:
@@ -482,13 +403,13 @@ class MatchSCENE(Scene):
         for direction in king_directions:
             movement = piece_standpoint+direction
             if direction == ESTE or direction == OESTE:
-                if movement not in self.row_of_(piece_standpoint):     
+                if movement not in row_of_(piece_standpoint):     
                     continue
             if direction == NOR_ESTE or direction == NOR_OESTE:
-                if movement-NORTE not in self.row_of_(piece_standpoint):
+                if movement-NORTE not in row_of_(piece_standpoint):
                     continue
             if direction == SUR_ESTE or direction == SUR_OESTE:
-                if movement-SUR not in self.row_of_(piece_standpoint):
+                if movement-SUR not in row_of_(piece_standpoint):
                     continue
             if 0 <= movement <= 63:
                 if movement not in self.black_positions and movement not in self.white_positions:
@@ -527,13 +448,13 @@ class MatchSCENE(Scene):
             for mult in range(1,8):
                 movement = piece_standpoint+direction*mult
                 if direction == ESTE or direction == OESTE:
-                    if movement not in self.row_of_(piece_standpoint):     
+                    if movement not in row_of_(piece_standpoint):     
                         break
                 if direction == NOR_ESTE or direction == NOR_OESTE:
-                    if movement not in self.row_of_(piece_standpoint+NORTE*mult):
+                    if movement not in row_of_(piece_standpoint+NORTE*mult):
                         break
                 if direction == SUR_ESTE or direction == SUR_OESTE:
-                    if movement not in self.row_of_(piece_standpoint+SUR*mult):
+                    if movement not in row_of_(piece_standpoint+SUR*mult):
                         break
                 if 0 <= movement <= 63:
                     if movement not in self.black_positions and movement not in self.white_positions:
@@ -555,7 +476,7 @@ class MatchSCENE(Scene):
         # main board frame
         pygame.draw.rect(self.screen,(200,200,200),
                     pygame.Rect(self.board_begin.x,self.board_begin.y,
-                                self.board_width,self.board_height),width=3)
+                                board.width,board.height),width=3)
 
         for board_index, SQUARE_RECT in enumerate(self.boardRects): #celdas que sirven por posición, índice y medida.
 
@@ -563,7 +484,7 @@ class MatchSCENE(Scene):
             pygame.draw.rect(self.screen,(200,200,200),SQUARE_RECT,width=1)
             self.draw_text(f'{board_index}',(150,150,150),
                            SQUARE_RECT.left +3,
-                           SQUARE_RECT.top + self.square_height -17,
+                           SQUARE_RECT.top + board.square_height -17,
                            center=False, font_size='medium')
             
             # Diccionarios de posiciones --------------------------
@@ -588,12 +509,12 @@ class MatchSCENE(Scene):
             # draw piece
             if SQUARE_TYPE != "EMPTY":
                 if interacted_PColor == 'Black':
-                    self.draw_text(SQUARE_TYPE,'black', SQUARE_RECT.left + self.square_width/2,
-                                                        SQUARE_RECT.top + self.square_height/2)
+                    self.draw_text(SQUARE_TYPE,'black', SQUARE_RECT.left + board.square_width/2,
+                                                        SQUARE_RECT.top + board.square_height/2)
                 if interacted_PColor == 'White':
                     self.draw_text(SQUARE_TYPE,(120,120,120),
-                                                      SQUARE_RECT.left + self.square_width/2,
-                                                      SQUARE_RECT.top + self.square_height/2)
+                                                      SQUARE_RECT.left + board.square_width/2,
+                                                      SQUARE_RECT.top + board.square_height/2)
 
             # hidden/visible elements upon paused state
             if not self.master.paused:
@@ -902,7 +823,7 @@ class MatchSCENE(Scene):
         self.draw_text('Match scene','black',20,20,center=False)
         self.draw_text(f'{self.master.match_mode}','black',200,20,center=False)
         self.draw_board()
-        self.draw_text(self.turn_attacker,'black',self.midScreen_pos.x - 25, self.board_height+70,center=False)
+        self.draw_text(self.turn_attacker,'black',self.midScreen_pos.x - 25, board.height+70,center=False)
         if self.master.paused:
             if not self.player_deciding_match:
                 self.draw_pause_menu()
@@ -927,7 +848,7 @@ class MatchSCENE(Scene):
             #hover
             pygame.draw.rect(self.screen,(255,0,0),confirm_match_rect,width=1)
             if self.master.click:
-                self.make_board()
+                self.set_board()
                 self.player_deciding_match = False
                 self.master.paused = False
 
