@@ -686,7 +686,7 @@ class Match(Scene):
 
     def get_king_standpoint(self,color:str) -> int:
         '''Devuelve la posición actual del rey'''
-        act_pos: int
+        act_pos: int #pieza unitaria
         if color == 'Black':
             for k,v in self.black_positions.items():
                 if v == 'Rey':
@@ -707,13 +707,60 @@ class Match(Scene):
             target_color)
         return list(move_positions.keys())
     
-    def get_horses_standpoint(self,color:str) -> list[int]: ...
+    def get_horses_standpoint(self,color:str) -> list[int]: 
+        act_posLIST: list[int] #grupo de piezas
+        if color == 'Black':
+            for k,v in self.black_positions.items():
+                if v == 'Caballo':
+                    act_posLIST.append(k)
+        if color == 'White':
+            for k,v in self.white_positions.items():
+                if v == 'Caballo':
+                    act_posLIST.append(k)
+        return act_posLIST
+    
     def get_horses_targets(self, target_color:str) -> list[int]: ...
-    def get_bishops_standpoint(self,color:str) -> list[int]: ...
+
+    def get_bishops_standpoint(self,color:str) -> list[int]: 
+        act_posLIST: list[int] #grupo de piezas
+        if color == 'Black':
+            for k,v in self.black_positions.items():
+                if v == 'Alfil':
+                    act_posLIST.append(k)
+        if color == 'White':
+            for k,v in self.white_positions.items():
+                if v == 'Alfil':
+                    act_posLIST.append(k)
+        return act_posLIST
+    
     def get_bishops_targets(self, target_color:str) -> list[int]: ...
-    def get_towers_standpoint(self,color:str) -> list[int]: ...
+
+    def get_towers_standpoint(self,color:str) -> list[int]:
+        act_posLIST: list[int] #grupo de piezas
+        if color == 'Black':
+            for k,v in self.black_positions.items():
+                if v == 'Torre':
+                    act_posLIST.append(k)
+        if color == 'White':
+            for k,v in self.white_positions.items():
+                if v == 'Torre':
+                    act_posLIST.append(k)
+        return act_posLIST
+    
     def get_towers_targets(self, target_color:str) -> list[int]: ...
-    def get_queen_standpoint(self,color:str) -> list[int]: ...
+
+    def get_queen_standpoint(self,color:str) -> list[int]: 
+        act_pos: int #pieza unitaria
+        if color == 'Black':
+            for k,v in self.black_positions.items():
+                if v == 'Reina':
+                    act_pos = k
+        if color == 'White':
+            for k,v in self.white_positions.items():
+                if v == 'Reina':
+                    act_pos = k
+        return act_pos
+    
     def get_queen_targets(self, target_color:str) -> list[int]: ...
 
     def get_pawns_standpoint(self,color:str) -> list[int]:
