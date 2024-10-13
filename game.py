@@ -51,7 +51,10 @@ class GameMaster:
         self.scene_manager_running = True
         self.paused = False
         self.scene_manager = MainMenu
-        self.match_mode = '' # Scenes ¿should? set this variable
+
+        # Tenemos que pasar las variables de juego seleccionadas en la interfaz aquí
+        # ya que será este manager quien instancie la escena Match
+        self.game_variables: dict = {'mode':'j1-vs-j2'}
         
         # control manager -> Consumidos por escenas
         self.mx = 0
