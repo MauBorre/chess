@@ -7,9 +7,6 @@
     Logos
     Elementos UI
     Imagen de mouse
-    
->> Fuentes
-    Dos fuentes está bien
 
 >> Sonidos
     Sonidos de menúes
