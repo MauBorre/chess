@@ -68,7 +68,7 @@ class MainMenu(Scene):
         super().__init__(master)
         self.view = 'main'
     
-    def make_mode(self): #Esto correspondería a MainMenuSCENE
+    def make_mode(self):
         '''PARTIDA es una colección de ordenes
         - modo: 1 jugador
         - j1_color: blancas
