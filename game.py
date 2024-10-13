@@ -9,102 +9,64 @@ será algo mas tedioso.
 '''
 
 '''Notas de desarrollo - un solo loop es dañino?
-
-Quizas nuestro concepto de 'escena' signifique en realidad
-que cada escena es un loop independiente del resto.
-
-De esta forma en cada loop tenemos un gran gobierno sobre
-los controles presionados.
-
-Sin embargo sí necesitamos un *decididor* de qué y cuándo
-mostrar determinada escena'''
+Respecto a controles, sí, por el hecho que varía qué
+se toca y cómo las cosas responden a los controles
+--PERO DUDO QUE LO NECESITEMOS EN ESTE JUEGO--
+'''
 
 import pygame
-from scenes import MainMenuSCENE, MatchSCENE
+from scenes import MainMenu, Match
 
 class GameMaster:
     '''Es GameMaster un scene manger ,un control manager
     y un "default maker"?
-    Es una clase de las cuales todas las "escenas" comparten *cosas*?
+    Es una clase de las cuales todas las "escenas" consumen *cosas*?
     Es maestro o es esclavo entonces?
     El concepto de "escena" no es tan fuerte aún,
-    pero siento que van a ser necesarias para hace transiciones.
+    pero siento que van a ser necesarias para hacer transiciones.
+    ^^O quizás esto sólo dependa de los SCREEN?
+
+    Debería manejar qué "escena" se debe mostrar y qué controles
+    se están tocando.
+
+    SceneManager loops = control independiente de controles sobre escena seleccionada
+                       = control decididor de qué escena y cúando mostrarla
     '''
     starting_volume : float #volume in db
     def __init__(self):
         pygame.init()
-        #default values
+        # default values (config)
         self.resolution = (800,800)
-        self.screen = pygame.display.set_mode(self.resolution)
+        self.screen = pygame.display.set_mode(self.resolution) #una screen por escena o una screen para todo el juego?
         pygame.display.set_caption('Chess')
         self.clock = pygame.time.Clock()
-
-        # Small font
-        # ...
-
-        # Medium font
-        self.m_font_size = 22
-        self.medium_font = pygame.font.Font(None,self.m_font_size)
-
-        # Large font
-        self.l_font_size = 28
-        self.large_font = pygame.font.Font(None,self.l_font_size)
 
         self.assets = ...#{'piezas': load_images('assets/piezas')} # colección de paths?
 
         # scene manager
+        '''Por ahora las escenas consumen screen, controles y variable de pausa
+        de GameMaster.
+        GameMaster controla vistas de las escenas.
+        '''
         self.scene_manager_running = True
         self.paused = False
-        self.scene_manager = MainMenuSCENE
-        self.match_mode = '' # Scenes set this variable 
+        self.scene_manager = MainMenu
+        self.match_mode = '' # Scenes ¿should? set this variable
         
-        # control manager
+        # control manager -> Consumidos por escenas
         self.mx = 0
         self.my = 0
         self.click = False
+        #cualquier otra tecla también es un bool que será trasladado
 
     def update_mouse(self,coordinates):
         self.mx = coordinates[0]
         self.my = coordinates[1]
 
-    def render_scene(scene):
-        #scene.init()
-        #scene.loop()
-            #internamente la escena hace .update() y luego .draw()
-        ...
-
-    def make_mode(self):
-        '''PARTIDA es una colección de ordenes
-        - modo: 1 jugador
-        - j1_color: blancas
-        - je_color: negras
-        - tiempo: desactivado
-        '''
-        '''Las cosas cambian segun el modo q se elija
-        Los modos son J1 vs J2 | J1 vs IA
-
-        El jugador es quien selecciona estos modos
-
-        Deberían los modos ser 'importados' a este programa
-        para trabajarlos mas facilmente?
-
-        >>Son los modos de juego un 'estado complejo' del juego?
-            Modo elegido: j1 vs j2
-            **el ajedrez tiene distintos modos por tiempo**
-                -> entonces
-                    elegir color
-                    darle el control a x jugador
-                        comienza danza de controles
-                        hasta encontrar un ganador
-                            ->al encontrar ganador mostrar
-                            post_game_menu
-        '''
-        set_colors = ...#player choice over menu focus
-        return {}
-
-    def match_SCENE(self):
-        current_scene = MatchSCENE(self)
-        while self.scene_manager == MatchSCENE:
+    def match_loop(self): # "ok" correspondería a un manager, pero de una forma más
+                           # unificada...
+        current_scene = Match(master=self)
+        while self.scene_manager == Match:
             self.click = False
             # Pygame Events
             for event in pygame.event.get():
@@ -146,6 +108,7 @@ class GameMaster:
                         self.click = True
             # Mouse
             self.update_mouse(pygame.mouse.get_pos())
+            # Esto va a servir, no borrar: 
             '''mousebtns = pygame.mouse.get_pressed()
             if mousebtns[0] == True:
                 # Movemos la pieza a la grilla hovereada legal
@@ -157,15 +120,16 @@ class GameMaster:
 
             # Scene Render
             self.screen.fill("white")
-            current_scene.draw()
+            current_scene.render() # (variables+updates+display)
 
             # Pygame Loop Closer
             pygame.display.flip()
             self.clock.tick(60)
     
-    def main_menu_SCENE(self):
-        current_scene = MainMenuSCENE(self)
-        while self.scene_manager == MainMenuSCENE:
+    def main_menu_loop(self): # "ok" correspondería a un manager, pero de una forma más
+                               # unificada...
+        current_scene = MainMenu(master=self)
+        while self.scene_manager == MainMenu:
             self.click = False
             # Pygame Events
             for event in pygame.event.get():
@@ -208,64 +172,26 @@ class GameMaster:
 
             # Scene Render 
             self.screen.fill("black")
-            current_scene.draw() # no estamos updateando cosas acá tambien?
+            current_scene.render() # (variables+updates+display)
 
             # Pygame Loop Closer
             pygame.display.flip()
             self.clock.tick(60)
     
-    def start_loop(self,scene=None):
+    def start_game(self,scene=None): # Es responsabilidad del manager 100%
         if scene!=None:
-            self.scene_manager = scene
+            self.scene_manager = scene # defaults MainMenu (init)
         # Registro de escenas --------------------------
         while self.scene_manager_running:
-            if self.scene_manager == MainMenuSCENE:
-                self.main_menu_SCENE()
-            if self.scene_manager == MatchSCENE:     
-                self.match_SCENE()
+            if self.scene_manager == MainMenu:
+                self.main_menu_loop()
+            if self.scene_manager == Match:     
+                self.match_loop()
             if self.scene_manager == 'exit':
                 self.scene_manager_running = False
         # ----------------------------------------------
         pygame.quit()
-    
-class ControlManager: # clase usada por quién? Es necesaria una clase para los controles?
-    '''CONTROLES
-
-    Jugador 1 o 2 seran las únicas entidades que tendran controles.
-    Pero el enemigo puede realizar las mismas acciones.
-
-    El juego podrá ser controlado con el mouse y con el teclado
-
-    >> Mouse:
-        Click izq
-            seleccion general
-        Click der
-            des-seleccion general
-
-    >> Teclado:
-        Wasd - flechitas
-            movimiento en menues
-            movimiento de seleccion
-        Enter
-            confirmacion de seleccion  
-        Escape
-            desconfirmacion de seleccion
-
-    >> Joystick:
-        Flechitas - analógicos:
-            movimiento en menues
-            movimiento de seleccion
-        Equis
-            confirmacion de seleccion
-        Circulo / Triángulo
-            desconfirmacion de seleccion
-    '''
-    '''A ControlManager hay que preguntarle:
-    ¿qué debería hacer *este input* *ahora*?'''
-    #es esto solo un dict?
-    #una colección de dicts?
-    ...
 
 if __name__ == '__main__':
     gm = GameMaster()
-    gm.start_loop(scene=MatchSCENE)
+    gm.start_game(scene=Match)
