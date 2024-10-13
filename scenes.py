@@ -6,6 +6,7 @@ from board import row_of_
 
 class Scene:
     def __init__(self,master):
+        #solo usados para dibujar texto?
         self.master = master
         self.screen = self.master.screen
 
@@ -142,7 +143,7 @@ class MatchSCENE(Scene):
         self.white_invalid_positions: dict[str, list[int]] = {} # {'peon': [2,4], 'alfil': [12,18,24]}
         self.black_invalid_positions: dict[str, list[int]] = {}
 
-        # position utils
+        # position utils <<- no se que tanto corresponden "solo a una escena" estas variables
         self.midScreen = (self.screen.get_width()/2, self.screen.get_height()/2)
         self.midScreen_pos = pygame.Vector2(self.midScreen)
 
