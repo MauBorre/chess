@@ -1,4 +1,4 @@
-origins: dict[dict[str,list[int]]] = {
+origins: dict[dict[str,list[int]]] = { #Legible pero no ideal para render
     'negras': {
         'Torre':[0,7],
         'Caballo':[1,6],
