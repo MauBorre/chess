@@ -7,16 +7,16 @@ from board import row_of_
 
 class Scene:
     '''Deberíamos abstraer mas a los draws, quizás haciendo por ej. una clase 
-    que herede de Scene llamada MainMenuDrawer, y MainMenu hereda de MainMenuDrawer
-    llamando de esta forma a todos sus draws al alcance de un self.- 
-    Es curiosamente parte de lo que esta aquí ya hecho, pero este concepto sienta mejor.
-    
-    Lo que Scene y "sus dibujos" nos interesa que tengan son una buena relacion con el
-    *screen* actual y los controles presionados.
+    que herede de Scene llamada MainMenuDrawer, y MainMenu hereda de MainMenuDrawer?
 
-    Pero realmente busco que el contenido de la "Escena final" sea la lógica de juego.
-    Que sea el mixer de todos los elementos necesarios para dicha escena, sin que estos
-    grandes elementos "choquen tanto". Un poco más prolijo nomá.
+    Los draws nos indican uso de fuentes, de posiciones en la pantalla (ui related), 
+    uso de rectángulos, escucha a clicks y modificaciones de variables.
+    Tienen gran relación con el *screen* actual y los controles presionados.
+    DRAW ESTÁ ESTRECHAMENTE RELACIONADO CON MASTER AL FIN Y AL CABO.
+
+    el objetivo es que el contenido de la "Escena final" sea la lógica mas neta posible del juego.
+    Que sea el mixer de todos los elementos necesarios para dicha escena, como board+pieces,
+    sin que estos grandes elementos "choquen tanto" con métodos draw. Un poco más prolijo nomá.
     '''
     def __init__(self,master):
         self.master = master # interfaz para comunicar variables y controles
