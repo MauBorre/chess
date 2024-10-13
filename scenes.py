@@ -9,14 +9,14 @@ class Scene:
     '''Deberíamos abstraer mas a los draws, quizás haciendo por ej. una clase 
     que herede de Scene llamada MainMenuDrawer, y MainMenu hereda de MainMenuDrawer?
 
+    >>Draw está estrechamente relacionado con MASTER.
     Los draws nos indican uso de fuentes, de posiciones en la pantalla (ui related), 
     uso de rectángulos, escucha a clicks y modificaciones de variables.
-    Tienen gran relación con el *screen* actual y los controles presionados.
-    DRAW ESTÁ ESTRECHAMENTE RELACIONADO CON MASTER AL FIN Y AL CABO.
+    Tienen gran relación con el *screen actual* y los controles presionados.
 
-    el objetivo es que el contenido de la "Escena final" sea la lógica mas neta posible del juego.
-    Que sea el mixer de todos los elementos necesarios para dicha escena, como board+pieces,
-    sin que estos grandes elementos "choquen tanto" con métodos draw. Un poco más prolijo nomá.
+    El objetivo es que el contenido de la "Escena final" sea la lógica mas neta posible del juego.
+    Un mixer de todos los elementos necesarios para dicha escena, como board+pieces,
+    sin que los mecanismos draw "choquen tanto" con estos. Un poco más prolijo nomá.
     '''
     def __init__(self,master):
         self.master = master # interfaz para comunicar variables y controles
@@ -41,34 +41,37 @@ class MainMenu(Scene):
         al jugador que presione una tecla cualquiera para 
         iniciar todo el resto.
             Esto tiene realmente una utilidad?
-        Aguardará una señal de mostrar escena main_menu
-            esta señal contiene instrucciones
+    >>Animaciones de transición de escenas<<
 
     +) contiene:
-        1 gran objeto *menu*
-            nueva partida
+        botón nueva partida
                 j1 vs j2 | j1 vs IA
                     modos de tiempo, modos de dificultad
+                    >> al clickear el último boton llamaremos a self.make_mode()
 
-            reglas
+        botón reglas
                 reglas del juego...?
 
-            opciones
+        botón opciones
                 resolución
                     400x800
                     600x800
                     1280x920
                 audio
                     Volumen
-            salir
-        Aguardará una señal de comenzar partida
-            esta señal contiene instrucciones'''
+        botón salir
+
+        Aguardará una señal de comenzar partida.
+        Esta señal contiene un dict de instrucciones
+        para la escena Match
+    '''
 
     def __init__(self,master):
         super().__init__(master)
         self.view = 'main'
+        self._match_modes: dict = {}
     
-    def make_mode(self):
+    def update_game_variables(self):
         '''Escena Match debe inicializarse consumiendo variables de juego,
         como modo, coles de jugador, activación de tiempo, reglas etc.
 
@@ -91,15 +94,13 @@ class MainMenu(Scene):
         - je_color: negras
         - tiempo: desactivado
         '''
-        match_modes: dict
+        # match_modes: dict
         set_player_colors = ...#player choice over menu focus
         mode: str
         time_activated: bool
         #if time_activated:...
-
         #match_modes.update(selected_from_gui) ...
-
-        return match_modes
+        self.master.game_variables.update(self._match_modes)
 
     def draw_newMatch_btn(self):
         self.draw_text('Nueva partida','white',50,100,center=False)
@@ -131,7 +132,9 @@ class MainMenu(Scene):
             #hover
             pygame.draw.rect(self.master.screen,(255,0,0),j1_vs_j2_rect,width=1)
             if self.master.click: #function_call() master.make_mode?
-                self.master.match_mode = 'j1 vs j2'
+                
+                self._match_modes.update({'mode':'j1-vs-j2'})
+                self.update_game_variables()
                 self.master.scene_manager = Match
 
         # J1 VS IA MODE
@@ -141,7 +144,9 @@ class MainMenu(Scene):
             # hover
             pygame.draw.rect(self.master.screen,(255,0,0),j1_vs_ia_rect,width=1)
             if self.master.click:
-                self.master.match_mode = 'j1 vs ia'
+                
+                self._match_modes.update({'mode':'j1-vs-ia'})
+                self.update_game_variables()
                 self.master.scene_manager = Match
 
     def render(self):
@@ -164,10 +169,11 @@ class Match(Scene):
             cada actor tiene un color y cada color
             corresponde a un color y un lado del tablero'''
 
-    def __init__(self,master):
+    def __init__(self, master):
         super().__init__(master)
 
         # game variables
+        self.match_mode: dict = self.master.game_variables
         self.move_here: int | None = None
         self.turn_attacker: str = 'White'
         self.turn_target: str = 'Black'
@@ -865,7 +871,7 @@ class Match(Scene):
     def render(self): #Podría ser heredada y ya?
         #hud
         self.draw_text('Match scene','black',20,20,center=False)
-        self.draw_text(f'{self.master.match_mode}','black',200,20,center=False)
+        self.draw_text(f'{self.match_mode['mode']}','black',200,20,center=False)
         self.draw_board()
         self.draw_text(self.turn_attacker,'black',self.midScreen_pos.x - 25, board.height+70,center=False)
         if self.master.paused:
