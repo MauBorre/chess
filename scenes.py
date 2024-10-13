@@ -20,8 +20,7 @@ class Scene:
     '''
     def __init__(self,master):
         self.master = master # interfaz para comunicar variables y controles
-        self.screen = self.master.screen #puedo prescindir de master para saber mi screen?
-        #self.controles = self.master.controles?
+        self.screen = self.master.screen
 
     def draw_text(self,text,color,x,y,center=True,font_size='large'):
         _font = font.large_font if font_size=='large' else font.medium_font
