@@ -8,26 +8,23 @@ Una vez tengamos esto pensaremos el modo en perspectiva porque
 será algo mas tedioso.
 '''
 
-'''Notas de desarrollo - un solo loop es dañino?
-Respecto a controles, sí, por el hecho que varía qué
-se toca y cómo las cosas responden a los controles
---PERO DUDO QUE LO NECESITEMOS EN ESTE JUEGO--
-'''
-
 import pygame
 from scenes import MainMenu, Match
 
 class GameMaster:
-    '''Es GameMaster un scene manger ,un control manager
+    '''
+    Es GameMaster un scene manger ,un control manager
     y un "default maker"?
-    Es una clase de las cuales todas las "escenas" consumen *cosas*?
+
+    Es una clase de las cuales todas las "escenas" consumen ciertas *cosas*
+    Es una clase que instancia y maneja escenas.
+    Transfiere controles a las escenas
+
+
     Es maestro o es esclavo entonces?
     El concepto de "escena" no es tan fuerte aún,
     pero siento que van a ser necesarias para hacer transiciones.
     ^^O quizás esto sólo dependa de los SCREEN?
-
-    Debería manejar qué "escena" se debe mostrar y qué controles
-    se están tocando.
 
     SceneManager loops = control independiente de controles sobre escena seleccionada
                        = control decididor de qué escena y cúando mostrarla
