@@ -677,7 +677,13 @@ class MatchSCENE(Scene):
                     self.black_positions.pop(self.move_here) 
                 self.white_positions.update({self.move_here:_piece})
 
-            self.decide_check()
+            # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
+            '''Creo que sería mejor separar decide_check() en dos funciones distintas,
+            ya que de otra forma lo estamos pensando como:
+                Evaluación de posiciones
+                Invalidación de movimientos
+            Y estos procesos pueden ser levemente diferidos en ciertas situaciones'''
+            self.decide_check() #<- evaluación de posiciones, invalidación de movimientos
             if self.B_check_state == 'jaque':
                 #alertar al jugador -los movimientos inválidos ya fueron computados-
                 ...
@@ -726,6 +732,46 @@ class MatchSCENE(Scene):
             self.boardRects[_current_king_pos],
             target_color)
         return list(move_positions.keys())
+    
+    def get_horses_standpoint(): ...
+    def get_horses_targets(): ...
+    def get_bishops_standpoint(): ...
+    def get_bishops_targets(): ...
+    def get_towers_standpoint(): ...
+    def get_towers_targets(): ...
+    def get_queen_standpoint(): ...
+    def get_queen_targets(): ...
+
+
+    def get_pawns_standpoint(self,color:str) -> list[int]:
+        '''Devuelve posición actual de *TODOS?* los pawns?'''
+        act_posLIST: list[int] #es distinto a levantar al rey
+        if color == 'Black':
+            for k,v in self.black_positions.items():
+                if v == 'Peón':
+                    act_posLIST.append(k)
+        if color == 'White':
+            for k,v in self.white_positions.items():
+                if v == 'Peón':
+                    act_posLIST.append(k)
+        return act_posLIST
+
+    
+    def get_pawn_targets(self, target_color:str) -> list[int]:
+        '''Extrayendo sólo targets de *TODOS LOS PAWNS* contra
+        el color indicado'''
+        _current_pawns_posLIST: list[int] = self.get_pawns_standpoint(target_color)
+        kill_movements_list: list[int] = []
+        for pos in _current_pawns_posLIST:
+            _, kill_positions = self.pawn_targets( #primer return de movimientos descartado
+                pos,
+                self.boardRects[pos],
+                target_color)
+            #tenemos q "appendear" las kill_positions a medida q salen
+            kill_movements_list.append(kill_positions)
+        # return list(kill_positions.keys())
+        return kill_movements_list
+
 
     def decide_check(self) -> str:
         '''
@@ -758,20 +804,26 @@ class MatchSCENE(Scene):
         
         Creo que no todos los movimientos invalidos corresponden teóricamente a la misma categoría,
         pero debemos definir si se evaluan en el mismo lugar y al mismo tiempo.
-        > INVALID_MOV_T1: Tu rey esta en jaque, solo podrás moverte si eso quita su estado de jaque.
-            Requiere que primero evaluemos el jaque.
+        > INVALID_MOV_T1: Tu rey (rey de self.turnColor) esta en jaque, solo podrás moverte si eso quita
+            su estado de jaque.
+            Requiere que primero evaluemos el jaque. -> POST-JAQUE_INVALID
         > INVALID_MOV_T2: Tu rey no esta en jaque, pero *el movimiento que querés hacer* lo deja en jaque. 
-            No requiere evaluar previamente el jaque? Pero y si lo sabemos de antemano y ya?
+            No requiere evaluar previamente el jaque? Pero y si lo sabemos de antemano y ya? -> PRE-JAQUE_INVALID
+        
+        En qué caso NO nos serviría que esto viva en el mismo diccionario?
+            Si no hay caso para esto, solo debemos definir el mejor posible lugar donde actualizaremos
+            el diccionario de movimientos inválidos.
 
         Los movimientos denegados del rey en estos diccionarios son la clave para deducir
         nuestro objetivo:
         ::RESUELVE:-> "jaque"
-            -Si encontró que el target king puede escapar (invalid pos no iguala a valid pos).
+            -Si encontró que el target king puede escapar (invalid pos NO-IGUALA a valid pos).
             -O si encontró que el king no puede escapar PERO puede ser salvado por un aliado.
                 (MATANDO AMENAZA o TAPANDO CAMINO) -> dos "tipos" de SALVAR? salvar = SQUARE_TYPE
             
         ::RESUELVE:-> "jaque-mate"
-            Si encontró que el target king NO puede escapar
+            Si encontró que el target king NO puede escapar (posiciones válidas son las mismas que las inválidas)
+                Este procedimiento va despues de almacenar perfectamente las posiciones inválidas *actuales*
         '''
         
         target_king_movements: list[int] = self.get_king_movements(self.turn_target) #OK
@@ -781,7 +833,12 @@ class MatchSCENE(Scene):
                                             #que hay en target_king_movements, entonces es jaque-mate
         
         if self.turn_attacker == 'Black': # target: white
-            #levantar ataque de todas las piezas BLACK
+            #levantar ataque de todas las piezas BLACK contra WHITE
+            pawns_checks: list[int] = self.get_pawn_targets(target_color='White')
+            horses_checks: list[int] = self.get_horses_targets(target_color='White')
+            bishops_checks: list[int] = self.get_bishops_targets(target_color='White')
+            towers_checks: list[int] = self.get_towers_targets(target_color='White')
+            queen_checks: list[int] = self.get_queen_targets(target_color='White')
             #appendear las que coincidan en target_king_movements
             all_attacks = ... #pawn_targets(rey_standpoint,'black')
                               #tower_targets(rey_standpoint,'black')
