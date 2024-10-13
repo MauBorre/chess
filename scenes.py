@@ -69,33 +69,37 @@ class MainMenu(Scene):
         self.view = 'main'
     
     def make_mode(self):
-        '''PARTIDA es una colección de ordenes
+        '''Escena Match debe inicializarse consumiendo variables de juego,
+        como modo, coles de jugador, activación de tiempo, reglas etc.
+
+        Posibles modos = J1-VS-J2, J1-VS-IA
+        J1_color posibles = blancas, negras
+        J2_color posibles = blancas, negras
+        IA_color posibles = blancas, negras
+        tiempo posible: activado / desactivado
+        otras reglas: ...
+        ______________________________________
+        ^
+        ^ - - Decididos en la GUI
+
+        Desde aquí (MainMenu) prepararemos toda la información en un dict que deberá
+        pasarse a Match.
+
+        Ejemplo final_dict:
         - modo: 1 jugador
         - j1_color: blancas
         - je_color: negras
         - tiempo: desactivado
         '''
-        '''Las cosas cambian segun el modo q se elija
-        Los modos son J1 vs J2 | J1 vs IA
-
-        El jugador es quien selecciona estos modos
-
-        Deberían los modos ser 'importados' a este programa
-        para trabajarlos mas facilmente?
-
-        >>Son los modos de juego un 'estado complejo' del juego?
-            Modo elegido: j1 vs j2
-            **el ajedrez tiene distintos modos por tiempo**
-                -> entonces
-                    elegir color
-                    darle el control a x jugador
-                        comienza danza de controles
-                        hasta encontrar un ganador
-                            ->al encontrar ganador mostrar
-                            post_game_menu
-        '''
+        match_modes: dict
         set_player_colors = ...#player choice over menu focus
-        return {}
+        mode: str
+        time_activated: bool
+        #if time_activated:...
+
+        #match_modes.update(selected_from_gui) ...
+
+        return match_modes
 
     def draw_newMatch_btn(self):
         self.draw_text('Nueva partida','white',50,100,center=False)
