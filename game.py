@@ -20,12 +20,16 @@ Sin embargo sí necesitamos un *decididor* de qué y cuándo
 mostrar determinada escena'''
 
 import pygame
-import entities
 from scenes import MainMenuSCENE, MatchSCENE
 
 class GameMaster:
     '''Es GameMaster un scene manger ,un control manager
-    y un "default maker"?'''
+    y un "default maker"?
+    Es una clase de las cuales todas las "escenas" comparten *cosas*?
+    Es maestro o es esclavo entonces?
+    El concepto de "escena" no es tan fuerte aún,
+    pero siento que van a ser necesarias para hace transiciones.
+    '''
     starting_volume : float #volume in db
     def __init__(self):
         pygame.init()
