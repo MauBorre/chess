@@ -51,7 +51,7 @@ class GameMaster:
 
         # Tenemos que pasar las variables de juego seleccionadas en la interfaz aquí
         # ya que será este manager quien instancie la escena Match
-        self.game_variables: dict = {'mode':'j1-vs-j2'}
+        self.game_variables: dict = {'mode':'j1-vs-j2'} #default
         
         # control manager -> Consumidos por escenas
         self.mx = 0
