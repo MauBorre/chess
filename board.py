@@ -1,6 +1,6 @@
 import pygame
 '''
-Las piezas pueden moverse en cinco direcciones:
+Las piezas pueden a través del tablero en las siguientes direcciones:
     > ADELANTE
     > ATRAS
     > IZQUIERDA
