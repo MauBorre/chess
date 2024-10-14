@@ -800,8 +800,6 @@ class Match(Scene):
                 if v == 'Caballo':
                     act_posLIST.append(k)
         return act_posLIST
-    
-    def get_horses_CHECKtargets(self, target_color:str) -> list[int]: ...
 
     def get_bishops_standpoint(self,color:str) -> list[int]: 
         act_posLIST: list[int] #grupo de piezas
@@ -814,8 +812,6 @@ class Match(Scene):
                 if v == 'Alfil':
                     act_posLIST.append(k)
         return act_posLIST
-    
-    def get_bishops_CHECKtargets(self, target_color:str) -> list[int]: ...
 
     def get_towers_standpoint(self,color:str) -> list[int]:
         act_posLIST: list[int] #grupo de piezas
@@ -828,8 +824,6 @@ class Match(Scene):
                 if v == 'Torre':
                     act_posLIST.append(k)
         return act_posLIST
-    
-    def get_towers_CHECKtargets(self, target_color:str) -> list[int]: ...
 
     def get_queen_standpoint(self,color:str) -> list[int]: 
         act_pos: int #pieza unitaria
@@ -842,8 +836,6 @@ class Match(Scene):
                 if v == 'Reina':
                     act_pos = k
         return act_pos
-    
-    def get_queen_CHECKtargets(self, target_color:str) -> list[int]: ...
 
     def get_pawns_standpoint(self,color:str) -> list[int]:
         '''Devuelve posición actual de *TODOS* los pawns?'''
@@ -857,35 +849,6 @@ class Match(Scene):
                 if v == 'Peón':
                     act_posLIST.append(k)
         return act_posLIST
-
-    def get_pawns_CHECKtargets(self, target_color:str) -> list[int]:
-        # 
-        '''Extrayendo kill targets de *TODOS LOS PAWNS* self.turn contra
-        el rey(y sus movimientos) turn.target'
-
-        >>BUG no estoy aún considerando posiciones aledañas al rey target
-          bajo kill target, estoy recuperando contra TODAS las categorías(piezas)
-
-        Para resolver esto debemos hacer que targets se pregunte:
-            Está este kill-movement en target_positions? Ok...
-                Es el valor de kill-movement el mismo valor que rey o alguno de sus movimientos?
-                    Ok.. appendeamos normalmente, PERO APARTE, appendeamos target_king_checks
-                    ^
-                    ^ --Si hacemos esto no necesitamos devolver nada de estas funciones _CHECKtargets()
-                        Solo llamar a quienes updateen TARGET_KING_CHECKS (porque _targets()
-                        aguarda a un click, pero el jaque es otro tipo de interacción que necesita
-                        recuperar todos los targets independientemente de q haya habido un click)
-        '''
-        _current_pawns_posLIST: list[int] = self.get_pawns_standpoint(target_color)
-        kill_movements_list: list[int] = []
-        for pos in _current_pawns_posLIST:
-            _, kill_positions = self.pawn_targets( #primer return de movimientos descartado
-                pos,
-                self.boardRects[pos])
-            #tenemos q "appendear" las kill_positions a medida q salen
-            kill_movements_list.append(kill_positions)
-        # return list(kill_positions.keys())
-        return kill_movements_list
 
     def decide_check(self) -> str:
         '''
@@ -939,92 +902,30 @@ class Match(Scene):
             Si encontró que el target king NO puede escapar (posiciones válidas son las mismas que las inválidas)
                 Este procedimiento va despues de almacenar perfectamente las posiciones inválidas *actuales*
         '''
-        
-        #esta variable debería ser "mas global", cambia automaticamente y se genera
-        #con cada paso de turno
-        target_king_movements: list[int] = self.get_king_movements(self.turn_target) #OK
 
-        # si los elementos aqui son iguales a los
-        # que hay en target_king_movements, entonces es jaque-mate
+        #update_target_king() ?
+        #make_targets() ?
+
+        # comparar _allPositions contra _checkPositions, si sus
+        # elementos son los mismos, es JAQUE-MATE
         #
-        # Una vez hayamos extraído todos los CORRECTOS-TARGETS de las piezas
-        #
-        on_target_kill_positions: list[int] = [] 
-                                           
-        if self.turn_attacker == 'Black': # target: white || <- innecesario?
-            #levantar ataque de todas las piezas BLACK contra rey target WHITE
-            '''>>CUIDADO<< no estoy aún considerando posiciones aledañas al rey target
-            que estén bajo kill-movement'''
-            pawns_checks: list[int] = self.get_pawns_CHECKtargets(target_color=self.turn_target)
-            horses_checks: list[int] = self.get_horses_CHECKtargets(target_color=self.turn_target)
-            bishops_checks: list[int] = self.get_bishops_CHECKtargets(target_color=self.turn_target)
-            towers_checks: list[int] = self.get_towers_CHECKtargets(target_color=self.turn_target)
-            queen_checks: list[int] = self.get_queen_CHECKtargets(target_color=self.turn_target)
+        # si no todos los elementos son los mismos, pero hay
+        # cieta compatibilidad, es JAQUE
+        '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
+            > Cómo saber si un movimiento corta una amenaza?
+                SI *este movimiento* elimina kill-movement crítico al rey...
+
+            > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?
+                SI *este movimiento* deja atrás un kill-movement DIRECTO al rey...
+                ^^^ esta evaluación "corresponde" a decide_check(), pero es EVALUADA
+                    cada vez que querramos mover una pieza.
             
-            all_attacks = ... # all_checks
-            
-            # debemos contrastar check targets contra king movements, pero no estaría
-            # eso ya hecho al calcular dichos checks?
-            #
-            # siento que estamos gestando un tipo nuevo de targets, porque es SOLO contra la
-            # categoría REY y SUS MOVIMIENTOS, los cuales depositaremos en la variable
-            # global self.target_king_movements
-            #
-            # Los viejos targets simplemente no apuntan a esto, pero contienen un buen
-            # cálculo de que es moverse y matar.
-
-            for attack in all_attacks: #revisar qué piezas black dejan en kill-position a rey white
-                if attack in target_king_movements:
-                    target_king_movements.pop(attack)
-
-            if len(target_king_movements) == 0: #jaque-mate
-                # !! puede aún tener escapatoria si ayuda un aliado !!
-                '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
-                > Cómo saber si un movimiento corta una amenaza?
-                    SI *este movimiento* elimina kill-movement crítico al rey...
-
-                > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?
-                    SI *este movimiento* deja atrás un kill-movement DIRECTO al rey...
-                    ^^^ esta evaluación "corresponde" a decide_check(), pero es EVALUADA
-                        cada vez que querramos mover una pieza.
-                
-                Hay dos tipos de movimientos inválidos? O es todo parte de lo mismo?
-                Un tipo de "movimiento inválido" es -> sólo podes salvar a tu rey
-                Otro tipo de "movimiento inválido" es -> ese mov. expone a tu rey
-                Pero se evalúan de igual forma y al mismo tiempo? se agrupan en el mismo dict?
-                '''
-                return 'jaque-mate'
-
-            else: #jaque
-                if len(target_king_movements) > len(on_target_kill_positions): ...
-                    # El rey puede escapar por si solo a la posición que no coincida
-                    # debemos obtener esta posición de escape para NO-NEGARLA de las 
-                    # posiciones inválidas en jaque
-                    #self.white_invalid_positions.append(bla bla bla )
-                return 'jaque'
-            
-        if self.turn_attacker == 'White': # target: black
-            #levantar ataque de todas las piezas WHITE
-            all_attacks = ... #pawn_targets(rey_standpoint,'white')
-                              #tower_targets(rey_standpoint,'white')
-                              #horse_targets(rey_standpoint,'white')
-                              #bishop_targets(rey_standpoint,'white') 
-            for attack in all_attacks: #revisar que piezas WHITE dejan en kill-position a rey BLACK
-                if attack in target_king_movements:
-                    target_king_movements.pop(attack)
-            if len(target_king_movements) == 0:
-                # !! puede aún tener escapatoria si ayuda un aliado !!
-                '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
-                > Cómo saber si un movimiento corta una amenaza?
-                > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?'''
-                return 'jaque-mate'
-            else:
-                if len(target_king_movements) > len(on_target_kill_positions): ...
-                    # El rey puede escapar por si solo a la posición que no coincida
-                    # debemos obtener esta posición de escape para NO-NEGARLA de las 
-                    # posiciones inválidas en jaque
-                #self.black_invalid_positions.append(bla bla bla
-                return 'jaque'
+            Hay dos tipos de movimientos inválidos? O es todo parte de lo mismo?
+            Un tipo de "movimiento inválido" es -> sólo podes salvar a tu rey
+            Otro tipo de "movimiento inválido" es -> ese mov. expone a tu rey
+            Pero se evalúan de igual forma y al mismo tiempo? se agrupan en el mismo dict?
+        '''
+        ...
 
     def render(self): #Podría ser heredada y ya? Innecesario por ahora.
         #hud
