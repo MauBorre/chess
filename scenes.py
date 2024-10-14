@@ -207,29 +207,60 @@ class Match(Scene):
         # board set defaults
         self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
+
+        self.blackKing_allPositions: list[int] = [bk for bk in pieces.origins['negras']['Rey']] # stndpoint (luego + movimientos)
+        self.whiteKing_allPositions: list[int] = [wk for wk in pieces.origins['blancas']['Rey']] # stndpoint (luego + movimientos)
+        self.blackKing_checkPositions: set[int] = {} #set que si iguala a blackKing_allPositions es JAQUE MATE
+        self.whiteKing_checkpositions: set[int] = {} #set que si iguala a whiteKing_allPositions es JAQUE MATE
+        
         self.black_positions: dict[int,str] = pieces.black_positions
         self.white_positions: dict[int,str] = pieces.white_positions
-        self.black_king_positions: list[int] = [bk for bk in pieces.origins['negras']['Rey']]
-        self.white_king_positions: list[int] = [wk for wk in pieces.origins['blancas']['Rey']]
+        
+        # turn lookups
+        '''Necesitamos una función que dicte un update particular a estas dos listas,
+        las cuales serán llamadas luego de realizar un movimiento en el tablero.'''
+
+        
+        self.targetcolor_kingCheckPos: set[int] = self.blackKing_checkPositions # default
+        self.targetcolor_kingAllPositions: list[int] = self.blackKing_allPositions # default
+
+    def update_king_positions(): ...
+    def make_all_king_positions(standpoint): ...
 
     def reset_board(self):
-        self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
-        self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
-        self.black_positions: dict[int,str] = pieces.black_positions
-        self.white_positions: dict[int,str] = pieces.white_positions
-        self.black_king_positions: list[int] = [bk for bk in pieces.origins['negras']['Rey']]
-        self.white_king_positions: list[int] = [wk for wk in pieces.origins['blancas']['Rey']]
-        self.turn_attacker: str = 'White'
-        self.winner: bool = False
+        self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['negras']['Peón']]
+        self.in_base_Wpawns = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
+        self.blackKing_allPositions = [bk for bk in pieces.origins['negras']['Rey']] #standpoint sin movimiento
+        self.whiteKing_allPositions = [wk for wk in pieces.origins['blancas']['Rey']] #standpoint sin movimiento
+        self.targetcolor_kingAllPositions = self.whiteKing_allPositions # default
+        self.black_positions = pieces.black_positions
+        self.white_positions = pieces.white_positions
+        self.blackKing_checkPositions = []
+        self.whiteKing_checkpositions = []
+        self.targetcolor_kingCheckPos = self.whiteKing_checkpositions
+        self.turn_attacker = 'White'
+        self.winner = False
 
     def turn_swap(self):
         if self.turn_attacker == 'White':
             self.turn_attacker = 'Black'
             self.turn_target = 'White'
+            #1ro transfiero targets
+            self.blackKing_allPositions = self.targetcolor_kingAllPositions
+            self.blackKing_checkPositions = self.targetcolor_kingCheckPos
+            #luego intercambio targets lists
+            self.targetcolor_kingCheckPos = self.whiteKing_checkpositions
+            self.targetcolor_kingAllPositions = self.whiteKing_allPositions
             return
         if self.turn_attacker == 'Black':
             self.turn_attacker = 'White'
             self.turn_target = 'Black'
+            #1ro transfiero targets
+            self.whiteKing_allPositions = self.targetcolor_kingAllPositions
+            self.whiteKing_checkpositions = self.targetcolor_kingCheckPos
+            #luego intercambio targets lists
+            self.targetcolor_kingCheckPos = self.blackKing_checkPositions
+            self.targetcolor_kingAllPositions = self.blackKing_allPositions
             return
     
     def pawn_targets(
@@ -250,10 +281,14 @@ class Match(Scene):
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         kill_positions: list[int] = []
 
-        if self.turn_attacker == 'Black': #target: white | turn associated evaluation
+        if self.turn_target == 'White':
             # SUR
             movement: int = piece_standpoint+SUR
+
+            # --- no implementado ---
             if movement not in self.black_invalid_positions['peon']: ... # !! REPETIR ESTO EN CADA PIEZA !! CUIDADO COLOR !!
+            # --- no implementado ---
+
             # piece block condition
             if movement <= 63: # SUR LIMIT
                 if movement not in self.black_positions and movement not in self.white_positions:
@@ -277,16 +312,12 @@ class Match(Scene):
             for kp in kill_positions:
                 if kp in self.white_positions:
                     on_target_kill_positions.update({kp:self.boardRects[kp]})
-                # :: Y si sólo buscámos contra la categoría-casillero rey? ::
-                #
-                # Quizás deberíamos cambiar también los inputs de estas funciones
-                # haciendo que inputeen el diccionario objetivo directamente,
-                # y al computar jaques, le enchufamos el diccionario de king movements
-                #
-                #if kp in self.target_king_movPositions:
-                    #kingMovement_on_target_kill_positions.update({kp:self.boardRects[kp]})
+                
+                # repetir en toda función _targets()
+                if kp in self.targetcolor_kingAllPositions:
+                    self.targetcolor_kingCheckPos.add(kp)
 
-        if self.turn_attacker == 'White': #target: black || target selection?
+        if self.turn_target == 'Black': 
             # NORTE
             movement: int = piece_standpoint+NORTE
             # piece block condition
@@ -313,13 +344,15 @@ class Match(Scene):
                 if kp in self.black_positions:
                     on_target_kill_positions.update({kp:self.boardRects[kp]})
 
+                if kp in self.targetcolor_kingAllPositions:
+                    self.targetcolor_kingCheckPos.add(kp)
+
         return mov_target_positions, on_target_kill_positions
 
     def tower_targets(
         self,
         piece_standpoint: int,
         sq_rect: pygame.Rect,
-        clicked_piece_color: str
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Torre:
         +NORTE
@@ -340,15 +373,17 @@ class Match(Scene):
                     if movement not in row_of_(piece_standpoint):
                         break
                 if 0 <= movement <= 63:
+                    if movement in self.targetcolor_kingAllPositions:
+                        self.targetcolor_kingCheckPos.add(movement)
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
                     else:
-                        if clicked_piece_color == 'Black':
-                            if movement in self.white_positions:
+                        if self.turn_target == 'Black':
+                            if movement in self.black_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
-                        if clicked_piece_color == 'White':
-                            if movement in self.black_positions:
+                        if self.turn_target == 'White':
+                            if movement in self.white_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
                         break #previene propagación mas allá del primer bloqueo - rompe el mult
@@ -390,13 +425,15 @@ class Match(Scene):
         
         for movement in horse_movements:
             if 0 <= movement <= 63: # NORTE/SUR LIMIT
+                if movement in self.targetcolor_kingAllPositions:
+                    self.targetcolor_kingCheckPos.add(movement)
                 if movement not in self.black_positions and movement not in self.white_positions:
                     mov_target_positions.update({movement:self.boardRects[movement]})
                 else:
-                    if clicked_piece_color == 'Black':
-                        if movement in self.white_positions: #if movement in white_positions
+                    if self.turn_target == 'White':
+                        if movement in self.white_positions:
                             on_target_kill_positions.update({movement:self.boardRects[movement]})
-                    if clicked_piece_color == 'White':
+                    if self.turn_target == 'Black':
                         if movement in self.black_positions:
                             on_target_kill_positions.update({movement:self.boardRects[movement]})
         return mov_target_positions, on_target_kill_positions
@@ -405,7 +442,6 @@ class Match(Scene):
         self,
         piece_standpoint: int,
         sq_rect: pygame.Rect,
-        clicked_piece_color: str
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Alfil:
         +NOR_OESTE
@@ -427,14 +463,16 @@ class Match(Scene):
                     if movement not in row_of_(piece_standpoint+SUR*mult):
                         break
                 if 0 <= movement <= 63:
+                    if movement in self.targetcolor_kingAllPositions:
+                        self.targetcolor_kingCheckPos.add(movement)
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
                     else:
-                        if clicked_piece_color == 'Black':
+                        if self.turn_target == 'White':
                             if movement in self.white_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
-                        if clicked_piece_color == 'White':
+                        if self.turn_target == 'Black':
                             if movement in self.black_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
@@ -472,15 +510,15 @@ class Match(Scene):
                 if movement-SUR not in row_of_(piece_standpoint):
                     continue
             if 0 <= movement <= 63:
+                if movement in self.targetcolor_kingAllPositions: #illegal movement
+                    continue
                 if movement not in self.black_positions and movement not in self.white_positions:
                     mov_target_positions.update({movement:self.boardRects[movement]}) 
                 else:
-                    if self.turn_attacker == 'Black':
+                    if self.turn_target == 'White':
                         if movement in self.white_positions:
                             on_target_kill_positions.update({movement:self.boardRects[movement]})
-                        #if movement in self.white_king_positions: #incl o no incl king standpoint? -> sí debería...
-                            #king_target_kill_positions.update({movement:self.boardRects[movement]})
-                    if self.turn_attacker == 'White':
+                    if self.turn_target == 'Black':
                         if movement in self.black_positions:
                             on_target_kill_positions.update({movement:self.boardRects[movement]})
                     continue
@@ -519,14 +557,16 @@ class Match(Scene):
                     if movement not in row_of_(piece_standpoint+SUR*mult):
                         break
                 if 0 <= movement <= 63:
+                    if movement in self.targetcolor_kingAllPositions:
+                        self.targetcolor_kingCheckPos.add(movement)
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]}) 
                     else:
-                        if clicked_piece_color == 'Black':
+                        if self.turn_target == 'White':
                             if movement in self.white_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
-                        if clicked_piece_color == 'White':
+                        if self.turn_target == 'Black':
                             if movement in self.black_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
@@ -693,6 +733,12 @@ class Match(Scene):
         for valid_kill_RECT in self.kill_validPositions.values():
             pygame.draw.rect(self.screen,'RED',valid_kill_RECT,width=2)
 
+    '''targetKing_allPositions necesita actualización continua, la cual
+    se accionará ¿Al iniciar un turno? ¿Al realizar un movimiento?
+    
+    A que cosas está sujeto su cambio?
+    '''
+
     def get_king_standpoint(self,color:str) -> int:
         '''Devuelve la posición actual del rey'''
         act_pos: int #pieza unitaria
@@ -785,13 +831,23 @@ class Match(Scene):
                     act_posLIST.append(k)
         return act_posLIST
 
-    def get_pawn_CHECKtargets(self, target_color:str) -> list[int]:
+    def get_pawns_CHECKtargets(self, target_color:str) -> list[int]:
         # 
-        '''Extrayendo kill targets de *TODOS LOS PAWNS* contra
-        el color indicado'
+        '''Extrayendo kill targets de *TODOS LOS PAWNS* self.turn contra
+        el rey(y sus movimientos) turn.target'
 
         >>BUG no estoy aún considerando posiciones aledañas al rey target
-          bajo kill target
+          bajo kill target, estoy recuperando contra TODAS las categorías(piezas)
+
+        Para resolver esto debemos hacer que targets se pregunte:
+            Está este kill-movement en target_positions? Ok...
+                Es el valor de kill-movement el mismo valor que rey o alguno de sus movimientos?
+                    Ok.. appendeamos normalmente, PERO APARTE, appendeamos target_king_checks
+                    ^
+                    ^ --Si hacemos esto no necesitamos devolver nada de estas funciones _CHECKtargets()
+                        Solo llamar a quienes updateen TARGET_KING_CHECKS (porque _targets()
+                        aguarda a un click, pero el jaque es otro tipo de interacción que necesita
+                        recuperar todos los targets independientemente de q haya habido un click)
         '''
         _current_pawns_posLIST: list[int] = self.get_pawns_standpoint(target_color)
         kill_movements_list: list[int] = []
@@ -868,15 +924,15 @@ class Match(Scene):
         #
         on_target_kill_positions: list[int] = [] 
                                            
-        if self.turn_attacker == 'Black': # target: white
+        if self.turn_attacker == 'Black': # target: white || <- innecesario?
             #levantar ataque de todas las piezas BLACK contra rey target WHITE
             '''>>CUIDADO<< no estoy aún considerando posiciones aledañas al rey target
             que estén bajo kill-movement'''
-            pawns_checks: list[int] = self.get_pawn_CHECKtargets(target_color='White')
-            horses_checks: list[int] = self.get_horses_CHECKtargets(target_color='White')
-            bishops_checks: list[int] = self.get_bishops_CHECKtargets(target_color='White')
-            towers_checks: list[int] = self.get_towers_CHECKtargets(target_color='White')
-            queen_checks: list[int] = self.get_queen_CHECKtargets(target_color='White')
+            pawns_checks: list[int] = self.get_pawns_CHECKtargets(target_color=self.turn_target)
+            horses_checks: list[int] = self.get_horses_CHECKtargets(target_color=self.turn_target)
+            bishops_checks: list[int] = self.get_bishops_CHECKtargets(target_color=self.turn_target)
+            towers_checks: list[int] = self.get_towers_CHECKtargets(target_color=self.turn_target)
+            queen_checks: list[int] = self.get_queen_CHECKtargets(target_color=self.turn_target)
             
             all_attacks = ... # all_checks
             
