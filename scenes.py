@@ -189,6 +189,7 @@ class Match(Scene):
         self.movement_validPositions: dict[int, pygame.Rect] = {} 
         self.kill_validPositions: dict[int, pygame.Rect] = {}
 
+        # Previo a un movimiento: conocer mis movimientos-inválidos
         # Movimientos que no pueden realizarse porque exponen al rey a un kill-movement, o que --> DOS TIPOS DE INVALID
         # no lo salvan en caso de estar el rey ya expuesto a un kill-movement. ------------------> MOV. DISTINTOS?
         # Algunas piezas no podrán moverse en absoluto, otras podrán moverse parcialmente.
@@ -217,16 +218,12 @@ class Match(Scene):
         self.white_positions: dict[int,str] = pieces.white_positions
         
         # turn lookups
-        '''Necesitamos una función que dicte un update particular a estas dos listas,
-        las cuales serán llamadas luego de realizar un movimiento en el tablero.'''
-
-        
+        '''Estas variables serán actualizadas por:
+        update_target_king() y make_targets()'''
         self.targetcolor_kingCheckPos: set[int] = self.blackKing_checkPositions # default
         self.targetcolor_kingAllPositions: list[int] = self.blackKing_allPositions # default
 
     def make_targets(self):
-        '''Estas funciones necesitan standpoints para
-        ser usadas.'''
         pawn_standpoints: list[int] = self.get_pawns_standpoint(self.turn_attacker)
         for _pawn in pawn_standpoints:
             self.pawn_targets(_pawn)
@@ -691,29 +688,26 @@ class Match(Scene):
                             if SQUARE_TYPE == "EMPTY":
                                 self.movement_validPositions.clear()
 
+        # >> Previo a un movimiento: conocer mis movimientos-inválidos <<
         # updating element's positions and game relevant state if a movement/kill was stated
         if self.move_here != None:
             ex_value: int = list(self.movement_validPositions.items())[0][0]
 
-            if self.turn_attacker == 'Black': # target:white
+            if self.turn_target == 'White':
                 _piece = self.black_positions.pop(ex_value)
                 if self.killing:
                     self.white_positions.pop(self.move_here)
                 self.black_positions.update({self.move_here:_piece})               
 
-            if self.turn_attacker == 'White':
+            if self.turn_target == 'Black':
                 _piece = self.white_positions.pop(ex_value)
                 if self.killing:
                     self.black_positions.pop(self.move_here) 
                 self.white_positions.update({self.move_here:_piece})
 
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
-            '''Creo que sería mejor separar decide_check() en dos funciones distintas,
-            ya que de otra forma lo estamos pensando como:
-                Evaluación de posiciones
-                Invalidación de movimientos
-            Y estos procesos pueden ser levemente diferidos en ciertas situaciones'''
-            self.decide_check() #<- evaluación de posiciones, invalidación de movimientos
+            self.update_target_king() # renovación de posiciones-rey y sus nuevos checks
+            self.decide_check() # <- evaluación de posiciones incl. movimientos-inválidos
             if self.B_check_state == 'jaque':
                 #alertar al jugador -los movimientos inválidos ya fueron computados-
                 ...
@@ -733,7 +727,7 @@ class Match(Scene):
             self.move_here = None
             self.killing = False
 
-        # Pre-movements visual display
+        # Pre-movements visual feedback
         if len(self.movement_validPositions) > 1 or len(self.kill_validPositions) > 0:
             for valid_mov_RECT in self.movement_validPositions.values():
                 pygame.draw.rect(self.screen,'GREEN',valid_mov_RECT,width=2)
@@ -743,13 +737,10 @@ class Match(Scene):
     '''targetKing_allPositions necesita actualización continua, la cual
     se accionará/revisará-si-corresponde luego de realizar un movimiento
     
-    A qué cosas está sujeto su cambio?
+    qué cosas cambian?
 
     _allPositions puede cambiar si el rey se mueve, o si una casilla
     aledaña se desocupa.
-
-    _allPositions, fuera del init, debe ser actualizada siendo el
-    valor que devuelve una función.
 
     si _allPositions cambia, es probable que _checkPositions también lo haga,
     pero cuándo lo sabremos/evaluaremos?
@@ -854,30 +845,15 @@ class Match(Scene):
         '''
         evaluar jaque/jaque-mate de piezas self.turn_color contra target
 
-        para ello, comparar *todas* las on_target_kill_positions de self.turn
-        contra la posicion actual+movimientos del rey target.
+        Su responsabilidad es evaluar posiciones:
+                    (_allPositions, _checkPositions, invalid-movements)
 
-            >> Llamar a todas las funciones "...targets()" pero "usándolas de
-               otra forma". -> ATENCION todas estas funciones usan 
-                               pygame.Rect (self.boardRects[standpoint])
-
-        Puede que haya una interesante interacción invirtiendo el hecho de que
-        son las piezas buscando al rey, haciendo que sea el rey quien busca a las
-        piezas. -> Excelente opción? Sólo con obtener los posibles movimientos del
-                   rey podría deducir esto, sin llamar a todos los targets(), pero sí con una
-                   correcta revisión categórica de "qué" pieza estoy tocando y si su movimiento
-                   "me puede comer"(target invertido?).
-                   -----
-                   Realmente con una sola pasada a boardRects podría registrar *todas* estas
-                   posiciones, pero actualmente solo las levanto al clickear piezas.
-
-        Aquí resolveremos *quién* y *cómo* puede moverse, porque es el paso
+        Aquí también podríamos resolver *quién* y *cómo* puede moverse, porque es el paso
         previo a cantar el jaque.
         Los movimientos denegados deducidos serán registrados en los correspondientes
         diccionarios *de color* (presentes "globalmente" en la clase):
 
-            >>white_invalid_positions = {'peon': [2,4], 'alfil': [12,18,24], 'rey':[5,6]}
-                ^^Si queremos un RECT para señalar en el tablero lo deducimos por indice-posición
+        >>white_invalid_positions = {'peon': [2,4], 'alfil': [12,18,24], 'rey':[5,6]}
         
         Creo que no todos los movimientos invalidos corresponden teóricamente a la misma categoría,
         pero debemos definir si se evaluan en el mismo lugar y al mismo tiempo.
@@ -892,7 +868,7 @@ class Match(Scene):
             el diccionario de movimientos inválidos.
 
         Los movimientos denegados del rey en estos diccionarios son la clave para deducir
-        nuestro objetivo:
+        la parte final de nuestro objetivo:
         ::RESUELVE:-> "jaque"
             -Si encontró que el target king puede escapar (invalid pos NO-IGUALA a valid pos).
             -O si encontró que el king no puede escapar PERO puede ser salvado por un aliado.
@@ -902,9 +878,6 @@ class Match(Scene):
             Si encontró que el target king NO puede escapar (posiciones válidas son las mismas que las inválidas)
                 Este procedimiento va despues de almacenar perfectamente las posiciones inválidas *actuales*
         '''
-
-        #update_target_king() ?
-        #make_targets() ?
 
         # comparar _allPositions contra _checkPositions, si sus
         # elementos son los mismos, es JAQUE-MATE
@@ -927,7 +900,7 @@ class Match(Scene):
         '''
         ...
 
-    def render(self): #Podría ser heredada y ya? Innecesario por ahora.
+    def render(self):
         #hud
         self.draw_text('Match scene','black',20,20,center=False)
         self.draw_text(f'{self.match_mode['mode']}','black',200,20,center=False)
