@@ -22,6 +22,10 @@ class Scene:
         self.master = master # interfaz para comunicar variables y controles
         self.screen = self.master.screen
 
+        # screen position utils
+        self.midScreen = (self.screen.get_width()/2, self.screen.get_height()/2)
+        self.midScreen_pos = pygame.Vector2(self.midScreen)
+
     def draw_text(self,text,color,x,y,center=True,font_size='large'):
         _font = font.large_font if font_size=='large' else font.medium_font
         surface = self.master.screen
@@ -73,7 +77,7 @@ class MainMenu(Scene):
     
     def update_game_variables(self):
         '''Escena Match debe inicializarse consumiendo variables de juego,
-        como modo, coles de jugador, activación de tiempo, reglas etc.
+        como modo, colores de jugador, activación de tiempo, reglas etc.
 
         Posibles modos = J1-VS-J2, J1-VS-IA
         J1_color posibles = blancas, negras
@@ -193,10 +197,6 @@ class Match(Scene):
         # Son tambien revisados en cada movimiento de pieza. -> Expone rey // No-salva rey
         self.white_invalid_positions: dict[str, list[int]] = {} # {'peon': [2,4], 'alfil': [12,18,24]}
         self.black_invalid_positions: dict[str, list[int]] = {}
-
-        # position utils <<- no se que tanto corresponden "solo a una escena" estas variables
-        self.midScreen = (self.screen.get_width()/2, self.screen.get_height()/2)
-        self.midScreen_pos = pygame.Vector2(self.midScreen)
 
         # board config
         self.board_begin = pygame.Vector2(
@@ -943,7 +943,7 @@ class Match(Scene):
                 #self.black_invalid_positions.append(bla bla bla
                 return 'jaque'
 
-    def render(self): #Podría ser heredada y ya?
+    def render(self): #Podría ser heredada y ya? Innecesario por ahora.
         #hud
         self.draw_text('Match scene','black',20,20,center=False)
         self.draw_text(f'{self.match_mode['mode']}','black',200,20,center=False)
