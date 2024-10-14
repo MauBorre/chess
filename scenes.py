@@ -224,8 +224,29 @@ class Match(Scene):
         self.targetcolor_kingCheckPos: set[int] = self.blackKing_checkPositions # default
         self.targetcolor_kingAllPositions: list[int] = self.blackKing_allPositions # default
 
-    def update_king_positions(): ...
-    def make_all_king_positions(standpoint): ...
+    def make_targets(self):
+        '''Estas funciones necesitan standpoints para
+        ser usadas.'''
+        pawn_standpoints: list[int] = self.get_pawns_standpoint(self.turn_attacker)
+        for _pawn in pawn_standpoints:
+            self.pawn_targets(_pawn)
+        tower_standpoints: list[int] = self.get_towers_standpoint(self.turn_attacker)
+        for _tower in tower_standpoints:
+            self.tower_targets(_tower)
+        bishop_standpoints: list[int] = self.get_bishops_standpoint(self.turn_attacker)
+        for _bishop in bishop_standpoints:
+            self.bishop_targets(_bishop)
+        queen_standpoint: int = self.get_queen_standpoint(self.turn_attacker)
+        self.queen_targets(queen_standpoint)
+        horse_standpoints: list[int] = self.get_horses_standpoint(self.turn_attacker)
+        for _horse in horse_standpoints:
+            self.horse_targets(_horse)
+
+    def update_target_king(self): #debe ser llamado DESPUES DE QUE SE MOVIÓ ALGO 
+        #nuevas all_positions
+        self.targetcolor_kingAllPositions = self.get_king_movements(self.turn_target)
+        #actualizando nuevas check positions
+        self.make_targets()
 
     def reset_board(self):
         self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['negras']['Peón']]
@@ -266,7 +287,6 @@ class Match(Scene):
     def pawn_targets(
         self,
         piece_standpoint: int,
-        sq_rect: pygame.Rect,
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Peón:
         NORTE (white)
@@ -277,7 +297,7 @@ class Match(Scene):
         Peon NEGRO: SUR_OESTE, SUR_ESTE
         Peon BLANCO: NOR_OESTE, NOR_ESTE
         '''
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:sq_rect} # standpoint is always first pos 
+        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos 
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         kill_positions: list[int] = []
 
@@ -352,7 +372,6 @@ class Match(Scene):
     def tower_targets(
         self,
         piece_standpoint: int,
-        sq_rect: pygame.Rect,
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Torre:
         +NORTE
@@ -362,7 +381,7 @@ class Match(Scene):
         "recursivo" hasta limite tablero o pieza aliada/enemiga.
         La torre mata como se mueve.
         '''
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:sq_rect} # standpoint is always first pos
+        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         tower_directions = [NORTE,SUR,ESTE,OESTE]
 
@@ -392,8 +411,6 @@ class Match(Scene):
     def horse_targets(
         self,
         piece_standpoint: int,
-        sq_rect: pygame.Rect,
-        clicked_piece_color: str
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Caballo:
         doble-norte + este
@@ -406,7 +423,7 @@ class Match(Scene):
         doble-oeste + sur
         El caballo mata como se mueve.
         '''
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:sq_rect} # standpoint is always first pos
+        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         horse_movements = []
         # ESTE / OESTE LIMITS
@@ -441,7 +458,6 @@ class Match(Scene):
     def bishop_targets(
         self,
         piece_standpoint: int,
-        sq_rect: pygame.Rect,
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Alfil:
         +NOR_OESTE
@@ -450,7 +466,7 @@ class Match(Scene):
         +SUR_ESTE
         "recursivo" hasta limite tablero o pieza aliada/enemiga
         '''
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:sq_rect} # standpoint is always first pos
+        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         bishop_directions = [NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         for direction in bishop_directions:
@@ -482,7 +498,6 @@ class Match(Scene):
     def king_targets(
         self,
         piece_standpoint: int,
-        sq_standing_rect: pygame.Rect
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Rey:
         +NORTE
@@ -495,7 +510,7 @@ class Match(Scene):
         +SUR_ESTE
         1 casillero a la vez hasta limite tablero o pieza aliada/enemiga
         '''
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint: sq_standing_rect} # standpoint is always first pos
+        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint: self.boardRects[piece_standpoint]} # standpoint is always first pos
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         king_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         for direction in king_directions:
@@ -527,8 +542,6 @@ class Match(Scene):
     def queen_targets(
         self,
         piece_standpoint: int,
-        sq_rect: pygame.Rect,
-        clicked_piece_color: str
         ) -> dict[int,pygame.Rect]:
         '''Movimiento Reina:
         +NORTE
@@ -541,7 +554,7 @@ class Match(Scene):
         +SUR_ESTE
         "recursivo" hasta limite tablero o pieza aliada/enemiga
         '''
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:sq_rect} # standpoint is always first pos
+        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         queen_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         for direction in queen_directions:
@@ -648,38 +661,32 @@ class Match(Scene):
                             if SQUARE_TYPE == 'Peón':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.pawn_targets(
-                                        board_index,SQUARE_RECT,interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.pawn_targets(board_index)
 
                             if SQUARE_TYPE == 'Torre':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.tower_targets(
-                                        board_index, SQUARE_RECT, interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.tower_targets(board_index)
                             
                             if SQUARE_TYPE == 'Caballo':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.horse_targets(
-                                        board_index, SQUARE_RECT, interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.horse_targets(board_index)
                         
                             if SQUARE_TYPE == 'Alfil':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.bishop_targets(
-                                        board_index, SQUARE_RECT, interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.bishop_targets(board_index)
 
                             if SQUARE_TYPE == 'Rey':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.king_targets(
-                                        board_index,SQUARE_RECT,interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.king_targets(board_index)
 
                             if SQUARE_TYPE == 'Reina':
                                 self.movement_validPositions.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.queen_targets(
-                                        board_index, SQUARE_RECT, interacted_PColor)
+                                    self.movement_validPositions, self.kill_validPositions = self.queen_targets(board_index)
                                 
                             if SQUARE_TYPE == "EMPTY":
                                 self.movement_validPositions.clear()
@@ -734,9 +741,32 @@ class Match(Scene):
             pygame.draw.rect(self.screen,'RED',valid_kill_RECT,width=2)
 
     '''targetKing_allPositions necesita actualización continua, la cual
-    se accionará ¿Al iniciar un turno? ¿Al realizar un movimiento?
+    se accionará/revisará-si-corresponde luego de realizar un movimiento
     
-    A que cosas está sujeto su cambio?
+    A qué cosas está sujeto su cambio?
+
+    _allPositions puede cambiar si el rey se mueve, o si una casilla
+    aledaña se desocupa.
+
+    _allPositions, fuera del init, debe ser actualizada siendo el
+    valor que devuelve una función.
+
+    si _allPositions cambia, es probable que _checkPositions también lo haga,
+    pero cuándo lo sabremos/evaluaremos?
+        Esto está relacionado con movimientos-inválidos.
+
+    Previo a un movimiento: conocer mis movimientos-inválidos
+    Luego de un movimiento: actualizar _allPositions
+                            actualizar contraste _checkPositions
+                                decidir cosas...
+        
+    Para checkear y re-checkear esto debemos llamar a los _targets() "al aire",
+    sin capturar su retorno, las cuales internamente imprimirán los valores 
+    targetPositions -EN LA NUEVA Y ACTUALIZADA _ALLPOSITIONS.
+
+    Debemos usar get_king_movements, es precisamente la actualización
+    de _allPositions
+
     '''
 
     def get_king_standpoint(self,color:str) -> int:
@@ -756,10 +786,7 @@ class Match(Scene):
         '''Extrayendo sólo posiciones de movimiento del rey target desde
         king_targets().'''
         _current_king_pos: int = self.get_king_standpoint(target_color)
-        move_positions, _ = self.king_targets( #descartamos el retorno de on_target_kill_positions
-            _current_king_pos,
-            self.boardRects[_current_king_pos],
-            )
+        move_positions, _ = self.king_targets(_current_king_pos) #descartamos el retorno de on_target_kill_positions
         return list(move_positions.keys()) #king_targets() ya consideró bloqueos.
     
     def get_horses_standpoint(self,color:str) -> list[int]: 
