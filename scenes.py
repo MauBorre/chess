@@ -277,6 +277,8 @@ class Match(Scene):
             for kp in kill_positions:
                 if kp in self.white_positions:
                     on_target_kill_positions.update({kp:self.boardRects[kp]})
+                #if kp in self.target_king_movPositions:
+                    #kingMovement_on_target_kill_positions.update({kp:self.boardRects[kp]})
 
         if clicked_piece_color == 'White': #target: black
             # NORTE
@@ -705,7 +707,7 @@ class Match(Scene):
             _current_king_pos,
             self.boardRects[_current_king_pos],
             target_color)
-        return list(move_positions.keys())
+        return list(move_positions.keys()) #move_positions ya consideró bloqueos.
     
     def get_horses_standpoint(self,color:str) -> list[int]: 
         act_posLIST: list[int] #grupo de piezas
@@ -719,7 +721,7 @@ class Match(Scene):
                     act_posLIST.append(k)
         return act_posLIST
     
-    def get_horses_targets(self, target_color:str) -> list[int]: ...
+    def get_horses_Ktargets(self, target_color:str) -> list[int]: ...
 
     def get_bishops_standpoint(self,color:str) -> list[int]: 
         act_posLIST: list[int] #grupo de piezas
@@ -733,7 +735,7 @@ class Match(Scene):
                     act_posLIST.append(k)
         return act_posLIST
     
-    def get_bishops_targets(self, target_color:str) -> list[int]: ...
+    def get_bishops_Ktargets(self, target_color:str) -> list[int]: ...
 
     def get_towers_standpoint(self,color:str) -> list[int]:
         act_posLIST: list[int] #grupo de piezas
@@ -747,7 +749,7 @@ class Match(Scene):
                     act_posLIST.append(k)
         return act_posLIST
     
-    def get_towers_targets(self, target_color:str) -> list[int]: ...
+    def get_towers_Ktargets(self, target_color:str) -> list[int]: ...
 
     def get_queen_standpoint(self,color:str) -> list[int]: 
         act_pos: int #pieza unitaria
@@ -761,11 +763,11 @@ class Match(Scene):
                     act_pos = k
         return act_pos
     
-    def get_queen_targets(self, target_color:str) -> list[int]: ...
+    def get_queen_Ktargets(self, target_color:str) -> list[int]: ...
 
     def get_pawns_standpoint(self,color:str) -> list[int]:
-        '''Devuelve posición actual de *TODOS?* los pawns?'''
-        act_posLIST: list[int] #es distinto a levantar al rey
+        '''Devuelve posición actual de *TODOS* los pawns?'''
+        act_posLIST: list[int] #grupo de piezas
         if color == 'Black':
             for k,v in self.black_positions.items():
                 if v == 'Peón':
@@ -776,8 +778,8 @@ class Match(Scene):
                     act_posLIST.append(k)
         return act_posLIST
 
-    def get_pawn_targets(self, target_color:str) -> list[int]:
-        '''Extrayendo sólo targets de *TODOS LOS PAWNS* contra
+    def get_pawn_Ktargets(self, target_color:str) -> list[int]:
+        '''Extrayendo kill targets de *TODOS LOS PAWNS* contra
         el color indicado'''
         _current_pawns_posLIST: list[int] = self.get_pawns_standpoint(target_color)
         kill_movements_list: list[int] = []
@@ -852,11 +854,11 @@ class Match(Scene):
         
         if self.turn_attacker == 'Black': # target: white
             #levantar ataque de todas las piezas BLACK contra WHITE
-            pawns_checks: list[int] = self.get_pawn_targets(target_color='White')
-            horses_checks: list[int] = self.get_horses_targets(target_color='White')
-            bishops_checks: list[int] = self.get_bishops_targets(target_color='White')
-            towers_checks: list[int] = self.get_towers_targets(target_color='White')
-            queen_checks: list[int] = self.get_queen_targets(target_color='White')
+            pawns_checks: list[int] = self.get_pawn_Ktargets(target_color='White')
+            horses_checks: list[int] = self.get_horses_Ktargets(target_color='White')
+            bishops_checks: list[int] = self.get_bishops_Ktargets(target_color='White')
+            towers_checks: list[int] = self.get_towers_Ktargets(target_color='White')
+            queen_checks: list[int] = self.get_queen_Ktargets(target_color='White')
             #appendear las que coincidan en target_king_movements
             all_attacks = ... #pawn_targets(rey_standpoint,'black')
                               #tower_targets(rey_standpoint,'black')
