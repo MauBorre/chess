@@ -759,7 +759,8 @@ class Match(Scene):
     '''
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
-        '''Argumentar pieza exactamente igual que en pieces.origins'''
+        '''Argumentar pieza exactamente igual que en pieces.origins
+        utilizar .pop() en piezas singulares como Rey y Reina'''
         act_posLIST: list[int]
         if color == 'Black':
             for k,v in self.black_positions.items():
