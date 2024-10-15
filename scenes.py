@@ -186,8 +186,25 @@ class Match(Scene):
         self.match_state: str = '' # HUD info
         self.player_deciding_match = False
         self.killing: bool = False
-        self.movement_validPositions: dict[int, pygame.Rect] = {} 
-        self.kill_validPositions: dict[int, pygame.Rect] = {}
+
+        '''Que diferencia tiene esta variable con la categoría de celda "salvar rey"?
+        Así como está ahora, y como está siendo usada es para visualizar
+        movimientos de piezas clickeadas, no para registrar movimientos válidos
+        de equipos
+        
+        Lo bueno es que podemos volver a usar las funciones "_targets()" para
+        registrar verdaderamente las posiciones en un dict por color,
+        y luego esos dicts "globales" serán "pulidos" para sacarles las posiciones que 
+        no pueden hacerse, y al querer mover una pieza, debemos contrastar TODOS
+        los movimientos contra estos diccionarios de unicos-movimientos-validos'''
+        self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {} 
+
+        '''Unificar estas dos en un turnTarget_validPositions?'''
+        self.white_valid_positions: list[int] = []
+        self.black_valid_positions: list[int] = []
+
+
+        self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {}
 
         # Previo a un movimiento: conocer mis movimientos-inválidos
         # Movimientos que no pueden realizarse porque exponen al rey a un kill-movement, o que --> DOS TIPOS DE INVALID
@@ -265,8 +282,12 @@ class Match(Scene):
         self.white_positions = pieces.white_positions
         self.blackKing_checkPositions = []
         self.whiteKing_checkpositions = []
+
+        # Creo que no conviene guardar invalid_positions, sino valid_positions (y que las invalid sean solo descartes)
         self.white_invalid_positions = {piece:[] for piece in pieces.origins['blancas']}
         self.black_invalid_positions = {piece:[] for piece in pieces.origins['negras']}
+        # --------------------------
+
         self.targetcolor_kingCheckPos = self.whiteKing_checkpositions
         self.turn_attacker = 'White'
         self.winner = False
@@ -595,16 +616,16 @@ class Match(Scene):
             
             # Diccionarios de posiciones --------------------------
             if board_index in self.black_positions.keys():
-                SQUARE_SUBTYPE = "kill-movement" if board_index in self.kill_validPositions.keys() else ""
+                SQUARE_SUBTYPE = "kill-movement" if board_index in self.pieceValidKill_posDisplay.keys() else ""
                 SQUARE_TYPE =  self.black_positions[board_index]
                 interacted_PColor = "Black"
 
             elif board_index in self.white_positions.keys():
-                SQUARE_SUBTYPE = "kill-movement" if board_index in self.kill_validPositions.keys() else ""
+                SQUARE_SUBTYPE = "kill-movement" if board_index in self.pieceValidKill_posDisplay.keys() else ""
                 SQUARE_TYPE = self.white_positions[board_index]
                 interacted_PColor = "White"
 
-            elif board_index in self.movement_validPositions.keys():
+            elif board_index in self.pieceValidMovement_posDisplay.keys():
                 SQUARE_SUBTYPE = "valid-movement"
                 SQUARE_TYPE = ""
                 interacted_PColor = ""
@@ -635,7 +656,7 @@ class Match(Scene):
                 
                     if self.master.click:
 
-                        self.kill_validPositions.clear()
+                        self.pieceValidKill_posDisplay.clear()
 
                         if SQUARE_SUBTYPE == "kill-movement":
                             self.killing = True
@@ -650,42 +671,42 @@ class Match(Scene):
 
                         else: 
                             if SQUARE_TYPE == 'Peón':
-                                self.movement_validPositions.clear()
+                                self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.pawn_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.pawn_targets(board_index)
 
                             if SQUARE_TYPE == 'Torre':
-                                self.movement_validPositions.clear()
+                                self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.tower_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.tower_targets(board_index)
                             
                             if SQUARE_TYPE == 'Caballo':
-                                self.movement_validPositions.clear()
+                                self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.horse_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.horse_targets(board_index)
                         
                             if SQUARE_TYPE == 'Alfil':
-                                self.movement_validPositions.clear()
+                                self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.bishop_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.bishop_targets(board_index)
 
                             if SQUARE_TYPE == 'Rey':
-                                self.movement_validPositions.clear()
+                                self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.king_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.king_targets(board_index)
 
                             if SQUARE_TYPE == 'Reina':
-                                self.movement_validPositions.clear()
+                                self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.movement_validPositions, self.kill_validPositions = self.queen_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.queen_targets(board_index)
                                 
                             if SQUARE_TYPE == "EMPTY":
-                                self.movement_validPositions.clear()
+                                self.pieceValidMovement_posDisplay.clear()
 
         # >> Previo a un movimiento: conocer mis movimientos-inválidos <<
         # updating element's positions and game relevant state if a movement/kill was stated
         if self.move_here != None:
-            ex_value: int = list(self.movement_validPositions.items())[0][0]
+            ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
 
             if self.turn_target == 'White':
                 _piece = self.black_positions.pop(ex_value)
@@ -705,15 +726,15 @@ class Match(Scene):
             self.update_valid_movements() # renovación de movimientos-inválidos
 
             self.turn_swap()
-            self.movement_validPositions.clear()
+            self.pieceValidMovement_posDisplay.clear()
             self.move_here = None
             self.killing = False
 
         # Pre-movements visual feedback
-        if len(self.movement_validPositions) > 1 or len(self.kill_validPositions) > 0:
-            for valid_mov_RECT in self.movement_validPositions.values():
+        if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0:
+            for valid_mov_RECT in self.pieceValidMovement_posDisplay.values():
                 pygame.draw.rect(self.screen,'GREEN',valid_mov_RECT,width=2)
-        for valid_kill_RECT in self.kill_validPositions.values():
+        for valid_kill_RECT in self.pieceValidKill_posDisplay.values():
             pygame.draw.rect(self.screen,'RED',valid_kill_RECT,width=2)
 
     '''targetKing_allPositions necesita actualización continua, la cual
