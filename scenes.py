@@ -18,7 +18,7 @@ class Scene:
     Un mixer de todos los elementos necesarios para dicha escena, como board+pieces,
     sin que los mecanismos draw "choquen tanto" con estos. Un poco más prolijo nomá.
     '''
-    def __init__(self,master):
+    def __init__(self,master): # paso master o paso LO QUE NECESITO de master?
         self.master = master # interfaz para comunicar variables y controles
         self.screen = self.master.screen
 
@@ -187,19 +187,17 @@ class Match(Scene):
         self.player_deciding_match = False
         self.killing: bool = False
 
-        '''Que diferencia tiene esta variable con la categoría de celda "salvar rey"?
-        Así como está ahora, y como está siendo usada es para visualizar
-        movimientos de piezas clickeadas, no para registrar movimientos válidos
-        de equipos
-        
-        Lo bueno es que podemos volver a usar las funciones "_targets()" para
-        registrar verdaderamente las posiciones en un dict por color,
-        y luego esos dicts "globales" serán "pulidos" para sacarles las posiciones que 
-        no pueden hacerse, y al querer mover una pieza, debemos contrastar TODOS
-        los movimientos contra estos diccionarios de unicos-movimientos-validos'''
+        # Usadas para visualizar movimientos de piezas clickeadas
         self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {} 
 
-        '''Unificar estas dos en un turnTarget_validPositions?'''
+        '''Unificar estas dos en un turnTarget_validPositions?
+        Estas son las posiciones que debo revisar cuando-quiera-hacer-un-movimiento
+        
+        NO registraremos posiciones inválidas, solo serán deducidas y removidas de aquí.
+        Al juego no le importa realmente que NO puede hacer si solo revisa lo que PUEDE hacer.
+        
+        Descartan posiciones inválidas por bloqueo de pieza aliada, posiciones inválidas
+        por exposicion del rey y únicas posiciones para salvar al rey'''
         self.white_valid_positions: list[int] = []
         self.black_valid_positions: list[int] = []
 
@@ -243,8 +241,8 @@ class Match(Scene):
         '''Estas variables serán actualizadas por:
         update_target_king() y make_targets()'''
         self.turnTarget_checkState = None
-        self.targetcolor_kingCheckPos: set[int] = self.blackKing_checkPositions # default
-        self.targetcolor_kingAllPositions: list[int] = self.blackKing_allPositions # default
+        self.targetColorKing_CHECKPOS: set[int] = self.blackKing_checkPositions # default
+        self.targetColorKing_ALLPOS: list[int] = self.blackKing_allPositions # default
 
     def make_targets(self):
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
@@ -268,7 +266,7 @@ class Match(Scene):
         
     def update_target_king(self): #debe ser llamado DESPUES DE QUE SE MOVIÓ ALGO 
         #nuevas all_positions
-        self.targetcolor_kingAllPositions = self.get_king_movements(self.turn_target)
+        self.targetColorKing_ALLPOS = self.get_king_movements(self.turn_target)
         #actualizando nuevas check positions
         self.make_targets()
 
@@ -277,7 +275,7 @@ class Match(Scene):
         self.in_base_Wpawns = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
         self.blackKing_allPositions = [bk for bk in pieces.origins['negras']['Rey']] #standpoint sin movimiento
         self.whiteKing_allPositions = [wk for wk in pieces.origins['blancas']['Rey']] #standpoint sin movimiento
-        self.targetcolor_kingAllPositions = self.whiteKing_allPositions # default
+        self.targetColorKing_ALLPOS = self.whiteKing_allPositions # default
         self.black_positions = pieces.black_positions
         self.white_positions = pieces.white_positions
         self.blackKing_checkPositions = []
@@ -288,7 +286,7 @@ class Match(Scene):
         self.black_invalid_positions = {piece:[] for piece in pieces.origins['negras']}
         # --------------------------
 
-        self.targetcolor_kingCheckPos = self.whiteKing_checkpositions
+        self.targetColorKing_CHECKPOS = self.whiteKing_checkpositions
         self.turn_attacker = 'White'
         self.winner = False
 
@@ -297,21 +295,21 @@ class Match(Scene):
             self.turn_attacker = 'Black'
             self.turn_target = 'White'
             #1ro transfiero targets
-            self.blackKing_allPositions = self.targetcolor_kingAllPositions
-            self.blackKing_checkPositions = self.targetcolor_kingCheckPos
+            self.blackKing_allPositions = self.targetColorKing_ALLPOS
+            self.blackKing_checkPositions = self.targetColorKing_CHECKPOS
             #luego intercambio targets lists
-            self.targetcolor_kingCheckPos = self.whiteKing_checkpositions
-            self.targetcolor_kingAllPositions = self.whiteKing_allPositions
+            self.targetColorKing_CHECKPOS = self.whiteKing_checkpositions
+            self.targetColorKing_ALLPOS = self.whiteKing_allPositions
             return
         if self.turn_attacker == 'Black':
             self.turn_attacker = 'White'
             self.turn_target = 'Black'
             #1ro transfiero targets
-            self.whiteKing_allPositions = self.targetcolor_kingAllPositions
-            self.whiteKing_checkpositions = self.targetcolor_kingCheckPos
+            self.whiteKing_allPositions = self.targetColorKing_ALLPOS
+            self.whiteKing_checkpositions = self.targetColorKing_CHECKPOS
             #luego intercambio targets lists
-            self.targetcolor_kingCheckPos = self.blackKing_checkPositions
-            self.targetcolor_kingAllPositions = self.blackKing_allPositions
+            self.targetColorKing_CHECKPOS = self.blackKing_checkPositions
+            self.targetColorKing_ALLPOS = self.blackKing_allPositions
             return
     
     def pawn_targets(self,piece_standpoint: int) -> dict[int,pygame.Rect]:
@@ -361,8 +359,8 @@ class Match(Scene):
                     on_target_kill_positions.update({kp:self.boardRects[kp]})
                 
                 # repetir en toda función _targets()
-                if kp in self.targetcolor_kingAllPositions:
-                    self.targetcolor_kingCheckPos.add(kp)
+                if kp in self.targetColorKing_ALLPOS:
+                    self.targetColorKing_CHECKPOS.add(kp)
 
         if self.turn_target == 'Black': 
             # NORTE
@@ -391,8 +389,8 @@ class Match(Scene):
                 if kp in self.black_positions:
                     on_target_kill_positions.update({kp:self.boardRects[kp]})
 
-                if kp in self.targetcolor_kingAllPositions:
-                    self.targetcolor_kingCheckPos.add(kp)
+                if kp in self.targetColorKing_ALLPOS:
+                    self.targetColorKing_CHECKPOS.add(kp)
 
         return mov_target_positions, on_target_kill_positions
 
@@ -416,8 +414,8 @@ class Match(Scene):
                     if movement not in row_of_(piece_standpoint):
                         break
                 if 0 <= movement <= 63:
-                    if movement in self.targetcolor_kingAllPositions:
-                        self.targetcolor_kingCheckPos.add(movement)
+                    if movement in self.targetColorKing_ALLPOS:
+                        self.targetColorKing_CHECKPOS.add(movement)
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
                     else:
@@ -463,8 +461,8 @@ class Match(Scene):
         
         for movement in horse_movements:
             if 0 <= movement <= 63: # NORTE/SUR LIMIT
-                if movement in self.targetcolor_kingAllPositions:
-                    self.targetcolor_kingCheckPos.add(movement)
+                if movement in self.targetColorKing_ALLPOS:
+                    self.targetColorKing_CHECKPOS.add(movement)
                 if movement not in self.black_positions and movement not in self.white_positions:
                     mov_target_positions.update({movement:self.boardRects[movement]})
                 else:
@@ -497,8 +495,8 @@ class Match(Scene):
                     if movement not in row_of_(piece_standpoint+SUR*mult):
                         break
                 if 0 <= movement <= 63:
-                    if movement in self.targetcolor_kingAllPositions:
-                        self.targetcolor_kingCheckPos.add(movement)
+                    if movement in self.targetColorKing_ALLPOS:
+                        self.targetColorKing_CHECKPOS.add(movement)
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
                     else:
@@ -540,7 +538,7 @@ class Match(Scene):
                 if movement-SUR not in row_of_(piece_standpoint):
                     continue
             if 0 <= movement <= 63:
-                if movement in self.targetcolor_kingAllPositions: #illegal movement
+                if movement in self.targetColorKing_ALLPOS: #illegal movement
                     continue
                 if movement not in self.black_positions and movement not in self.white_positions:
                     mov_target_positions.update({movement:self.boardRects[movement]}) 
@@ -582,8 +580,8 @@ class Match(Scene):
                     if movement not in row_of_(piece_standpoint+SUR*mult):
                         break
                 if 0 <= movement <= 63:
-                    if movement in self.targetcolor_kingAllPositions:
-                        self.targetcolor_kingCheckPos.add(movement)
+                    if movement in self.targetColorKing_ALLPOS:
+                        self.targetColorKing_CHECKPOS.add(movement)
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]}) 
                     else:
@@ -796,11 +794,11 @@ class Match(Scene):
         STALE-MATE > Si el rey no es apuntado directamente pero no puede moverse ni
             ser salvado por pieza aliada. Estado de empate.
         '''
-        if self.get_piece_standpoint(self.turn_target,"Rey").pop() in self.targetcolor_kingCheckPos:
+        if self.get_piece_standpoint(self.turn_target,"Rey").pop() in self.targetColorKing_CHECKPOS:
             #ok, está en jaque, pero tiene escapatoria?
-            if set(self.targetcolor_kingAllPositions) == self.targetcolor_kingCheckPos:
+            if set(self.targetColorKing_ALLPOS) == self.targetColorKing_CHECKPOS:
                 #ok tampoco puede moverse, pero puede una pieza salvarlo?
-                if self.targetcolor_kingCheckPos not in self.saving_positions: # JAQUE-MATE
+                if self.targetColorKing_CHECKPOS not in self.saving_positions: # JAQUE-MATE
                     #está apuntado, está rodeado y no puede ser salvado
                     if self.turn_target == 'Black': 
                         self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
@@ -819,9 +817,9 @@ class Match(Scene):
                     self.match_state = 'Rey White en jaque'
                     #modificar posiciones inválidas aquí o no? La lógica para invalidarlas "es por acá"...o no?
         # Ahogado | stalemate (draw)
-        elif set(self.targetcolor_kingAllPositions).discard(self.get_piece_standpoint(self.turn_target,"Rey").pop()) == self.targetcolor_kingCheckPos:
+        elif set(self.targetColorKing_ALLPOS).discard(self.get_piece_standpoint(self.turn_target,"Rey").pop()) == self.targetColorKing_CHECKPOS:
             #ok, está rodeado, pero alguna pieza puede salvarlo?
-            if self.targetcolor_kingCheckPos not in self.saving_positions: # DRAW
+            if self.targetColorKing_CHECKPOS not in self.saving_positions: # DRAW
                 #nadie puede salvarlo tampoco
                 self.stalemate == True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
                 self.match_state = 'Rey ahogado - Empate'
@@ -830,9 +828,14 @@ class Match(Scene):
         '''
         Resuelve *quién* y *cómo* puede moverse.
 
+        !!!!!!!!!!!!!!!!!!! ESTO PUEDE CAMBIAR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         Los movimientos denegados deducidos serán registrados en los correspondientes
         diccionarios *de color* sin contar al rey que tiene el suyo:
         >>self.white_invalid_positions = {'peon': [2,4], 'alfil': [12,18,24]}
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        A
+        Los movimientos denegados deducidos serán removidos de los diccionarios de posiciones
+        válidas(legales)
 
         Creo que no todos los movimientos invalidos corresponden, teóricamente, a la misma categoría,
         pero debemos definir si se evaluan en el mismo lugar y al mismo tiempo.
@@ -855,6 +858,13 @@ class Match(Scene):
                     Un tipo de "movimiento inválido" es -> sólo podes salvar a tu rey
                     Otro tipo de "movimiento inválido" es -> ese mov. expone a tu rey
                     Pero se evalúan de igual forma y al mismo tiempo? se agrupan en el mismo dict?
+        
+        Debemos volver a usar las funciones "_targets()" para registrar las posiciones
+        en un dict por color,
+        y luego esos dicts "globales" serán "pulidos" para sacarles las posiciones que 
+        no pueden hacerse, y al querer mover una pieza, debemos contrastar TODOS
+        los movimientos contra estos diccionarios de unicos-movimientos-validos
+        
         '''
         ...
 
