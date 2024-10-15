@@ -1,4 +1,4 @@
-origins: dict[dict[str,list[int]]] = { #Legible pero no ideal para render
+origins: dict[str,dict[str,list[int]]] = { #Legible pero no ideal para render
     'negras': {
         'Torre':[0,7],
         'Caballo':[1,6],
@@ -18,7 +18,7 @@ origins: dict[dict[str,list[int]]] = { #Legible pero no ideal para render
     }
 
 def reverse_expand_origins(
-    pieces_legible_origins: dict[dict[str,list[int]]]
+    pieces_legible_origins: dict[str,dict[str,list[int]]]
     ) -> dict[int,str]:
     '''Transforma dict={'color...': {'peon':[0,1,2]}}
     En color-A_dict={0:peon,1:peon,2:peon}
@@ -36,7 +36,7 @@ def reverse_expand_origins(
         for d in key_val_reverse:
             aux_d.update(d)
         dict_list.append(aux_d)
-    _black_positions, _white_positions = dict_list
+    _black_positions, _white_positions = dict_list #unpack from list
     return _black_positions, _white_positions #SIEMPRE se debe devolver en esta posición
 
 black_positions, white_positions = reverse_expand_origins(origins)
