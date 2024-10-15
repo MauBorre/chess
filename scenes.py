@@ -184,8 +184,8 @@ class Match(Scene):
         self.winner: bool = False
         self.player_deciding_match = False
         self.killing: bool = False
-        self.W_check_state: str #jaque o jaque-mate o None
-        self.B_check_state: str #jaque o jaque-mate o None
+        self.W_check_state: str | None = None #jaque o jaque-mate o None
+        self.B_check_state: str | None = None #jaque o jaque-mate o None
         self.movement_validPositions: dict[int, pygame.Rect] = {} 
         self.kill_validPositions: dict[int, pygame.Rect] = {}
 
@@ -220,6 +220,7 @@ class Match(Scene):
         # turn lookups
         '''Estas variables serán actualizadas por:
         update_target_king() y make_targets()'''
+        self.turnTarget_checkState = None
         self.targetcolor_kingCheckPos: set[int] = self.blackKing_checkPositions # default
         self.targetcolor_kingAllPositions: list[int] = self.blackKing_allPositions # default
 
@@ -707,20 +708,18 @@ class Match(Scene):
 
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
             self.update_target_king() # renovación de posiciones-rey y sus nuevos checks
+            self.update_invalid_movements() # renovación de movimientos-inválidos
             self.decide_check() # <- evaluación de posiciones incl. movimientos-inválidos
-            if self.B_check_state == 'jaque':
+            
+            if self.turnTarget_checkState == 'jaque':
                 #alertar al jugador -los movimientos inválidos ya fueron computados-
-                ...
-            if self.B_check_state == 'jaque-mate':
+                if self.turn_target == 'Black': ...
+                if self.turn_target == 'White': ...
+            if self.turnTarget_checkState == 'jaque-mate':
                 self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
-                #color_winner...
-
-            if self.W_check_state == 'jaque':
-                #alertar al jugador -los movimientos inválidos ya fueron computados-
-                ...
-            if self.W_check_state == 'jaque-mate': 
-                self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
-                #color_winner...
+                #color_winner? 
+                if self.turn_target == 'Black': ...
+                if self.turn_target == 'White': ...
 
             self.turn_swap()
             self.movement_validPositions.clear()
@@ -841,34 +840,11 @@ class Match(Scene):
                     act_posLIST.append(k)
         return act_posLIST
 
-    def decide_check(self) -> str:
+    def decide_check(self):
         '''
-        evaluar jaque/jaque-mate de piezas self.turn_color contra target
+        Evaluar posiciones _allPositions, _checkPositions y invalid-movements
+        para resolver estados jaque/jaque-mate. (self.turnTarget_checkState)
 
-        Su responsabilidad es evaluar posiciones:
-                    (_allPositions, _checkPositions, invalid-movements)
-
-        Aquí también podríamos resolver *quién* y *cómo* puede moverse, porque es el paso
-        previo a cantar el jaque.
-        Los movimientos denegados deducidos serán registrados en los correspondientes
-        diccionarios *de color* (presentes "globalmente" en la clase):
-
-        >>white_invalid_positions = {'peon': [2,4], 'alfil': [12,18,24], 'rey':[5,6]}
-        
-        Creo que no todos los movimientos invalidos corresponden teóricamente a la misma categoría,
-        pero debemos definir si se evaluan en el mismo lugar y al mismo tiempo.
-        > INVALID_MOV_T1: Tu rey (rey de self.turnColor) esta en jaque, solo podrás moverte si eso quita
-            su estado de jaque.
-            Requiere que primero evaluemos el jaque. -> POST-JAQUE_INVALID
-        > INVALID_MOV_T2: Tu rey no esta en jaque, pero *el movimiento que querés hacer* lo deja en jaque. 
-            No requiere evaluar previamente el jaque? Pero y si lo sabemos de antemano y ya? -> PRE-JAQUE_INVALID
-        
-        En qué caso NO nos serviría que esto viva en el mismo diccionario?
-            Si no hay caso para esto, solo debemos definir el mejor posible lugar donde actualizaremos
-            el diccionario de movimientos inválidos.
-
-        Los movimientos denegados del rey en estos diccionarios son la clave para deducir
-        la parte final de nuestro objetivo:
         ::RESUELVE:-> "jaque"
             -Si encontró que el target king puede escapar (invalid pos NO-IGUALA a valid pos).
             -O si encontró que el king no puede escapar PERO puede ser salvado por un aliado.
@@ -877,26 +853,56 @@ class Match(Scene):
         ::RESUELVE:-> "jaque-mate"
             Si encontró que el target king NO puede escapar (posiciones válidas son las mismas que las inválidas)
                 Este procedimiento va despues de almacenar perfectamente las posiciones inválidas *actuales*
+        
+        **Debo resumir B_check_state y W_check_state en self.turnTarget_checkState
         '''
+        if len(self.targetcolor_kingCheckPos) == 0: # nada que hacer
+            return
 
-        # comparar _allPositions contra _checkPositions, si sus
-        # elementos son los mismos, es JAQUE-MATE
-        #
-        # si no todos los elementos son los mismos, pero hay
-        # cieta compatibilidad, es JAQUE
-        '''Ayuda aliada: un aliado puede interceptar/matar la amenaza
-            > Cómo saber si un movimiento corta una amenaza?
-                SI *este movimiento* elimina kill-movement crítico al rey...
+        elif self.targetcolor_kingAllPositions == self.targetcolor_kingCheckPos: #revisar si hay MISMOS-ELEMENTOS
+            if self.targetcolor_kingCheckPos in self.saving_positions:
+                #target está en jaque
+                self.turnTarget_checkState == 'jaque'
+            else:
+                #target está en jaque mate
+                self.turnTarget_checkState == 'jaque-mate'
+            return
+        
+        if len(self.targetcolor_kingAllPositions) - len(self.targetcolor_kingCheckPos)  > 0: #<- este caso NUNCA ES JAQUE-MATE
+            # ^^ si esta diferencia existe es jaque, lo único que me compete aquí es declarar 
+            #    estados check para ver si el juego o sucede otra acción.
+            self.turnTarget_checkState == 'jaque'
+            return
 
-            > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?
-                SI *este movimiento* deja atrás un kill-movement DIRECTO al rey...
-                ^^^ esta evaluación "corresponde" a decide_check(), pero es EVALUADA
-                    cada vez que querramos mover una pieza.
-            
-            Hay dos tipos de movimientos inválidos? O es todo parte de lo mismo?
-            Un tipo de "movimiento inválido" es -> sólo podes salvar a tu rey
-            Otro tipo de "movimiento inválido" es -> ese mov. expone a tu rey
-            Pero se evalúan de igual forma y al mismo tiempo? se agrupan en el mismo dict?
+    def update_valid_movements(self):
+        '''
+        Resuelve *quién* y *cómo* puede moverse.
+
+        Los movimientos denegados deducidos serán registrados en los correspondientes
+        diccionarios *de color* sin contar al rey que tiene el suyo:
+        >>self.white_invalid_positions = {'peon': [2,4], 'alfil': [12,18,24]}
+
+        Creo que no todos los movimientos invalidos corresponden, teóricamente, a la misma categoría,
+        pero debemos definir si se evaluan en el mismo lugar y al mismo tiempo.
+        > INVALID_MOV_T1: Tu rey (rey de self.turnColor) esta en jaque, solo podrás moverte si eso quita
+            su estado de jaque.
+            Requiere que primero evaluemos el jaque. -> POST-JAQUE_INVALID
+        > INVALID_MOV_T2: Tu rey no esta en jaque, pero *el movimiento que querés hacer* lo deja en jaque. 
+            No requiere evaluar previamente el jaque? Pero y si lo sabemos de antemano y ya? -> PRE-JAQUE_INVALID
+
+        Ayuda aliada: un aliado puede interceptar/matar la amenaza
+                    > Cómo saber si un movimiento corta una amenaza?
+                        SI *este movimiento* elimina kill-movement crítico al rey...
+
+                    > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?
+                        SI *este movimiento* deja atrás un kill-movement DIRECTO al rey...
+                        ^^^ esta evaluación "corresponde" a decide_check(), pero es EVALUADA
+                            cada vez que querramos mover una pieza.
+                    
+                    Hay dos tipos de movimientos inválidos? O es todo parte de lo mismo?
+                    Un tipo de "movimiento inválido" es -> sólo podes salvar a tu rey
+                    Otro tipo de "movimiento inválido" es -> ese mov. expone a tu rey
+                    Pero se evalúan de igual forma y al mismo tiempo? se agrupan en el mismo dict?
         '''
         ...
 
