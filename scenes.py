@@ -183,6 +183,7 @@ class Match(Scene):
         self.turn_target: str = 'Black'
         self.winner: bool = False
         self.stalemate: bool = False # Ahogado | draw
+        self.match_state: str = ''
         self.player_deciding_match = False
         self.killing: bool = False
         self.movement_validPositions: dict[int, pygame.Rect] = {} 
@@ -784,8 +785,10 @@ class Match(Scene):
         
         JAQUE > El rey es apuntado directamente, PUEDE escapar moviendose o siendo
             salvado por pieza aliada (matando o bloqueando amenaza) <- Square types?
+
         JAQUE-MATE > El rey es apuntado directamente, NO PUEDE escapar moviendose ni
             siendo salvado por pieza aliada. 
+
         STALE-MATE > Si el rey no es apuntado directamente pero no puede moverse ni
             ser salvado por pieza aliada. Estado de empate.
         '''
@@ -797,24 +800,27 @@ class Match(Scene):
                     #está apuntado, está rodeado y no puede ser salvado
                     if self.turn_target == 'Black': 
                         self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
-                        #color winner?
+                        self.match_state = 'White gana - Black en jaque-mate'
                     if self.turn_target == 'White': 
                         self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
-                        #color winner?
+                        self.match_state = 'Black gana - White en jaque-mate'
             else: # JAQUE
                 #puede ser salvado, o no todo su camino no está rodeado
                 if self.turn_target == 'Black': 
                     #alertar al jugador
+                    self.match_state = 'Rey Black en jaque'
                     #modificar posiciones inválidas aquí o no? La lógica para invalidarlas "es por acá"...o no?
-                    ...
                 if self.turn_target == 'White': 
                     #alertar al jugador
+                    self.match_state = 'Rey White en jaque'
                     #modificar posiciones inválidas aquí o no? La lógica para invalidarlas "es por acá"...o no?
-                    ...
         # Ahogado | stalemate (draw)
         elif set(self.targetcolor_kingAllPositions).discard(self.get_piece_standpoint(self.turn_target,"Rey").pop()) == self.targetcolor_kingCheckPos:
-            self.stalemate == True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
-
+            #ok, está rodeado, pero alguna pieza puede salcarlo?
+            if self.targetcolor_kingCheckPos not in self.saving_positions:
+                #nadie puede salvarlo tampoco
+                self.stalemate == True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
+                self.match_state = 'Rey ahogado - Empate'
 
     def update_valid_movements(self):
         '''
