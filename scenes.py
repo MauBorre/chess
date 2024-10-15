@@ -184,8 +184,6 @@ class Match(Scene):
         self.winner: bool = False
         self.player_deciding_match = False
         self.killing: bool = False
-        self.W_check_state: str | None = None #jaque o jaque-mate o None
-        self.B_check_state: str | None = None #jaque o jaque-mate o None
         self.movement_validPositions: dict[int, pygame.Rect] = {} 
         self.kill_validPositions: dict[int, pygame.Rect] = {}
 
@@ -198,6 +196,11 @@ class Match(Scene):
         # Son tambien revisados en cada movimiento de pieza. -> Expone rey // No-salva rey
         self.white_invalid_positions: dict[str, list[int]] = {} # {'peon': [2,4], 'alfil': [12,18,24]}
         self.black_invalid_positions: dict[str, list[int]] = {}
+        '''No estoy aún 100% seguro si conviene registrar estas posiciones, o solo reconocerlas
+        para restringirlas de los movimientos válidos.
+        Al estar un rey en jaque, los movimientos se restringen sólo a aquellos que quiten la amenaza.
+        Jaque es apuntar directamente al rey, revisar esto en decide checks
+        '''
 
         # board config
         self.board_begin = pygame.Vector2(
@@ -711,19 +714,9 @@ class Match(Scene):
                 self.white_positions.update({self.move_here:_piece})
 
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
+            self.decide_check() # <- evaluación de posiciones | modifica self.turnTarget_checkState
             self.update_target_king() # renovación de posiciones-rey y sus nuevos checks
             self.update_invalid_movements() # renovación de movimientos-inválidos
-            self.decide_check() # <- evaluación de posiciones incl. movimientos-inválidos | modifica self.turnTarget_checkState
-
-            if self.turnTarget_checkState == 'jaque':
-                #alertar al jugador -los movimientos inválidos ya fueron computados-
-                if self.turn_target == 'Black': ...
-                if self.turn_target == 'White': ...
-            if self.turnTarget_checkState == 'jaque-mate':
-                self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
-                #color_winner? 
-                if self.turn_target == 'Black': ...
-                if self.turn_target == 'White': ...
 
             self.turn_swap()
             self.movement_validPositions.clear()
@@ -786,7 +779,7 @@ class Match(Scene):
     def decide_check(self):
         '''
         Evaluar posiciones _allPositions, _checkPositions y invalid-movements
-        para resolver estados jaque/jaque-mate. (self.turnTarget_checkState)
+        para resolver estados jaque/jaque-mate.
 
         ::RESUELVE:-> "jaque"
             -Si encontró que el target king puede escapar (invalid pos NO-IGUALA a valid pos).
@@ -797,24 +790,38 @@ class Match(Scene):
             Si encontró que el target king NO puede escapar (posiciones válidas son las mismas que las inválidas)
                 Este procedimiento va despues de almacenar perfectamente las posiciones inválidas *actuales*
         
-        **Debo resumir B_check_state y W_check_state en self.turnTarget_checkState
+        JAQUE ES SOLO CUANDO EL REY ES APUNTADO, NO SUS CASILLAS DE MOVIMIENTO
+        Guarda con esto boLUdo.
         '''
-        if len(self.targetcolor_kingCheckPos) == 0: # nada que hacer
-            return
-
-        elif self.targetcolor_kingAllPositions == self.targetcolor_kingCheckPos: #revisar si hay MISMOS-ELEMENTOS
-            if self.targetcolor_kingCheckPos in self.saving_positions:
-                #target está en jaque
-                self.turnTarget_checkState == 'jaque'
-            else:
-                #target está en jaque mate
-                self.turnTarget_checkState == 'jaque-mate'
-            return
+        if self.get_piece_standpoint(self.turn_target,"Rey").pop() in self.targetcolor_kingCheckPos:
+            #ok, está apuntado, pero tiene escapatoria? Si no la tiene es jaque
+            if self.targetcolor_kingAllPositions == self.targetcolor_kingCheckPos: #revisar si hay MISMOS-ELEMENTOS
+                #ok, no puede moverse, pero una pieza lo puede salvar?
+                if self.targetcolor_kingCheckPos not in self.saving_positions: # JAQUE-MATE
+                    #está rodeado y no puede ser salvado
+                    if self.turn_target == 'Black': 
+                        self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                        #color winner?
+                    if self.turn_target == 'White': 
+                        self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                        #color winner?
+                else: # JAQUE
+                    #puede ser salvado, o no todo su camino no está rodeado
+                    if self.turn_target == 'Black': 
+                        #alertar al jugador
+                        #modificar posiciones inválidas aquí o no?
+                        ...
+                    if self.turn_target == 'White': 
+                        #alertar al jugador
+                        #modificar posiciones inválidas aquí o no?
+                        ...
+        return
         
+        '''Creo que esto es cualquiera, es JAQUE SOLO SI EL REY ESTA APUNTADO DIRECTAMENTE'''
         if len(self.targetcolor_kingAllPositions) - len(self.targetcolor_kingCheckPos)  > 0: #<- este caso NUNCA ES JAQUE-MATE
             # ^^ si esta diferencia existe es jaque, lo único que me compete aquí es declarar 
             #    estados check para ver si el juego o sucede otra acción.
-            self.turnTarget_checkState == 'jaque'
+            self.turnTarget_checkState == 'jaque' #???
             return
 
     def update_valid_movements(self):
