@@ -196,8 +196,8 @@ class Match(Scene):
         #
         # Estos conjuntos son actualizados luego de mover una pieza (si corresponde).
         # Son tambien revisados en cada movimiento de pieza. -> Expone rey // No-salva rey
-        self.white_invalid_positions: dict[str, list[int]] = {} # {'peon': [2,4], 'alfil': [12,18,24]}
-        self.black_invalid_positions: dict[str, list[int]] = {}
+        self.white_invalid_positions: dict[str, list[int]] = {piece:[] for piece in pieces.origins['blancas']} # {'peon': [2,4], 'alfil': [12,18,24], etc...}
+        self.black_invalid_positions: dict[str, list[int]] = {piece:[] for piece in pieces.origins['negras']}
         '''No estoy aún 100% seguro si conviene registrar estas posiciones, o solo reconocerlas
         para restringirlas de los movimientos válidos.
         Al estar un rey en jaque, los movimientos se restringen sólo a aquellos que quiten la amenaza.
@@ -265,6 +265,8 @@ class Match(Scene):
         self.white_positions = pieces.white_positions
         self.blackKing_checkPositions = []
         self.whiteKing_checkpositions = []
+        self.white_invalid_positions = {piece:[] for piece in pieces.origins['blancas']}
+        self.black_invalid_positions = {piece:[] for piece in pieces.origins['negras']}
         self.targetcolor_kingCheckPos = self.whiteKing_checkpositions
         self.turn_attacker = 'White'
         self.winner = False
@@ -310,7 +312,7 @@ class Match(Scene):
             movement: int = piece_standpoint+SUR
 
             # --- no implementado ---
-            if movement not in self.black_invalid_positions['peon']: ... # !! REPETIR ESTO EN CADA PIEZA !! CUIDADO COLOR !!
+            if movement not in self.black_invalid_positions['Peón']: ... # !! REPETIR ESTO EN CADA PIEZA !! CUIDADO COLOR !!
             # --- no implementado ---
 
             # piece block condition
@@ -700,7 +702,7 @@ class Match(Scene):
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
             self.decide_check() # <- evaluación de posiciones | modifica self.turnTarget_checkState
             self.update_target_king() # renovación de posiciones-rey y sus nuevos checks
-            self.update_invalid_movements() # renovación de movimientos-inválidos
+            self.update_valid_movements() # renovación de movimientos-inválidos
 
             self.turn_swap()
             self.movement_validPositions.clear()
@@ -743,16 +745,16 @@ class Match(Scene):
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''Argumentar pieza exactamente igual que en pieces.origins
         utilizar .pop() en piezas singulares como Rey y Reina'''
-        act_posLIST: list[int]
+        _actual_standpoints: list[int] = []
         if color == 'Black':
             for k,v in self.black_positions.items():
                 if v == piece:
-                    act_posLIST.append(k)
+                    _actual_standpoints.append(k)
         if color == 'White':
             for k,v in self.white_positions.items():
                 if v == piece:
-                    act_posLIST.append(k)
-        return act_posLIST
+                    _actual_standpoints.append(k)
+        return _actual_standpoints
     
     def get_king_movements(self, target_color:str) -> list[int]:
         _current_king_pos: int = self.get_piece_standpoint(color=target_color,piece="Rey").pop()
