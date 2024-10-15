@@ -291,10 +291,7 @@ class Match(Scene):
             self.targetcolor_kingAllPositions = self.blackKing_allPositions
             return
     
-    def pawn_targets(
-        self,
-        piece_standpoint: int,
-        ) -> dict[int,pygame.Rect]:
+    def pawn_targets(self,piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Peón:
         NORTE (white)
         SUR (black)
@@ -376,10 +373,7 @@ class Match(Scene):
 
         return mov_target_positions, on_target_kill_positions
 
-    def tower_targets(
-        self,
-        piece_standpoint: int,
-        ) -> dict[int,pygame.Rect]:
+    def tower_targets(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Torre:
         +NORTE
         +SUR
@@ -415,10 +409,7 @@ class Match(Scene):
                         break #previene propagación mas allá del primer bloqueo - rompe el mult
         return mov_target_positions, on_target_kill_positions
 
-    def horse_targets(
-        self,
-        piece_standpoint: int,
-        ) -> dict[int,pygame.Rect]:
+    def horse_targets(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Caballo:
         doble-norte + este
         doble-norte + oeste
@@ -462,10 +453,7 @@ class Match(Scene):
                             on_target_kill_positions.update({movement:self.boardRects[movement]})
         return mov_target_positions, on_target_kill_positions
 
-    def bishop_targets(
-        self,
-        piece_standpoint: int,
-        ) -> dict[int,pygame.Rect]:
+    def bishop_targets(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Alfil:
         +NOR_OESTE
         +NOR_ESTE
@@ -502,10 +490,7 @@ class Match(Scene):
                         break #previene propagación mas allá del primer bloqueo - rompe el mult
         return mov_target_positions, on_target_kill_positions
 
-    def king_targets(
-        self,
-        piece_standpoint: int,
-        ) -> dict[int,pygame.Rect]:
+    def king_targets(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Rey:
         +NORTE
         +SUR
@@ -546,10 +531,7 @@ class Match(Scene):
                     continue
         return mov_target_positions, on_target_kill_positions
 
-    def queen_targets(
-        self,
-        piece_standpoint: int,
-        ) -> dict[int,pygame.Rect]:
+    def queen_targets(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Reina:
         +NORTE
         +SUR
@@ -773,8 +755,6 @@ class Match(Scene):
         return act_posLIST
     
     def get_king_movements(self, target_color:str) -> list[int]:
-        '''Extrayendo sólo posiciones de movimiento del rey target desde
-        king_targets().'''
         _current_king_pos: int = self.get_piece_standpoint(color=target_color,piece="Rey").pop()
         move_positions, _ = self.king_targets(_current_king_pos) #descartamos el retorno de on_target_kill_positions
         return list(move_positions.keys()) #king_targets() ya consideró bloqueos.
