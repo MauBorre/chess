@@ -797,7 +797,7 @@ class Match(Scene):
                     #modificar posiciones inválidas aquí o no? La lógica para invalidarlas "es por acá"...o no?
         # Ahogado | stalemate (draw)
         elif set(self.targetcolor_kingAllPositions).discard(self.get_piece_standpoint(self.turn_target,"Rey").pop()) == self.targetcolor_kingCheckPos:
-            #ok, está rodeado, pero alguna pieza puede salcarlo?
+            #ok, está rodeado, pero alguna pieza puede salvarlo?
             if self.targetcolor_kingCheckPos not in self.saving_positions: # DRAW
                 #nadie puede salvarlo tampoco
                 self.stalemate == True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
