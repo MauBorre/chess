@@ -758,9 +758,9 @@ class Match(Scene):
 
     '''
 
-    def get_piece_standpoint(self,color:str,piece:str) -> list[int]:
+    def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''Argumentar pieza exactamente igual que en pieces.origins'''
-        act_posLIST: list[int] #grupo de piezas
+        act_posLIST: list[int]
         if color == 'Black':
             for k,v in self.black_positions.items():
                 if v == piece:
