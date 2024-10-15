@@ -225,21 +225,25 @@ class Match(Scene):
         self.targetcolor_kingAllPositions: list[int] = self.blackKing_allPositions # default
 
     def make_targets(self):
-        pawn_standpoints: list[int] = self.get_pawns_standpoint(self.turn_attacker)
+        pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
         for _pawn in pawn_standpoints:
             self.pawn_targets(_pawn)
-        tower_standpoints: list[int] = self.get_towers_standpoint(self.turn_attacker)
+
+        tower_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Torre")
         for _tower in tower_standpoints:
             self.tower_targets(_tower)
-        bishop_standpoints: list[int] = self.get_bishops_standpoint(self.turn_attacker)
+
+        bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Alfil")
         for _bishop in bishop_standpoints:
             self.bishop_targets(_bishop)
-        queen_standpoint: int = self.get_queen_standpoint(self.turn_attacker)
-        self.queen_targets(queen_standpoint)
-        horse_standpoints: list[int] = self.get_horses_standpoint(self.turn_attacker)
+
+        horse_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Caballo")
         for _horse in horse_standpoints:
             self.horse_targets(_horse)
 
+        queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker,piece="Reina").pop()
+        self.queen_targets(queen_standpoint)
+        
     def update_target_king(self): #debe ser llamado DESPUES DE QUE SE MOVIÓ ALGO 
         #nuevas all_positions
         self.targetcolor_kingAllPositions = self.get_king_movements(self.turn_target)
@@ -709,8 +713,8 @@ class Match(Scene):
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
             self.update_target_king() # renovación de posiciones-rey y sus nuevos checks
             self.update_invalid_movements() # renovación de movimientos-inválidos
-            self.decide_check() # <- evaluación de posiciones incl. movimientos-inválidos
-            
+            self.decide_check() # <- evaluación de posiciones incl. movimientos-inválidos | modifica self.turnTarget_checkState
+
             if self.turnTarget_checkState == 'jaque':
                 #alertar al jugador -los movimientos inválidos ya fueron computados-
                 if self.turn_target == 'Black': ...
@@ -759,86 +763,25 @@ class Match(Scene):
 
     '''
 
-    def get_king_standpoint(self,color:str) -> int:
-        '''Devuelve la posición actual del rey'''
-        act_pos: int #pieza unitaria
+    def get_piece_standpoint(self,color:str,piece:str) -> list[int]:
+        '''Argumentar pieza exactamente igual que en pieces.origins'''
+        act_posLIST: list[int] #grupo de piezas
         if color == 'Black':
             for k,v in self.black_positions.items():
-                if v == 'Rey':
-                    act_pos = k
+                if v == piece:
+                    act_posLIST.append(k)
         if color == 'White':
             for k,v in self.white_positions.items():
-                if v == 'Rey':
-                    act_pos = k
-        return act_pos
+                if v == piece:
+                    act_posLIST.append(k)
+        return act_posLIST
     
     def get_king_movements(self, target_color:str) -> list[int]:
         '''Extrayendo sólo posiciones de movimiento del rey target desde
         king_targets().'''
-        _current_king_pos: int = self.get_king_standpoint(target_color)
+        _current_king_pos: int = self.get_piece_standpoint(color=target_color,piece="Rey").pop()
         move_positions, _ = self.king_targets(_current_king_pos) #descartamos el retorno de on_target_kill_positions
         return list(move_positions.keys()) #king_targets() ya consideró bloqueos.
-    
-    def get_horses_standpoint(self,color:str) -> list[int]: 
-        act_posLIST: list[int] #grupo de piezas
-        if color == 'Black':
-            for k,v in self.black_positions.items():
-                if v == 'Caballo':
-                    act_posLIST.append(k)
-        if color == 'White':
-            for k,v in self.white_positions.items():
-                if v == 'Caballo':
-                    act_posLIST.append(k)
-        return act_posLIST
-
-    def get_bishops_standpoint(self,color:str) -> list[int]: 
-        act_posLIST: list[int] #grupo de piezas
-        if color == 'Black':
-            for k,v in self.black_positions.items():
-                if v == 'Alfil':
-                    act_posLIST.append(k)
-        if color == 'White':
-            for k,v in self.white_positions.items():
-                if v == 'Alfil':
-                    act_posLIST.append(k)
-        return act_posLIST
-
-    def get_towers_standpoint(self,color:str) -> list[int]:
-        act_posLIST: list[int] #grupo de piezas
-        if color == 'Black':
-            for k,v in self.black_positions.items():
-                if v == 'Torre':
-                    act_posLIST.append(k)
-        if color == 'White':
-            for k,v in self.white_positions.items():
-                if v == 'Torre':
-                    act_posLIST.append(k)
-        return act_posLIST
-
-    def get_queen_standpoint(self,color:str) -> list[int]: 
-        act_pos: int #pieza unitaria
-        if color == 'Black':
-            for k,v in self.black_positions.items():
-                if v == 'Reina':
-                    act_pos = k
-        if color == 'White':
-            for k,v in self.white_positions.items():
-                if v == 'Reina':
-                    act_pos = k
-        return act_pos
-
-    def get_pawns_standpoint(self,color:str) -> list[int]:
-        '''Devuelve posición actual de *TODOS* los pawns?'''
-        act_posLIST: list[int] #grupo de piezas
-        if color == 'Black':
-            for k,v in self.black_positions.items():
-                if v == 'Peón':
-                    act_posLIST.append(k)
-        if color == 'White':
-            for k,v in self.white_positions.items():
-                if v == 'Peón':
-                    act_posLIST.append(k)
-        return act_posLIST
 
     def decide_check(self):
         '''
