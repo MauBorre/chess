@@ -194,9 +194,11 @@ class Match(Scene):
         # --------   HACIENDO UPDATE_VALID_MOVEMENTS() PARA ESTO v v v   ----------
         # Debo revisar estas posiciones al intentar un movimiento.
         # Estos conjuntos son actualizados luego de mover una pieza (si corresponde).
-        '''Unificar estas dos en un turnTarget_validPositions?'''
-        self.white_valid_positions: list[int] = [] # creo que conviene que tenga estructura: dict[str, list[int]]
-        self.black_valid_positions: list[int] = [] # {piece:[] for piece in pieces.origins['negras'/'blancas']} {'peon': [2,4], 'alfil': [12,18,24], etc...}
+        '''Unificar estas dos en un turnTarget_validPositions?''' # v v FALTA MECANISMO DE ACTUALIZAR MOVIMIENTOS COMO YA TENEMOS CON EL REY!!
+        '''Es más, el actual "allpositions" del rey puede estar aquí tranquilamente, es el mismo mecanismo lógico que para todas las piezas,
+        y casualmente también estabamos evaluar hacer un colorTarget de estas mierdas también...'''
+        self.white_valid_positions: dict[str,list[int]] = {piece:[] for piece in pieces.origins['blancas']} 
+        self.black_valid_positions: dict[str,list[int]] = {piece:[] for piece in pieces.origins['negras']} # {'peon': [2,4], 'alfil': [12,18,24], etc...}
         # ------------------------------------------------------------------------------
 
         # board config
@@ -753,9 +755,9 @@ class Match(Scene):
             ser salvado por pieza aliada. Estado de empate.
         '''
         if self.get_piece_standpoint(self.turn_target,"Rey").pop() in self.targetColorKing_CHECKPOS:
-            #ok, está en jaque, pero tiene escapatoria?
+            #ok, está en jaque. ¿pero tiene escapatoria?
             if set(self.targetColorKing_ALLPOS) == self.targetColorKing_CHECKPOS:
-                #ok tampoco puede moverse, pero puede una pieza salvarlo?
+                #ok tampoco puede moverse. ¿pero puede una pieza salvarlo?
                 if self.targetColorKing_CHECKPOS not in self.saving_positions: # JAQUE-MATE
                     #está apuntado, está rodeado y no puede ser salvado
                     if self.turn_target == 'Black': 
@@ -776,9 +778,9 @@ class Match(Scene):
                     #modificar posiciones inválidas aquí o no? La lógica para invalidarlas "es por acá"...o no?
         # Ahogado | stalemate (draw)
         elif set(self.targetColorKing_ALLPOS).discard(self.get_piece_standpoint(self.turn_target,"Rey").pop()) == self.targetColorKing_CHECKPOS:
-            #ok, está rodeado, pero alguna pieza puede salvarlo?
+            #ok, está rodeado ¿pero alguna pieza puede salvarlo?
             if self.targetColorKing_CHECKPOS not in self.saving_positions: # DRAW
-                #nadie puede salvarlo tampoco
+                # nadie puede salvarlo tampoco
                 self.stalemate == True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
                 self.match_state = 'Rey ahogado - Empate'
 
