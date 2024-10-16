@@ -187,37 +187,17 @@ class Match(Scene):
         self.player_deciding_match = False
         self.killing: bool = False
 
-        # Usadas para visualizar movimientos de piezas clickeadas
-        self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {} 
+        # board feedback utilities
+        self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
+        self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {} 
 
-        '''Unificar estas dos en un turnTarget_validPositions?
-        Estas son las posiciones que debo revisar cuando-quiera-hacer-un-movimiento
-        
-        NO registraremos posiciones inválidas, solo serán deducidas y removidas de aquí.
-        Al juego no le importa realmente que NO puede hacer si solo revisa lo que PUEDE hacer.
-        
-        Descartan posiciones inválidas por bloqueo de pieza aliada, posiciones inválidas
-        por exposicion del rey y únicas posiciones para salvar al rey'''
-        self.white_valid_positions: list[int] = []
-        self.black_valid_positions: list[int] = []
-
-
-        self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {}
-
-        # Previo a un movimiento: conocer mis movimientos-inválidos
-        # Movimientos que no pueden realizarse porque exponen al rey a un kill-movement, o que --> DOS TIPOS DE INVALID
-        # no lo salvan en caso de estar el rey ya expuesto a un kill-movement. ------------------> MOV. DISTINTOS?
-        # Algunas piezas no podrán moverse en absoluto, otras podrán moverse parcialmente.
-        #
+        # --------   HACIENDO UPDATE_VALID_MOVEMENTS() PARA ESTO v v v   ----------
+        # Debo revisar estas posiciones al intentar un movimiento.
         # Estos conjuntos son actualizados luego de mover una pieza (si corresponde).
-        # Son tambien revisados en cada movimiento de pieza. -> Expone rey // No-salva rey
-        self.white_invalid_positions: dict[str, list[int]] = {piece:[] for piece in pieces.origins['blancas']} # {'peon': [2,4], 'alfil': [12,18,24], etc...}
-        self.black_invalid_positions: dict[str, list[int]] = {piece:[] for piece in pieces.origins['negras']}
-        '''No estoy aún 100% seguro si conviene registrar estas posiciones, o solo reconocerlas
-        para restringirlas de los movimientos válidos.
-        Al estar un rey en jaque, los movimientos se restringen sólo a aquellos que quiten la amenaza.
-        Jaque es apuntar directamente al rey, revisar esto en decide checks
-        '''
+        '''Unificar estas dos en un turnTarget_validPositions?'''
+        self.white_valid_positions: list[int] = [] # creo que conviene que tenga estructura: dict[str, list[int]]
+        self.black_valid_positions: list[int] = [] # {piece:[] for piece in pieces.origins['negras'/'blancas']} {'peon': [2,4], 'alfil': [12,18,24], etc...}
+        # ------------------------------------------------------------------------------
 
         # board config
         self.board_begin = pygame.Vector2(
@@ -229,6 +209,7 @@ class Match(Scene):
         self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
 
+        # Se actualizan indirectamente a través de >targetColorKing_ALLPOS< (update_target_king())
         self.blackKing_allPositions: list[int] = [bk for bk in pieces.origins['negras']['Rey']] # stndpoint (luego + movimientos)
         self.whiteKing_allPositions: list[int] = [wk for wk in pieces.origins['blancas']['Rey']] # stndpoint (luego + movimientos)
         self.blackKing_checkPositions: set[int] = {} #set que si iguala a blackKing_allPositions es JAQUE MATE
@@ -265,9 +246,9 @@ class Match(Scene):
         self.queen_targets(queen_standpoint)
         
     def update_target_king(self): #debe ser llamado DESPUES DE QUE SE MOVIÓ ALGO 
-        #nuevas all_positions
+        # actualizando nuevas all_positions
         self.targetColorKing_ALLPOS = self.get_king_movements(self.turn_target)
-        #actualizando nuevas check positions
+        # actualizando nuevas targetColorKing_CHECKPOS
         self.make_targets()
 
     def reset_board(self):
@@ -280,12 +261,6 @@ class Match(Scene):
         self.white_positions = pieces.white_positions
         self.blackKing_checkPositions = []
         self.whiteKing_checkpositions = []
-
-        # Creo que no conviene guardar invalid_positions, sino valid_positions (y que las invalid sean solo descartes)
-        self.white_invalid_positions = {piece:[] for piece in pieces.origins['blancas']}
-        self.black_invalid_positions = {piece:[] for piece in pieces.origins['negras']}
-        # --------------------------
-
         self.targetColorKing_CHECKPOS = self.whiteKing_checkpositions
         self.turn_attacker = 'White'
         self.winner = False
@@ -721,7 +696,7 @@ class Match(Scene):
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
             self.decide_check() # <- evaluación de posiciones | modifica self.turnTarget_checkState
             self.update_target_king() # renovación de posiciones-rey y sus nuevos checks
-            self.update_valid_movements() # renovación de movimientos-inválidos
+            self.update_valid_movements() # renovación de movimientos válidos (excepto rey)
 
             self.turn_swap()
             self.pieceValidMovement_posDisplay.clear()
@@ -734,32 +709,6 @@ class Match(Scene):
                 pygame.draw.rect(self.screen,'GREEN',valid_mov_RECT,width=2)
         for valid_kill_RECT in self.pieceValidKill_posDisplay.values():
             pygame.draw.rect(self.screen,'RED',valid_kill_RECT,width=2)
-
-    '''targetKing_allPositions necesita actualización continua, la cual
-    se accionará/revisará-si-corresponde luego de realizar un movimiento
-    
-    qué cosas cambian?
-
-    _allPositions puede cambiar si el rey se mueve, o si una casilla
-    aledaña se desocupa.
-
-    si _allPositions cambia, es probable que _checkPositions también lo haga,
-    pero cuándo lo sabremos/evaluaremos?
-        Esto está relacionado con movimientos-inválidos.
-
-    Previo a un movimiento: conocer mis movimientos-inválidos
-    Luego de un movimiento: actualizar _allPositions
-                            actualizar contraste _checkPositions
-                                decidir cosas...
-        
-    Para checkear y re-checkear esto debemos llamar a los _targets() "al aire",
-    sin capturar su retorno, las cuales internamente imprimirán los valores 
-    targetPositions -EN LA NUEVA Y ACTUALIZADA _ALLPOSITIONS.
-
-    Debemos usar get_king_movements, es precisamente la actualización
-    de _allPositions
-
-    '''
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''Argumentar pieza exactamente igual que en pieces.origins
@@ -827,13 +776,7 @@ class Match(Scene):
     def update_valid_movements(self):
         '''
         Resuelve *quién* y *cómo* puede moverse.
-
-        !!!!!!!!!!!!!!!!!!! ESTO PUEDE CAMBIAR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        Los movimientos denegados deducidos serán registrados en los correspondientes
-        diccionarios *de color* sin contar al rey que tiene el suyo:
-        >>self.white_invalid_positions = {'peon': [2,4], 'alfil': [12,18,24]}
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        A
+        
         Los movimientos denegados deducidos serán removidos de los diccionarios de posiciones
         válidas(legales)
 
@@ -866,6 +809,14 @@ class Match(Scene):
         los movimientos contra estos diccionarios de unicos-movimientos-validos
         
         '''
+        # -> Expone rey // No-salva rey
+        # Al estar un rey en jaque, los movimientos se restringen sólo a aquellos que quiten la amenaza.
+        # Movimientos que no pueden realizarse porque exponen al rey a un kill-movement, o que --> DOS TIPOS DE INVALID
+        # no lo salvan en caso de estar el rey ya expuesto a un kill-movement. ------------------> MOV. DISTINTOS?
+        # Algunas piezas no podrán moverse en absoluto, otras podrán moverse parcialmente.
+        #if ... update ...
+        #get targets?
+        #get standpoints?
         ...
 
     def render(self):
