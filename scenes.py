@@ -711,8 +711,8 @@ class Match(Scene):
             pygame.draw.rect(self.screen,'RED',valid_kill_RECT,width=2)
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
-        '''Argumentar pieza exactamente igual que en pieces.origins
-        utilizar .pop() en piezas singulares como Rey y Reina'''
+        '''> Argumentar pieza exactamente igual que en pieces.origins
+        > Utilizar .pop() en piezas singulares como Rey y Reina'''
         _actual_standpoints: list[int] = []
         if color == 'Black':
             for k,v in self.black_positions.items():
@@ -731,8 +731,17 @@ class Match(Scene):
 
     def decide_check(self):
         '''
-        Evaluar posiciones _allPositions, _checkPositions e invalid-movements
-        para resolver estados jaque/jaque-mate.
+        Evaluar posiciones _allPositions, _checkPositions para resolver estados
+        jaque/jaque-mate.
+
+        Estoy pensando que quizás aqui mismo debería restringir movimientos inválidos,
+        porque el camino lógico a deducir qué y por qué no puedo mover esta aquí.
+
+        Es decir, en el momento en q registro un jaque, se qué unicos movimientos
+        puedo hacer, o eso debería deducir.
+
+        De todas formas siento que es mejor delegar esta acción de manipular posiciones
+        a otra función porque es profunda en sí, o al menos eso parece.
         
         JAQUE > El rey es apuntado directamente, PUEDE escapar moviendose o siendo
             salvado por pieza aliada (matando o bloqueando amenaza) <- Square types?
@@ -775,48 +784,35 @@ class Match(Scene):
 
     def update_valid_movements(self):
         '''
-        Resuelve *quién* y *cómo* puede moverse.
+        Resuelve *quién* y *cómo* puede moverse. Pero es llamada porque ya sabemos *por qué*?
         
         Los movimientos denegados deducidos serán removidos de los diccionarios de posiciones
         válidas(legales)
 
-        Creo que no todos los movimientos invalidos corresponden, teóricamente, a la misma categoría,
-        pero debemos definir si se evaluan en el mismo lugar y al mismo tiempo.
+        Parece que los movimientos invalidos no corresponden a la misma categoría.
+
         > INVALID_MOV_T1: Tu rey (rey de self.turnColor) esta en jaque, solo podrás moverte si eso quita
-            su estado de jaque.
-            Requiere que primero evaluemos el jaque. -> POST-JAQUE_INVALID
-        > INVALID_MOV_T2: Tu rey no esta en jaque, pero *el movimiento que querés hacer* lo deja en jaque. 
-            No requiere evaluar previamente el jaque? Pero y si lo sabemos de antemano y ya? -> PRE-JAQUE_INVALID
+            su estado de jaque (MATANDO o BLOQUEANDO amenaza).
+            !! Requiere que primero evaluemos el jaque. -> ACTUAL-JAQUE__INVALID !!
+
+        > INVALID_MOV_T2: Tu rey no está en jaque, pero *el movimiento que querés hacer* lo deja en jaque. 
+            Requiere evaluar el jaque *A FUTURO* -saberlo de antemano- FUTURE-JAQUE__INVALID
 
         Ayuda aliada: un aliado puede interceptar/matar la amenaza
-                    > Cómo saber si un movimiento corta una amenaza?
-                        SI *este movimiento* elimina kill-movement crítico al rey...
+        ¿TURNCOLOR_SAVING_POSITIONS?
 
-                    > Cómo saber si nuestro movimiento dejaría atrás una amenaza(a nuestro rey)?
-                        SI *este movimiento* deja atrás un kill-movement DIRECTO al rey...
-                        ^^^ esta evaluación "corresponde" a decide_check(), pero es EVALUADA
-                            cada vez que querramos mover una pieza.
-                    
-                    Hay dos tipos de movimientos inválidos? O es todo parte de lo mismo?
-                    Un tipo de "movimiento inválido" es -> sólo podes salvar a tu rey
-                    Otro tipo de "movimiento inválido" es -> ese mov. expone a tu rey
-                    Pero se evalúan de igual forma y al mismo tiempo? se agrupan en el mismo dict?
+        ACTUAL-JAQUE__INVALID -> No salva rey
+            > Cómo saber si un movimiento mata una amenaza?
+            > Cómo saber si un movimiento bloquea una amenaza?
         
-        Debemos volver a usar las funciones "_targets()" para registrar las posiciones
-        en un dict por color,
-        y luego esos dicts "globales" serán "pulidos" para sacarles las posiciones que 
-        no pueden hacerse, y al querer mover una pieza, debemos contrastar TODOS
-        los movimientos contra estos diccionarios de unicos-movimientos-validos
+        FUTURE-JAQUE__INVALID -> Expone rey
+            > Cómo saber si nuestro movimiento dejaría atrás una amenaza DIRECTA a nuestro rey?
         
         '''
-        # -> Expone rey // No-salva rey
-        # Al estar un rey en jaque, los movimientos se restringen sólo a aquellos que quiten la amenaza.
-        # Movimientos que no pueden realizarse porque exponen al rey a un kill-movement, o que --> DOS TIPOS DE INVALID
-        # no lo salvan en caso de estar el rey ya expuesto a un kill-movement. ------------------> MOV. DISTINTOS?
         # Algunas piezas no podrán moverse en absoluto, otras podrán moverse parcialmente.
-        #if ... update ...
-        #get targets?
-        #get standpoints?
+
+        # DONDE está nuestro rey en jaque?.
+        # QUIÉN lo jaquea - bloquear depende de como "apunte" la pieza amenazante
         ...
 
     def render(self):
