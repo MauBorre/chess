@@ -201,7 +201,7 @@ class Match(Scene):
         self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
         self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {} 
 
-        # --------   HACIENDO UPDATE_VALID_MOVEMENTS() PARA ESTO v v v   ----------
+        
         # Debo revisar estas posiciones al intentar un movimiento.
         # Estos conjuntos son actualizados luego de mover una pieza (si corresponde).
         '''Unificar estas dos en un turnTarget_validPositions? 
@@ -215,7 +215,7 @@ class Match(Scene):
         # {'peon': [2,4], 'alfil': [12,18,24], etc...}
         # ------------------------------------------------------------------------------
 
-        # Se actualizan indirectamente a través de >targetColorKing_ALLPOS< (update_target_king())
+        # Se actualizan indirectamente a través de >targetColorKing_ALLPOS< (make_turn_Targets())
         '''Debo inicializarlas como corresponde, con el mismo mecanismo que será usado en el juego.
         De todas formas creo que allPositions se va y es trasladado a color_valid_positions, ya que el juego
         necesita (y aún no estoy haciendo) un registro "global" de posiciones/movimientos-legales actuales(turno)
@@ -230,14 +230,18 @@ class Match(Scene):
         
         # turn lookups
         '''Estas variables serán actualizadas por:
-        update_target_king() y make_targets()'''
+        make_turn_targets()'''
         self.turnTarget_checkState = None
         self.targetColorKing_CHECKPOS: set[int] = self.blackKing_checkPositions # default
         self.targetColorKing_ALLPOS: list[int] = self.blackKing_allPositions # default
         #self.targetColor_legalMovements: list[int] = ...
 
-    def make_targets(self):
+    def make_turn_targets(self):
         '''Internamente, todas las funciones _targets() modifican targetColorking_CHECKPOS'''
+        
+        # King merece trato especial o no?
+        self.targetColorKing_ALLPOS = self.get_king_movements(self.turn_target)
+
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
         for _pawn in pawn_standpoints:
             self.pawn_targets(_pawn)
@@ -256,12 +260,6 @@ class Match(Scene):
 
         queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker,piece="Reina").pop()
         self.queen_targets(queen_standpoint)
-        
-    def update_target_king(self): #debe ser llamado DESPUES DE QUE SE MOVIÓ ALGO 
-        # actualizando nuevas all_positions
-        self.targetColorKing_ALLPOS = self.get_king_movements(self.turn_target)
-        # actualizando nuevas targetColorKing_CHECKPOS
-        self.make_targets()
 
     def reset_board(self):
         self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['negras']['Peón']]
@@ -483,9 +481,34 @@ class Match(Scene):
                         break
                 if 0 <= movement <= 63:
                     
+                    '''
+                    > INVALID_MOV_T1: Tu rey (rey de self.turnColor) esta en jaque, solo podrás moverte si eso quita
+                        su estado de jaque (MATANDO o BLOQUEANDO amenaza).
+                        !! Requiere que primero evaluemos el jaque. -> ACTUAL-JAQUE__INVALID !!
+
+                    > INVALID_MOV_T2: Tu rey no está en jaque, pero *el movimiento que querés hacer* lo deja en jaque. 
+                        Requiere evaluar el jaque *A FUTURO* -saberlo de antemano- FUTURE-JAQUE__INVALID
+
+                    Ayuda aliada: un aliado puede interceptar/matar la amenaza
+                    ¿TURNCOLOR_SAVING_POSITIONS?
+                        V contra V
+                    ¿TURNCOLOR_THREAT_POSITIONS?
+
+                    ACTUAL-JAQUE__INVALID -> No salva rey
+                        > Cómo saber si un movimiento mata una amenaza?
+                        > Cómo saber si un movimiento bloquea una amenaza?
+                    
+                    FUTURE-JAQUE__INVALID -> Expone rey
+                        > Cómo saber si nuestro movimiento dejaría atrás una amenaza DIRECTA a nuestro rey?
+                    
+                    '''
+
                     # King checks ------------------------------------
                     if movement in self.targetColorKing_ALLPOS:
                         self.targetColorKing_CHECKPOS.add(movement)
+                        #appendearme como pieza amenazante(directa o indirecta?)
+                        #indirecta: no soy válido en save_positions
+                        #directa: soy válido para save_positions(eliminandome o intercediendo)
                     # ------------------------------------------------
 
                     # Saving positions -------------------------------
@@ -727,9 +750,17 @@ class Match(Scene):
                 self.white_positions.update({self.move_here:_piece})
 
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
-            self.update_target_king() # renovación de posiciones-rey y sus nuevos checks
-            self.decide_check() # <- evaluación de posiciones
-            self.update_valid_movements() # renovación de movimientos válidos (excepto rey)
+            '''Esto será modificado. el registro de posiciones save, posiciones 
+            amenazantes, etc, será dictado en las funciones "_targets()", las cuales
+            registraran en la clase "que está pasando"
+            De esta forma, luego de hacer un movimiento debo re-interpretar todos estos
+            targets, y luego decidir estado de juego(jaque/jaque-mate).
+            Tengo que tener mucho cuidado con las perspectivas de TURNO.
+            '''
+            # Actualizar registros de posiciones, movimientos legales, posiciones save, posiciones threat
+            self.make_turn_targets() 
+            # Evaluación de posiciones, movimientos legales, posiciones save, posiciones threat
+            self.decide_check()
 
             self.turn_swap()
             self.pieceValidMovement_posDisplay.clear()
@@ -814,39 +845,6 @@ class Match(Scene):
                 # nadie puede salvarlo tampoco
                 self.stalemate == True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
                 self.match_state = 'Rey ahogado - Empate'
-
-    def update_valid_movements(self):
-        '''
-        Resuelve *quién* y *cómo* puede moverse. Pero es llamada porque ya sabemos *por qué*?
-        
-        Los movimientos denegados deducidos serán removidos de los diccionarios de posiciones
-        válidas(legales)
-
-        Parece que los movimientos invalidos no corresponden a la misma categoría.
-
-        > INVALID_MOV_T1: Tu rey (rey de self.turnColor) esta en jaque, solo podrás moverte si eso quita
-            su estado de jaque (MATANDO o BLOQUEANDO amenaza).
-            !! Requiere que primero evaluemos el jaque. -> ACTUAL-JAQUE__INVALID !!
-
-        > INVALID_MOV_T2: Tu rey no está en jaque, pero *el movimiento que querés hacer* lo deja en jaque. 
-            Requiere evaluar el jaque *A FUTURO* -saberlo de antemano- FUTURE-JAQUE__INVALID
-
-        Ayuda aliada: un aliado puede interceptar/matar la amenaza
-        ¿TURNCOLOR_SAVING_POSITIONS?
-
-        ACTUAL-JAQUE__INVALID -> No salva rey
-            > Cómo saber si un movimiento mata una amenaza?
-            > Cómo saber si un movimiento bloquea una amenaza?
-        
-        FUTURE-JAQUE__INVALID -> Expone rey
-            > Cómo saber si nuestro movimiento dejaría atrás una amenaza DIRECTA a nuestro rey?
-        
-        '''
-        # Algunas piezas no podrán moverse en absoluto, otras podrán moverse parcialmente.
-
-        # DONDE está nuestro rey en jaque?.
-        # QUIÉN lo jaquea - bloquear depende de como "apunte" la pieza amenazante
-        ...
 
     def render(self):
         #hud
