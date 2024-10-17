@@ -187,6 +187,16 @@ class Match(Scene):
         self.player_deciding_match = False
         self.killing: bool = False
 
+        # board config
+        self.board_begin = pygame.Vector2(
+            (self.midScreen_pos.x - board.width/2,
+            self.midScreen_pos.y - board.height/2))
+        self.boardRects: list[pygame.Rect] = board.make_rects(self.board_begin)
+        
+        # board set defaults
+        self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
+        self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
+
         # board feedback utilities
         self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
         self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {} 
@@ -198,24 +208,18 @@ class Match(Scene):
         Es más, el actual "allpositions" del rey puede estar aquí tranquilamente, es el mismo mecanismo
         para todas las piezas, y casualmente también estabamos evaluando hacer un colorTarget de estas
         mierdas también...'''
-        self.white_valid_positions: dict[str,list[int]] = {piece:[] for piece in pieces.origins['blancas']} 
-        self.black_valid_positions: dict[str,list[int]] = {piece:[] for piece in pieces.origins['negras']} 
+        self.white_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['blancas']} 
+        self.black_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['negras']} 
         # ^ ^ ^ FALTA MECANISMO DE ACTUALIZAR MOVIMIENTOS COMO YA TENEMOS CON EL REY!!
         # ^ ^ El cual es pedir standpoint y luego "get_king_movements()"
         # {'peon': [2,4], 'alfil': [12,18,24], etc...}
         # ------------------------------------------------------------------------------
 
-        # board config
-        self.board_begin = pygame.Vector2(
-            (self.midScreen_pos.x - board.width/2,
-            self.midScreen_pos.y - board.height/2))
-        self.boardRects: list[pygame.Rect] = board.make_rects(self.board_begin)
-        
-        # board set defaults
-        self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
-        self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
-
         # Se actualizan indirectamente a través de >targetColorKing_ALLPOS< (update_target_king())
+        '''Debo inicializarlas como corresponde, con el mismo mecanismo que será usado en el juego.
+        De todas formas creo que allPositions se va y es trasladado a color_valid_positions, ya que el juego
+        necesita (y aún no estoy haciendo) un registro "global" de posiciones/movimientos-legales actuales(turno)
+        '''
         self.blackKing_allPositions: list[int] = [bk for bk in pieces.origins['negras']['Rey']] # stndpoint (luego + movimientos)
         self.whiteKing_allPositions: list[int] = [wk for wk in pieces.origins['blancas']['Rey']] # stndpoint (luego + movimientos)
         self.blackKing_checkPositions: set[int] = {} #set que si iguala a blackKing_allPositions es JAQUE MATE
@@ -230,8 +234,10 @@ class Match(Scene):
         self.turnTarget_checkState = None
         self.targetColorKing_CHECKPOS: set[int] = self.blackKing_checkPositions # default
         self.targetColorKing_ALLPOS: list[int] = self.blackKing_allPositions # default
+        #self.targetColor_legalMovements: list[int] = ...
 
     def make_targets(self):
+        '''Internamente, todas las funciones _targets() modifican targetColorking_CHECKPOS'''
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
         for _pawn in pawn_standpoints:
             self.pawn_targets(_pawn)
@@ -476,10 +482,27 @@ class Match(Scene):
                     if movement not in row_of_(piece_standpoint+SUR*mult):
                         break
                 if 0 <= movement <= 63:
+                    
+                    # King checks ------------------------------------
                     if movement in self.targetColorKing_ALLPOS:
                         self.targetColorKing_CHECKPOS.add(movement)
+                    # ------------------------------------------------
+
+                    # Saving positions -------------------------------
+                    '''El movimiento *bloquea* un ataque? *elimina* una amenaza?'''
+                    #if movement in threat_path... or movement in killer[0]
+                    # ------------------------------------------------
+
+                    # Exposing positions -----------------------------
+                    '''El movimiento *expone* a nuestro rey a un ataque?'''
+                    #if movement in movements_that_expose_king(): ...
+                    # ------------------------------------------------
+
+                    # Un tipo de movimiento ilegal?
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
+
+
                     else:
                         if self.turn_target == 'White':
                             if movement in self.white_positions:
@@ -561,8 +584,12 @@ class Match(Scene):
                     if movement not in row_of_(piece_standpoint+SUR*mult):
                         break
                 if 0 <= movement <= 63:
+
+                    # King check -----------------------------------
                     if movement in self.targetColorKing_ALLPOS:
                         self.targetColorKing_CHECKPOS.add(movement)
+                    # ----------------------------------------------
+
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]}) 
                     else:
@@ -700,8 +727,8 @@ class Match(Scene):
                 self.white_positions.update({self.move_here:_piece})
 
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
-            self.decide_check() # <- evaluación de posiciones | modifica self.turnTarget_checkState
             self.update_target_king() # renovación de posiciones-rey y sus nuevos checks
+            self.decide_check() # <- evaluación de posiciones
             self.update_valid_movements() # renovación de movimientos válidos (excepto rey)
 
             self.turn_swap()
