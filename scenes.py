@@ -237,16 +237,28 @@ class Match(Scene):
         #self.targetColor_legalMovements: list[int] = ...
 
     def make_turn_targets(self):
-        '''Internamente, todas las funciones _targets() modifican:
-        targetColorking_CHECKPOS
-        legal-movements,
-        saving-movements,
-        threat-movements
-        para completar el registro buscado (en pos de determinar jaque/jaque-mate)'''
+        '''Levanta todos los standpoints y llama a las correspondientes
+        funciones "_targets()".
+
+        Las "_targets()" modifican las sig. class variables:
+        >> targetColorking_CHECKPOS <- posiciones q rodean al rey q estan en kill-movement
+        >> legal-movements <- los movimientos del rey pueden entrar aquí tranquilamente
+                               las funciones _target buscan resolver (para registrar y visualizar)
+                               actualmente estos movimientos.
+        >> saving-movements <- target o attacker? saving a sí mismo
+        >> threat-movements <- target o attacker? threat de turn contra target
+
+        Cuando yo llamo a "_targets()" decidiré dentro de ellas que posiciones
+        registro del turn_attacker y del turn_target <- esto no está bien si
+                                                        necesito un riguroso control
+                                                        sobre attacker/target
         
-        # King merece trato especial o no?
+        Aquí adentro: >TARGET = rey || >ATTACKER = pieces'''
+        
+        # King merece trato especial o no? AQUI KING ES TARGET
         self.targetColorKing_ALLPOS = self.get_king_movements(self.turn_target)
 
+        # Piezas atacando
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
         for _pawn in pawn_standpoints:
             self.pawn_targets(_pawn)
