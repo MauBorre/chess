@@ -236,7 +236,7 @@ class Match(Scene):
         self.targetColorKing_ALLPOS: list[int] = self.blackKing_allPositions # default
         #self.targetColor_legalMovements: list[int] = ...
 
-    def make_turn_targets(self):
+    def make_turn_targets(self): # >TARGET = rey || >ATTACKER = pieces
         '''Levanta todos los standpoints y llama a las correspondientes
         funciones "_targets()".
 
@@ -253,8 +253,12 @@ class Match(Scene):
                                                         sobre attacker/target
         
         actualmente cuando llamo a "_targets()" solo tengo en cuenta apuntar a self.target
-        
-        Aquí adentro: >TARGET = rey || >ATTACKER = pieces'''
+
+        Para cocinar los movimientos, es verdad que necesito solo un standpoint, pero
+        al crear targets, parece que debería poder decidir mejor si enfoco a attacker o a target.
+        Puede que eso sea solo agregar mas if's dentro de estas funciones y no tener que modificar
+        argumentos.
+        '''
         
         # King merece trato especial o no? AQUI KING ES TARGET
         self.targetColorKing_ALLPOS = self.get_king_movements(self.turn_target)
@@ -807,7 +811,7 @@ class Match(Scene):
                     _actual_standpoints.append(k)
         return _actual_standpoints
     
-    def get_king_movements(self, target_color:str) -> list[int]:
+    def get_king_movements(self, target_color:str) -> list[int]: # searching turn target king
         _current_king_pos: int = self.get_piece_standpoint(color=target_color,piece="Rey").pop()
         move_positions, _ = self.king_targets(_current_king_pos) #descartamos el retorno de on_target_kill_positions
         return list(move_positions.keys()) #king_targets() ya consideró bloqueos.
