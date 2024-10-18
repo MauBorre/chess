@@ -242,16 +242,17 @@ class Match(Scene):
 
         Las "_targets()" modifican las sig. class variables:
         >> targetColorking_CHECKPOS <- posiciones q rodean al rey q estan en kill-movement
-        >> legal-movements <- los movimientos del rey pueden entrar aquí tranquilamente
-                               las funciones _target buscan resolver (para registrar y visualizar)
-                               actualmente estos movimientos.
-        >> saving-movements <- target o attacker? saving a sí mismo
-        >> threat-movements <- target o attacker? threat de turn contra target
+        >> legal-movements <- movimientos posibles del turno para *ambos jugadores*? o target o attacker?
+                              incluye KILL-MOVEMENTS por lo que deberíamos recopilar ambos?
+        >> saving-movements <- target salvando a su propio rey
+        >> threat-movements <- threat de turn contra target
 
         Cuando yo llamo a "_targets()" decidiré dentro de ellas que posiciones
         registro del turn_attacker y del turn_target <- esto no está bien si
                                                         necesito un riguroso control
                                                         sobre attacker/target
+        
+        actualmente cuando llamo a "_targets()" solo tengo en cuenta apuntar a self.target
         
         Aquí adentro: >TARGET = rey || >ATTACKER = pieces'''
         
@@ -538,11 +539,11 @@ class Match(Scene):
                     #if movement in movements_that_expose_king(): ...
                     # ------------------------------------------------
 
-                    # Un tipo de movimiento ilegal?
+                    # Libre de movimientos ilegales:
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
 
-
+                    # kill-movements fijadas al target del turno, puede que convenga crear -todas-
                     else:
                         if self.turn_target == 'White':
                             if movement in self.white_positions:
@@ -553,6 +554,7 @@ class Match(Scene):
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
                         break #previene propagación mas allá del primer bloqueo - rompe el mult
+
         return mov_target_positions, on_target_kill_positions
 
     def king_targets(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
