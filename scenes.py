@@ -204,58 +204,76 @@ class Match(Scene):
         # Turn lookups ---------------------------------------------------
         self.turn_attacker: str = 'White'
         self.turn_target: str = 'Black'
-        '''Debemos tener registros individuales de los siguientes tipos
-        de posiciones/movimientos:
-        Válidos
-        Saving king
-        Threating king
-        Check positions
-        Que serán "unificadas" respectivamente en cada turno en registros
-        turn_target y turn_attacker
+        '''Debemos tener registros (individuales por color y luego acoplados en target/attacker)
+        de los siguientes tipos de posiciones/movimientos:
+
+        >> Válidos
+            Movimientos que pueden hacerse porque: No hay bloqueos, no exponen a mi rey, salvan
+            al rey si está en jaque.
+
+        >> Saving king
+            Únicos movimientos posibles si el rey está en jaque, pueden significar MATAR AMENAZA o
+            BLOQUEAR AMENAZA.
+
+        >> Threating king
+            Movimientos *propios* que amenazan al rey *target* (o sus movimientos legales).
+
+        >> Check positions
+            Casilleros de *nuestro* rey bajo kill-movement del *otro* equipo
+        
+        El formato mas sensato parece ser {'peon': [2,4], 'alfil': [12,18,24], etc...} en la
+        mayoría de casos.
 
         Todas estas variables se actualizarán en las funciones objectives() (individuales y "all")
         
         Debo revisar estas posiciones al intentar un movimiento.
         Estos conjuntos son actualizados luego de mover una pieza (si corresponde).
 
-        Debo inicializarlas como corresponde, con el mismo mecanismo que será usado en el juego.
+        Debo inicializarlas con el mismo mecanismo que será usado en el juego.
         '''
         
-        '''
-        El actual "allpositions" del rey puede estar aquí tranquilamente, es el mismo mecanismo
-        para todas las piezas'''
-        
-        # {'peon': [2,4], 'alfil': [12,18,24], etc...}
-        self.white_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['blancas']} # missing init call
+        # Black 
         self.black_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['negras']} # missing init call
 
         '''
-        Creo que king_allPositions se va y es trasladado a color_legalMovements, ya que necesitamos un registro 
-        "global" de posiciones/movimientos-legales actuales(turno)
+        kingLegalMovements debe ser trasladado a color_legalMovements, ya que es el mismo mecanismo que
+        para todas las piezas
         '''
-        self.blackKing_allPositions: list[int] = [bk for bk in pieces.origins['negras']['Rey']] # missing init call
-        self.whiteKing_allPositions: list[int] = [wk for wk in pieces.origins['blancas']['Rey']] # missing init call
-        self.blackKing_checkPositions: set[int] = {} #set que si iguala a blackKing_allPositions es JAQUE MATE | # missing init call
-        self.whiteKing_checkpositions: set[int] = {} #set que si iguala a whiteKing_allPositions es JAQUE MATE | # missing init call
-        
-        # TURN INIT (atención restart_match()) ----------------------------------------------
-        '''Debo asignar al correspondiente TURNO las variables previamente dictadas "por equipo" '''
+        self.black_kingLegalMovements: list[int] = [bk for bk in pieces.origins['negras']['Rey']] # missing init call
+
+        self.black_savingMovements = ... # missing init call
+        self.black_threatMovements = ... # missing init call
+        self.black_kingCheckPositions: set[int] = {} #set que si iguala a blackKing_allPositions es JAQUE MATE | # missing init call
+
+        # White
+        self.white_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['blancas']} # missing init call
+
+        '''
+        kingLegalMovements debe ser trasladado a color_legalMovements, ya que es el mismo mecanismo que
+        para todas las piezas
+        '''
+        self.white_kingLegalMovements: list[int] = [wk for wk in pieces.origins['blancas']['Rey']] # missing init call
+
+        self.white_savingMovements = ... # missing init call
+        self.white_threatMovements = ... # missing init call
+        self.white_kingCheckpositions: set[int] = {} #set que si iguala a whiteKing_allPositions es JAQUE MATE | # missing init call
+
+        # TURN INIT (atención restart_match() y turn_swap() ) ----------------------------------------------
+        '''Asignar al correspondiente TURNO las variables previamente dictadas "por equipo" '''
         # Target default
-        self.targetColor_legalMovements = ...
-        self.targetColor_savingMovements = ...
-        self.targetColor_threatMovements = ...
-        self.targetColor_checkPositions = ...
+        self.targetColor_legalMovements = ... # missing init call
+        self.targetColor_savingMovements = ... # missing init call
+        self.targetColor_threatMovements = ... # missing init call
+        self.targetColor_checkPositions = ... # king's legalMovs in kill-movement square
 
-        self.targetColorKing_CHECKPOS: set[int] = self.blackKing_checkPositions # default
-        self.targetColorKing_ALLPOS: list[int] = self.blackKing_allPositions # default | se va a legalMovements
-
-        #self.targetColor_legalMovements: list[int] = ...
+        self.targetColorKing_CHECKPOS: set[int] = self.black_kingCheckPositions # default
+        self.targetColorKing_ALLPOS: list[int] = self.black_kingLegalMovements # default | se va a legalMovements
 
         # Attacker default
         self.attackerColor_legalMovements = ...
         self.attackerColor_savingMovements = ...
         self.attackerColor_threatMovements = ...
-        self.attackerColor_checkPositions = ...
+        self.attackerColor_checkPositions = ... # king's legalMovs in kill-movement square
 
     def make_turn_objectives(self): # >TARGET = rey || >ATTACKER = pieces
         '''Consigue standpoints de:
@@ -310,14 +328,14 @@ class Match(Scene):
     def reset_board(self):
         self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['negras']['Peón']]
         self.in_base_Wpawns = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
-        self.blackKing_allPositions = [bk for bk in pieces.origins['negras']['Rey']] #standpoint sin movimiento
-        self.whiteKing_allPositions = [wk for wk in pieces.origins['blancas']['Rey']] #standpoint sin movimiento
-        self.targetColorKing_ALLPOS = self.whiteKing_allPositions # default
+        self.black_kingLegalMovements = [bk for bk in pieces.origins['negras']['Rey']] #standpoint sin movimiento
+        self.white_kingLegalMovements = [wk for wk in pieces.origins['blancas']['Rey']] #standpoint sin movimiento
+        self.targetColorKing_ALLPOS = self.white_kingLegalMovements # default
         self.black_positions = pieces.black_positions
         self.white_positions = pieces.white_positions
-        self.blackKing_checkPositions = []
-        self.whiteKing_checkpositions = []
-        self.targetColorKing_CHECKPOS = self.whiteKing_checkpositions
+        self.black_kingCheckPositions = []
+        self.white_kingCheckpositions = []
+        self.targetColorKing_CHECKPOS = self.white_kingCheckpositions
         self.turn_attacker = 'White'
         self.winner = False
 
@@ -326,21 +344,21 @@ class Match(Scene):
             self.turn_attacker = 'Black'
             self.turn_target = 'White'
             #1ro transfiero targets
-            self.blackKing_allPositions = self.targetColorKing_ALLPOS
-            self.blackKing_checkPositions = self.targetColorKing_CHECKPOS
+            self.black_kingLegalMovements = self.targetColorKing_ALLPOS
+            self.black_kingCheckPositions = self.targetColorKing_CHECKPOS
             #luego intercambio targets lists
-            self.targetColorKing_CHECKPOS = self.whiteKing_checkpositions
-            self.targetColorKing_ALLPOS = self.whiteKing_allPositions
+            self.targetColorKing_CHECKPOS = self.white_kingCheckpositions
+            self.targetColorKing_ALLPOS = self.white_kingLegalMovements
             return
         if self.turn_attacker == 'Black':
             self.turn_attacker = 'White'
             self.turn_target = 'Black'
             #1ro transfiero targets
-            self.whiteKing_allPositions = self.targetColorKing_ALLPOS
-            self.whiteKing_checkpositions = self.targetColorKing_CHECKPOS
+            self.white_kingLegalMovements = self.targetColorKing_ALLPOS
+            self.white_kingCheckpositions = self.targetColorKing_CHECKPOS
             #luego intercambio targets lists
-            self.targetColorKing_CHECKPOS = self.blackKing_checkPositions
-            self.targetColorKing_ALLPOS = self.blackKing_allPositions
+            self.targetColorKing_CHECKPOS = self.black_kingCheckPositions
+            self.targetColorKing_ALLPOS = self.black_kingLegalMovements
             return
     
     def pawn_objectives(self,piece_standpoint: int) -> dict[int,pygame.Rect]:
