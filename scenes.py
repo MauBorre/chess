@@ -224,22 +224,30 @@ class Match(Scene):
         El formato mas sensato parece ser {'peon': [2,4], 'alfil': [12,18,24], etc...} en la
         mayoría de casos.
 
-        Todas estas variables se actualizarán en las funciones objectives() (individuales y "all")
+        Todas estas variables se actualizarán en las funciones objectives() (individuales y "all").
+
+        Luego de hacer un movimiento, debo re-interpretar todos estos
+        targets, y luego decidir estado de juego(jaque/jaque-mate).
+        Mucho cuidado con las perspectivas de TURNO.
         
         Debo revisar estas posiciones al intentar un movimiento.
         Estos conjuntos son actualizados luego de mover una pieza (si corresponde).
 
         Debo inicializarlas con el mismo mecanismo que será usado en el juego.
+
+        kingLegalMovements debe ser trasladado a color_legalMovements, ya que es el mismo mecanismo que
+        para todas las piezas
+
+        La particularidad que tiene este conjunto es que al momento de actualizarlo, el turno dicta que
+        es PIEZAS ATTACKER contra KING TARGET
         '''
         
         # Black 
         self.black_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['negras']} # missing init call
 
-        '''
-        kingLegalMovements debe ser trasladado a color_legalMovements, ya que es el mismo mecanismo que
-        para todas las piezas
-        '''
+        # !!!
         self.black_kingLegalMovements: list[int] = [bk for bk in pieces.origins['negras']['Rey']] # missing init call
+        # !!!
 
         self.black_savingMovements = ... # missing init call
         self.black_threatMovements = ... # missing init call
@@ -248,11 +256,9 @@ class Match(Scene):
         # White
         self.white_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['blancas']} # missing init call
 
-        '''
-        kingLegalMovements debe ser trasladado a color_legalMovements, ya que es el mismo mecanismo que
-        para todas las piezas
-        '''
+        # !!!
         self.white_kingLegalMovements: list[int] = [wk for wk in pieces.origins['blancas']['Rey']] # missing init call
+        # !!!
 
         self.white_savingMovements = ... # missing init call
         self.white_threatMovements = ... # missing init call
@@ -274,6 +280,8 @@ class Match(Scene):
         self.attackerColor_savingMovements = ...
         self.attackerColor_threatMovements = ...
         self.attackerColor_checkPositions = ... # king's legalMovs in kill-movement square
+        #
+        #make_turn_objectives()
 
     def make_turn_objectives(self): # >TARGET = rey || >ATTACKER = pieces
         '''Consigue standpoints de:
@@ -546,12 +554,22 @@ class Match(Scene):
                 if 0 <= movement <= 63:
                     
                     '''
-                    > INVALID_MOV_T1: Tu rey (rey de self.turnColor) esta en jaque, solo podrás moverte si eso quita
+                    MOVIMIENTOS DESCARTADOS:
+                    > INVALID_MOV_T1: Tu rey (persp. turn_attacker) esta en jaque, solo podrás moverte si eso quita
                         su estado de jaque (MATANDO o BLOQUEANDO amenaza).
                         !! Requiere que primero evaluemos el jaque. -> ACTUAL-JAQUE__INVALID !!
 
-                    > INVALID_MOV_T2: Tu rey no está en jaque, pero *el movimiento que querés hacer* lo deja en jaque. 
-                        Requiere evaluar el jaque *A FUTURO* -saberlo de antemano- FUTURE-JAQUE__INVALID
+                    > INVALID_MOV_T2: Tu rey (persp. turn_attacker) no está en jaque, pero *el movimiento que querés
+                        hacer* lo deja en jaque. 
+                        Requiere evaluar el jaque *A FUTURO* (saberlo de antemano) FUTURE-JAQUE__INVALID
+                    
+                    > INVALID_MOV_T3: Pieza aliada bloqueando el camino.
+
+                    MOVIMIENTOS SAVE:
+
+                    MOVIMIENTOS THREAT(amenaza a target):
+
+                    MOVIMIENTOS CHECK(amenada de target A MI):
 
                     Ayuda aliada: un aliado puede interceptar/matar la amenaza
                     ¿TURNCOLOR_SAVING_POSITIONS? > siempre salvo a "mis" piezas
@@ -816,17 +834,9 @@ class Match(Scene):
                 self.white_positions.update({self.move_here:_piece})
 
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
-            '''El registro de posiciones save, posiciones 
-            amenazantes, etc, será dictado en las funciones objectives(), las cuales
-            registraran en la clase "que está pasando"
-
-            Luego de hacer un movimiento, debo re-interpretar todos estos
-            targets, y luego decidir estado de juego(jaque/jaque-mate).
-            Mucho cuidado con las perspectivas de TURNO.
-            '''
-            # Actualizar registros de posiciones, movimientos legales, posiciones save, posiciones threat
+            # Actualizar todos los registros de posiciones (legales, save, threat, check)
             self.make_turn_objectives() 
-            # Evaluación de posiciones, movimientos legales, posiciones save, posiciones threat
+            # Evaluación de posiciones (legales, save, threat, check)
             self.decide_check() #<- El juego debe continuar? 
 
             self.turn_swap()
