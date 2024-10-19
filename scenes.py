@@ -176,10 +176,9 @@ class Match(Scene):
     def __init__(self, master):
         super().__init__(master)
 
-        # game variables
+        # judge variables
         self.match_mode: dict = self.master.game_variables
         self.move_here: int | None = None
-        
         self.winner: bool = False
         self.stalemate: bool = False # Ahogado | draw
         self.match_state: str = '' # HUD info
@@ -192,18 +191,19 @@ class Match(Scene):
             self.midScreen_pos.y - board.height/2))
         self.boardRects: list[pygame.Rect] = board.make_rects(self.board_begin)
         
-        # board set defaults
-        self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
-        self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
-
         # board feedback utilities
         self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
         self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {} 
 
-        # Turn lookups -----------------------------------------------------------------
+        # Board defaults ---------------------------------------------------
+        self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
+        self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
+        self.black_positions: dict[int,str] = pieces.black_positions
+        self.white_positions: dict[int,str] = pieces.white_positions
+
+        # Turn lookups ---------------------------------------------------
         self.turn_attacker: str = 'White'
         self.turn_target: str = 'Black'
-        # 
         '''Debemos tener registros individuales de los siguientes tipos
         de posiciones/movimientos:
         Válidos
@@ -212,42 +212,50 @@ class Match(Scene):
         Check positions
         Que serán "unificadas" respectivamente en cada turno en registros
         turn_target y turn_attacker
+
+        Todas estas variables se actualizarán en las funciones objectives() (individuales y "all")
         
         Debo revisar estas posiciones al intentar un movimiento.
         Estos conjuntos son actualizados luego de mover una pieza (si corresponde).
+
+        Debo inicializarlas como corresponde, con el mismo mecanismo que será usado en el juego.
         '''
         
         '''
         El actual "allpositions" del rey puede estar aquí tranquilamente, es el mismo mecanismo
-        para todas las piezas, y casualmente también estabamos evaluando hacer un colorTarget de estas
-        mierdas también...
+        para todas las piezas'''
         
-        FALTA MECANISMO DE ACTUALIZAR MOVIMIENTOS COMO YA TENEMOS CON EL REY'''
         # {'peon': [2,4], 'alfil': [12,18,24], etc...}
-        self.white_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['blancas']} 
-        self.black_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['negras']} 
+        self.white_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['blancas']} # missing init call
+        self.black_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['negras']} # missing init call
 
-        # Se actualizan indirectamente a través de >targetColorKing_ALLPOS< (make_turn_objectives())
-        '''Debo inicializarlas como corresponde, con el mismo mecanismo que será usado en el juego.
-        De todas formas creo que allPositions se va y es trasladado a color_valid_positions, ya que el juego
-        necesita (y aún no estoy haciendo) un registro "global" de posiciones/movimientos-legales actuales(turno)
         '''
-        self.blackKing_allPositions: list[int] = [bk for bk in pieces.origins['negras']['Rey']] # stndpoint (luego + movimientos)
-        self.whiteKing_allPositions: list[int] = [wk for wk in pieces.origins['blancas']['Rey']] # stndpoint (luego + movimientos)
-        self.blackKing_checkPositions: set[int] = {} #set que si iguala a blackKing_allPositions es JAQUE MATE
-        self.whiteKing_checkpositions: set[int] = {} #set que si iguala a whiteKing_allPositions es JAQUE MATE
+        Creo que king_allPositions se va y es trasladado a color_legalMovements, ya que necesitamos un registro 
+        "global" de posiciones/movimientos-legales actuales(turno)
+        '''
+        self.blackKing_allPositions: list[int] = [bk for bk in pieces.origins['negras']['Rey']] # missing init call
+        self.whiteKing_allPositions: list[int] = [wk for wk in pieces.origins['blancas']['Rey']] # missing init call
+        self.blackKing_checkPositions: set[int] = {} #set que si iguala a blackKing_allPositions es JAQUE MATE | # missing init call
+        self.whiteKing_checkpositions: set[int] = {} #set que si iguala a whiteKing_allPositions es JAQUE MATE | # missing init call
         
-        self.black_positions: dict[int,str] = pieces.black_positions
-        self.white_positions: dict[int,str] = pieces.white_positions
-        
-        
-        '''Estas variables serán actualizadas por:
-        make_turn_objectives()'''
-        self.turnTarget_checkState = None
+        # TURN INIT (atención restart_match()) ----------------------------------------------
+        '''Debo asignar al correspondiente TURNO las variables previamente dictadas "por equipo" '''
+        # Target default
+        self.targetColor_legalMovements = ...
+        self.targetColor_savingMovements = ...
+        self.targetColor_threatMovements = ...
+        self.targetColor_checkPositions = ...
+
         self.targetColorKing_CHECKPOS: set[int] = self.blackKing_checkPositions # default
-        self.targetColorKing_ALLPOS: list[int] = self.blackKing_allPositions # default
+        self.targetColorKing_ALLPOS: list[int] = self.blackKing_allPositions # default | se va a legalMovements
+
         #self.targetColor_legalMovements: list[int] = ...
-        #self.attackerColor_legalMovements: list[int] = ...
+
+        # Attacker default
+        self.attackerColor_legalMovements = ...
+        self.attackerColor_savingMovements = ...
+        self.attackerColor_threatMovements = ...
+        self.attackerColor_checkPositions = ...
 
     def make_turn_objectives(self): # >TARGET = rey || >ATTACKER = pieces
         '''Consigue standpoints de:
