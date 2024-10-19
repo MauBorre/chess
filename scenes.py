@@ -236,11 +236,13 @@ class Match(Scene):
         self.targetColorKing_ALLPOS: list[int] = self.blackKing_allPositions # default
         #self.targetColor_legalMovements: list[int] = ...
 
-    def make_turn_targets(self): # >TARGET = rey || >ATTACKER = pieces
-        '''Levanta todos los standpoints y llama a las correspondientes
-        funciones "_targets()".
+    def make_turn_objectives(self): # >TARGET = rey || >ATTACKER = pieces
+        '''Consigue standpoints de:
+            TURN TARGET -> Rey
+            TURN ATTACKER -> Todas las otras piezas
+        Luego llama a las correspondientes funciones objectives().
 
-        Las "_targets()" modifican las sig. class variables:
+        Las objectives() modifican las sig. class variables:
         >> targetColorking_CHECKPOS <- posiciones q rodean al rey q estan en kill-movement
         >> legal-movements <- movimientos posibles del turno para *ambos jugadores*? o target o attacker?
                               incluye KILL-MOVEMENTS por lo que deberíamos recopilar ambos?
@@ -252,7 +254,7 @@ class Match(Scene):
                                                         necesito un riguroso control
                                                         sobre attacker/target
         
-        actualmente cuando llamo a "_targets()" solo tengo en cuenta apuntar a self.target
+        actualmente cuando llamo a objectives() solo tengo en cuenta apuntar a self.target
 
         Para cocinar los movimientos, es verdad que necesito solo un standpoint, pero
         al crear targets, parece que debería poder decidir mejor si enfoco a attacker o a target.
@@ -260,28 +262,28 @@ class Match(Scene):
         argumentos.
         '''
         
-        # King merece trato especial o no? AQUI KING ES TARGET
+        # Current target afflictions
         self.targetColorKing_ALLPOS = self.get_king_movements(self.turn_target)
 
         # Piezas atacando
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
         for _pawn in pawn_standpoints:
-            self.pawn_targets(_pawn)
+            self.pawn_objectives(_pawn)
 
         tower_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Torre")
         for _tower in tower_standpoints:
-            self.tower_targets(_tower)
+            self.tower_objectives(_tower)
 
         bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Alfil")
         for _bishop in bishop_standpoints:
-            self.bishop_targets(_bishop)
+            self.bishop_objectives(_bishop)
 
         horse_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Caballo")
         for _horse in horse_standpoints:
-            self.horse_targets(_horse)
+            self.horse_objectives(_horse)
 
         queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker,piece="Reina").pop()
-        self.queen_targets(queen_standpoint)
+        self.queen_objectives(queen_standpoint)
 
     def reset_board(self):
         self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['negras']['Peón']]
@@ -319,7 +321,7 @@ class Match(Scene):
             self.targetColorKing_ALLPOS = self.blackKing_allPositions
             return
     
-    def pawn_targets(self,piece_standpoint: int) -> dict[int,pygame.Rect]:
+    def pawn_objectives(self,piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Peón:
         NORTE (white)
         SUR (black)
@@ -401,7 +403,7 @@ class Match(Scene):
 
         return mov_target_positions, on_target_kill_positions
 
-    def tower_targets(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
+    def tower_objectives(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Torre:
         +NORTE
         +SUR
@@ -437,7 +439,7 @@ class Match(Scene):
                         break #previene propagación mas allá del primer bloqueo - rompe el mult
         return mov_target_positions, on_target_kill_positions
 
-    def horse_targets(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
+    def horse_objectives(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Caballo:
         doble-norte + este
         doble-norte + oeste
@@ -481,7 +483,7 @@ class Match(Scene):
                             on_target_kill_positions.update({movement:self.boardRects[movement]})
         return mov_target_positions, on_target_kill_positions
 
-    def bishop_targets(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
+    def bishop_objectives(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Alfil:
         +NOR_OESTE
         +NOR_ESTE
@@ -512,21 +514,22 @@ class Match(Scene):
                         Requiere evaluar el jaque *A FUTURO* -saberlo de antemano- FUTURE-JAQUE__INVALID
 
                     Ayuda aliada: un aliado puede interceptar/matar la amenaza
-                    ¿TURNCOLOR_SAVING_POSITIONS?
+                    ¿TURNCOLOR_SAVING_POSITIONS? > siempre salvo a "mis" piezas
                         V contra V
-                    ¿TURNCOLOR_THREAT_POSITIONS?
+                    ¿TURNCOLOR_THREAT_POSITIONS? > siempre amenazo a "sus" piezas
 
-                    ACTUAL-JAQUE__INVALID -> No salva rey
-                        > Cómo saber si un movimiento mata una amenaza?
-                        > Cómo saber si un movimiento bloquea una amenaza?
+                    ACTUAL-JAQUE__INVALID -> Tu movimiento no salva a tu rey
+                        > Cómo saber si un movimiento mata/bloquea una amenaza?
+                        ^ - -Debemos tener un conjunto de referencias de amenazas.
+                             Esto es, las amenazas de turn_target contra mí, turn_attacker
                     
-                    FUTURE-JAQUE__INVALID -> Expone rey
+                    FUTURE-JAQUE__INVALID -> Tu movimiento expone a tu rey
                         > Cómo saber si nuestro movimiento dejaría atrás una amenaza DIRECTA a nuestro rey?
                     
                     '''
 
                     # King checks ------------------------------------
-                    if movement in self.targetColorKing_ALLPOS:
+                    if movement in self.targetColorKing_ALLPOS: # check pos del siguiente en turno
                         self.targetColorKing_CHECKPOS.add(movement)
                         #appendearme como pieza amenazante(directa o indirecta?)
                         #indirecta: no soy válido en save_positions
@@ -561,7 +564,7 @@ class Match(Scene):
 
         return mov_target_positions, on_target_kill_positions
 
-    def king_targets(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
+    def king_objectives(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Rey:
         +NORTE
         +SUR
@@ -602,7 +605,7 @@ class Match(Scene):
                     continue
         return mov_target_positions, on_target_kill_positions
 
-    def queen_targets(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
+    def queen_objectives(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
         '''Movimiento Reina:
         +NORTE
         +SUR
@@ -725,32 +728,32 @@ class Match(Scene):
                             if SQUARE_TYPE == 'Peón':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.pawn_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.pawn_objectives(board_index)
 
                             if SQUARE_TYPE == 'Torre':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.tower_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.tower_objectives(board_index)
                             
                             if SQUARE_TYPE == 'Caballo':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.horse_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.horse_objectives(board_index)
                         
                             if SQUARE_TYPE == 'Alfil':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.bishop_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.bishop_objectives(board_index)
 
                             if SQUARE_TYPE == 'Rey':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.king_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.king_objectives(board_index)
 
                             if SQUARE_TYPE == 'Reina':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.queen_targets(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.queen_objectives(board_index)
                                 
                             if SQUARE_TYPE == "EMPTY":
                                 self.pieceValidMovement_posDisplay.clear()
@@ -773,17 +776,18 @@ class Match(Scene):
                 self.white_positions.update({self.move_here:_piece})
 
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
-            '''Esto será modificado. el registro de posiciones save, posiciones 
-            amenazantes, etc, será dictado en las funciones "_targets()", las cuales
+            '''El registro de posiciones save, posiciones 
+            amenazantes, etc, será dictado en las funciones objectives(), las cuales
             registraran en la clase "que está pasando"
-            De esta forma, luego de hacer un movimiento debo re-interpretar todos estos
+
+            Luego de hacer un movimiento, debo re-interpretar todos estos
             targets, y luego decidir estado de juego(jaque/jaque-mate).
-            Tengo que tener mucho cuidado con las perspectivas de TURNO.
+            Mucho cuidado con las perspectivas de TURNO.
             '''
             # Actualizar registros de posiciones, movimientos legales, posiciones save, posiciones threat
-            self.make_turn_targets() 
+            self.make_turn_objectives() 
             # Evaluación de posiciones, movimientos legales, posiciones save, posiciones threat
-            self.decide_check()
+            self.decide_check() #<- El juego debe continuar? 
 
             self.turn_swap()
             self.pieceValidMovement_posDisplay.clear()
@@ -813,7 +817,15 @@ class Match(Scene):
     
     def get_king_movements(self, target_color:str) -> list[int]: # searching turn target king
         _current_king_pos: int = self.get_piece_standpoint(color=target_color,piece="Rey").pop()
-        move_positions, _ = self.king_targets(_current_king_pos) #descartamos el retorno de on_target_kill_positions
+
+        '''BUG hasta que no arreglemos targets, porque aquí estamos levantando casillas del
+        rey TURN ATTACKER, y necesitamos que sea del TURN TARGET
+        
+        Puede que la toma de esta dicisión convenga que sea un mecanismo de ifs internos
+        a las funciones objectives()'''
+        move_positions, _ = self.king_objectives(_current_king_pos) #descartamos el retorno de on_target_kill_positions
+        
+        
         return list(move_positions.keys()) #king_targets() ya consideró bloqueos.
 
     def decide_check(self):
