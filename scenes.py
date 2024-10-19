@@ -179,8 +179,7 @@ class Match(Scene):
         # game variables
         self.match_mode: dict = self.master.game_variables
         self.move_here: int | None = None
-        self.turn_attacker: str = 'White'
-        self.turn_target: str = 'Black'
+        
         self.winner: bool = False
         self.stalemate: bool = False # Ahogado | draw
         self.match_state: str = '' # HUD info
@@ -201,21 +200,34 @@ class Match(Scene):
         self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
         self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {} 
 
+        # Turn lookups -----------------------------------------------------------------
+        self.turn_attacker: str = 'White'
+        self.turn_target: str = 'Black'
+        # 
+        '''Debemos tener registros individuales de los siguientes tipos
+        de posiciones/movimientos:
+        Válidos
+        Saving king
+        Threating king
+        Check positions
+        Que serán "unificadas" respectivamente en cada turno en registros
+        turn_target y turn_attacker
         
-        # Debo revisar estas posiciones al intentar un movimiento.
-        # Estos conjuntos son actualizados luego de mover una pieza (si corresponde).
-        '''Unificar estas dos en un turnTarget_validPositions? 
-        Es más, el actual "allpositions" del rey puede estar aquí tranquilamente, es el mismo mecanismo
+        Debo revisar estas posiciones al intentar un movimiento.
+        Estos conjuntos son actualizados luego de mover una pieza (si corresponde).
+        '''
+        
+        '''
+        El actual "allpositions" del rey puede estar aquí tranquilamente, es el mismo mecanismo
         para todas las piezas, y casualmente también estabamos evaluando hacer un colorTarget de estas
-        mierdas también...'''
+        mierdas también...
+        
+        FALTA MECANISMO DE ACTUALIZAR MOVIMIENTOS COMO YA TENEMOS CON EL REY'''
+        # {'peon': [2,4], 'alfil': [12,18,24], etc...}
         self.white_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['blancas']} 
         self.black_legalMovements: dict[str,list[int]] = {piece:[] for piece in pieces.origins['negras']} 
-        # ^ ^ ^ FALTA MECANISMO DE ACTUALIZAR MOVIMIENTOS COMO YA TENEMOS CON EL REY!!
-        # ^ ^ El cual es pedir standpoint y luego "get_king_movements()"
-        # {'peon': [2,4], 'alfil': [12,18,24], etc...}
-        # ------------------------------------------------------------------------------
 
-        # Se actualizan indirectamente a través de >targetColorKing_ALLPOS< (make_turn_Targets())
+        # Se actualizan indirectamente a través de >targetColorKing_ALLPOS< (make_turn_objectives())
         '''Debo inicializarlas como corresponde, con el mismo mecanismo que será usado en el juego.
         De todas formas creo que allPositions se va y es trasladado a color_valid_positions, ya que el juego
         necesita (y aún no estoy haciendo) un registro "global" de posiciones/movimientos-legales actuales(turno)
@@ -228,13 +240,14 @@ class Match(Scene):
         self.black_positions: dict[int,str] = pieces.black_positions
         self.white_positions: dict[int,str] = pieces.white_positions
         
-        # turn lookups
+        
         '''Estas variables serán actualizadas por:
-        make_turn_targets()'''
+        make_turn_objectives()'''
         self.turnTarget_checkState = None
         self.targetColorKing_CHECKPOS: set[int] = self.blackKing_checkPositions # default
         self.targetColorKing_ALLPOS: list[int] = self.blackKing_allPositions # default
         #self.targetColor_legalMovements: list[int] = ...
+        #self.attackerColor_legalMovements: list[int] = ...
 
     def make_turn_objectives(self): # >TARGET = rey || >ATTACKER = pieces
         '''Consigue standpoints de:
@@ -244,10 +257,11 @@ class Match(Scene):
 
         Las objectives() modifican las sig. class variables:
         >> targetColorking_CHECKPOS <- posiciones q rodean al rey q estan en kill-movement
-        >> legal-movements <- movimientos posibles del turno para *ambos jugadores*? o target o attacker?
-                              incluye KILL-MOVEMENTS por lo que deberíamos recopilar ambos?
-        >> saving-movements <- target salvando a su propio rey
-        >> threat-movements <- threat de turn contra target
+        >> legal-movements <- movimientos posibles del turno para *ambos jugadores*?
+                              o target o attacker?
+                              incluye KILL-MOVEMENTS, por lo tanto deberíamos recopilar ambos?
+        >> saving-movements <- target salvando a su propio rey *EN EL PRÓXIMO TURNO*
+        >> threat-movements <- threat de turn contra target *LUEGO THREAT DE TARGET CONTRA ATTACKER*
 
         Cuando yo llamo a "_targets()" decidiré dentro de ellas que posiciones
         registro del turn_attacker y del turn_target <- esto no está bien si
@@ -823,10 +837,10 @@ class Match(Scene):
         
         Puede que la toma de esta dicisión convenga que sea un mecanismo de ifs internos
         a las funciones objectives()'''
-        move_positions, _ = self.king_objectives(_current_king_pos) #descartamos el retorno de on_target_kill_positions
-        
-        
-        return list(move_positions.keys()) #king_targets() ya consideró bloqueos.
+        move_positions, _ = self.king_objectives(_current_king_pos)
+        # ^ descartamos el retorno de on_target_kill_positions, aunque debería haber una forma mejor.
+
+        return list(move_positions.keys()) #king_objectives() ya consideró bloqueos.
 
     def decide_check(self):
         '''
