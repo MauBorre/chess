@@ -208,11 +208,11 @@ class Match(Scene):
         de los siguientes tipos de posiciones/movimientos:
 
         >> Válidos
-            Movimientos que pueden hacerse porque: No hay bloqueos, no exponen a mi rey, salvan
-            al rey si está en jaque.
+            Posibles si: > No hay bloqueos *Y* no exponen a mi rey.
+                         > No hay bloqueos *Y* salvan al rey si está en jaque (siendo turn_attacker en ambos casos). 
 
         >> Saving king
-            Únicos movimientos posibles si el rey está en jaque, pueden significar MATAR AMENAZA o
+            Posibles si: el rey está en jaque, pueden significar MATAR AMENAZA o
             BLOQUEAR AMENAZA.
 
         >> Threating king
@@ -586,6 +586,7 @@ class Match(Scene):
                     
                     '''
 
+                    # if hay King checks (o si dejaría atras king checks?)
                     # King checks ------------------------------------
                     if movement in self.targetColor_KingALLPOS: # check pos del siguiente en turno
                         self.targetColor_KingCHECKPOS.add(movement)
@@ -594,11 +595,13 @@ class Match(Scene):
                         #directa: soy válido para save_positions(eliminandome o intercediendo)
                     # ------------------------------------------------
 
+                    #if hay Saving positions...
                     # Saving positions -------------------------------
                     '''El movimiento *bloquea* un ataque? *elimina* una amenaza?'''
                     #if movement in threat_path... or movement in killer[0]
                     # ------------------------------------------------
 
+                    #if hay Exposing positions...
                     # Exposing positions -----------------------------
                     '''El movimiento *expone* a nuestro rey a un ataque?'''
                     #if movement in self.attackerColor_checkPositions(): no hacer ...
