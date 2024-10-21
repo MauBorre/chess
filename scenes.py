@@ -202,10 +202,18 @@ class Match(Scene):
         self.white_positions: dict[int,str] = pieces.white_positions
 
         # Turn lookups ---------------------------------------------------
+        '''Siento que necesitamos un prolijo sistema de turnos
+        turn.defender.king
+        turn.attacker.all_pieces
+        
+        '''
         self.turn_attacker: str = 'White'
         self.turn_target: str = 'Black'
+
         '''Debemos tener registros (individuales por color y luego acoplados en target/attacker)
-        de los siguientes tipos de OBJETIVOS:
+        de los siguientes tipos de OBJETIVOS: 
+        
+        *>> Mucho cuidado con las perspectivas de TURNO. <<*
 
         >> Movement / Kill-movement
             Posibles si: > No hay bloqueos *Y* no exponen a mi rey.
@@ -217,32 +225,24 @@ class Match(Scene):
 
         >> Threatening squares
             PRE-Movimientos que caen en casillero rey target o adyacencias legales.
+            Nos sirven para saber donde NO puede moverse el rey. (jaque + rodeado = jaque-mate)
 
-        >> In-Check squares
-            Casilleros ady. de *nuestro* rey bajo kill-movement del *otro* equipo
+        >> Our-king-in-check squares
+            Casilleros ady. de *nuestro* rey bajo kill-movement del *otro* equipo.
+            NO es lo mismo la amenaza directa que indirecta, como solucionamos esto?
         
         El formato mas sensato parece ser {'peon': [2,4], 'alfil': [12,18,24], etc...} en la
         mayoría de casos.
 
-        Todos estos conjuntos se actualizarán en las funciones objectives() luego de mover una pieza
-        (individuales y "all") (si corresponde).
-
-        LUEGO DE hacer un movimiento, debo re-interpretar todos estos
-        objetivos, y luego decidir estado de juego(jaque/jaque-mate).
+        Todos estos conjuntos se actualizarán en las funcion make_turn_objectives() luego de mover una pieza.
 
         ANTES DE intentar un movimiento debo revisar estos conjuntos.
 
-        >> Mucho cuidado con las perspectivas de TURNO. <<
-
         Inicializarlos con el mismo mecanismo que será usado en el juego.
 
-        kingLegalMovements debe ser trasladado a color_legalMovements, ya que es el mismo mecanismo que
-        para todas las piezas
-
-        La particularidad que tiene este conjunto es que al momento de actualizarlo, el turno dicta que
-        es PIEZAS ATTACKER contra KING TARGET
-
-        Y la posición actual del rey es tiene un peso distinto a sus adyacencias.
+        kingLegalMovements debería ser trasladado a color_legalMovements, ya que es el mismo mecanismo que
+        para todas las piezas, pero el rey es especial, asi que no estoy seguro aún. Incluso la amenaza
+        directa/indirecta significan caminos "bastante" distintos.
         '''
         
         # Black 
