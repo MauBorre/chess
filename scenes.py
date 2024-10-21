@@ -205,41 +205,44 @@ class Match(Scene):
         self.turn_attacker: str = 'White'
         self.turn_target: str = 'Black'
         '''Debemos tener registros (individuales por color y luego acoplados en target/attacker)
-        de los siguientes tipos de posiciones/movimientos:
+        de los siguientes tipos de OBJETIVOS:
 
-        >> Válidos (mov o kill)
+        >> Movement / Kill-movement
             Posibles si: > No hay bloqueos *Y* no exponen a mi rey.
                          > No hay bloqueos *Y* salvan al rey si está en jaque (siendo turn_attacker en ambos casos). 
 
-        >> Saving king
-            Posibles si: el rey está en jaque, pueden significar MATAR AMENAZA o
+        >> Saving-movement
+            Únicos movimientos posibles si el rey está en jaque. Pueden significar MATAR AMENAZA o
             BLOQUEAR AMENAZA.
 
-        >> Threating king
-            Movimientos *propios* que amenazan al rey *target* (o sus movimientos legales).
+        >> Threatening squares
+            PRE-Movimientos que caen en casillero rey target o adyacencias legales.
 
-        >> Check positions
+        >> In-Check squares
             Casilleros ady. de *nuestro* rey bajo kill-movement del *otro* equipo
         
         El formato mas sensato parece ser {'peon': [2,4], 'alfil': [12,18,24], etc...} en la
         mayoría de casos.
 
-        Todas estas variables se actualizarán en las funciones objectives() (individuales y "all").
+        Todos estos conjuntos se actualizarán en las funciones objectives() luego de mover una pieza
+        (individuales y "all") (si corresponde).
 
-        Luego de hacer un movimiento, debo re-interpretar todos estos
-        targets, y luego decidir estado de juego(jaque/jaque-mate).
-        Mucho cuidado con las perspectivas de TURNO.
-        
-        Debo revisar estas posiciones al intentar un movimiento.
-        Estos conjuntos son actualizados luego de mover una pieza (si corresponde).
+        LUEGO DE hacer un movimiento, debo re-interpretar todos estos
+        objetivos, y luego decidir estado de juego(jaque/jaque-mate).
 
-        Debo inicializarlas con el mismo mecanismo que será usado en el juego.
+        ANTES DE intentar un movimiento debo revisar estos conjuntos.
+
+        >> Mucho cuidado con las perspectivas de TURNO. <<
+
+        Inicializarlos con el mismo mecanismo que será usado en el juego.
 
         kingLegalMovements debe ser trasladado a color_legalMovements, ya que es el mismo mecanismo que
         para todas las piezas
 
         La particularidad que tiene este conjunto es que al momento de actualizarlo, el turno dicta que
         es PIEZAS ATTACKER contra KING TARGET
+
+        Y la posición actual del rey es tiene un peso distinto a sus adyacencias.
         '''
         
         # Black 
@@ -291,9 +294,10 @@ class Match(Scene):
         '''
         
         # Current target afflictions
-        '''BUG stamos levantando internamente casillas del rey TURN ATTACKER, necesitamos que sea del TURN TARGET'''
+        '''BUG estamos levantando internamente casillas del rey TURN ATTACKER, necesitamos que sea del TURN TARGET'''
         king_standpoint: int = self.get_piece_standpoint(color=self.turn_target,piece="Rey").pop()
-        self.king_objectives(king_standpoint) # self.targetColor_KingALLPOS debería ser actualizado aquí
+        self.king_objectives(king_standpoint)
+        # ^ self.targetColor_KingALLPOS (targetColor_legalMovements['Rey']) debería ser actualizado aquí
 
         # Current attacker offensive
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
@@ -537,7 +541,7 @@ class Match(Scene):
                 if direction == SUR_ESTE or direction == SUR_OESTE:
                     if movement not in row_of_(piece_standpoint+SUR*mult):
                         break
-                if 0 <= movement <= 63: # VALID
+                if 0 <= movement <= 63: # VALID SQUARE
                     
                     '''
                     MOVIMIENTOS DESCARTADOS:
@@ -600,20 +604,28 @@ class Match(Scene):
                     #if movement in self.attackerColor_checkPositions(): no hacer ...
                     # ------------------------------------------------
 
-                    # Libre de movimientos ilegales:
+                    # Movement 
+                    # (!! estamos adjuntando sin considerar target, es muy general !!)
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
 
                     # kill-movements fijadas al targetColor, puede que convenga crear -todas-
                     else:
+
                         if self.turn_target == 'White':
-                            if movement in self.white_positions:
+                            # Update White's objective restrictions, threats,
+                            # saves and king's-check-adj.
+
+                            # Kill-movement
+                            if movement in self.white_positions: # valid kill
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
-                        if self.turn_target == 'Black':
+
+                        if self.turn_target == 'Black': # valid kill
                             if movement in self.black_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
+
                         break #previene propagación mas allá del primer bloqueo - rompe el mult
 
         return mov_target_positions, on_target_kill_positions
