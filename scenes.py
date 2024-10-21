@@ -583,7 +583,12 @@ class Match(Scene):
                     
                     FUTURE-JAQUE__INVALID -> Tu movimiento expone a tu rey
                         > Cómo saber si nuestro movimiento dejaría atrás una amenaza DIRECTA a nuestro rey?
-                    
+
+
+                    ****************************************************************************************************
+                    verificando qué cosas puede hacer turn_attacker
+                                        y en qué "estado" queda turn_target con las posiciones *actuales*
+                    ****************************************************************************************************
                     '''
 
                     # if hay King checks (o si dejaría atras king checks?)
@@ -872,10 +877,7 @@ class Match(Scene):
         _current_king_pos: int = self.get_piece_standpoint(color=target_color,piece="Rey").pop()
 
         '''BUG hasta que no arreglemos targets, porque aquí estamos levantando casillas del
-        rey TURN ATTACKER, y necesitamos que sea del TURN TARGET
-        
-        Puede que la toma de esta dicisión convenga que sea un mecanismo de ifs internos
-        a las funciones objectives()'''
+        rey TURN ATTACKER, y necesitamos que sea del TURN TARGET'''
         move_positions, _ = self.king_objectives(_current_king_pos)
         # ^ descartamos el retorno de on_target_kill_positions, aunque debería haber una forma mejor.
 
