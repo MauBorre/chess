@@ -207,7 +207,7 @@ class Match(Scene):
         '''Debemos tener registros (individuales por color y luego acoplados en target/attacker)
         de los siguientes tipos de posiciones/movimientos:
 
-        >> Válidos
+        >> Válidos (mov o kill)
             Posibles si: > No hay bloqueos *Y* no exponen a mi rey.
                          > No hay bloqueos *Y* salvan al rey si está en jaque (siendo turn_attacker en ambos casos). 
 
@@ -219,7 +219,7 @@ class Match(Scene):
             Movimientos *propios* que amenazan al rey *target* (o sus movimientos legales).
 
         >> Check positions
-            Casilleros de *nuestro* rey bajo kill-movement del *otro* equipo
+            Casilleros ady. de *nuestro* rey bajo kill-movement del *otro* equipo
         
         El formato mas sensato parece ser {'peon': [2,4], 'alfil': [12,18,24], etc...} en la
         mayoría de casos.
@@ -287,33 +287,15 @@ class Match(Scene):
         '''Consigue standpoints de:
             TURN TARGET -> Rey
             TURN ATTACKER -> Todas las otras piezas
-        Luego llama a las correspondientes funciones objectives().
-
-        Las objectives() modifican las sig. class variables:
-        >> targetColorking_CHECKPOS <- posiciones q rodean al rey q estan en kill-movement
-        >> legal-movements <- movimientos posibles del turno para *ambos jugadores*?
-                              o target o attacker?
-                              incluye KILL-MOVEMENTS, por lo tanto deberíamos recopilar ambos?
-        >> saving-movements <- target salvando a su propio rey *EN EL PRÓXIMO TURNO*
-        >> threat-movements <- threat de turn contra target *LUEGO THREAT DE TARGET CONTRA ATTACKER*
-
-        Cuando yo llamo a "_targets()" decidiré dentro de ellas que posiciones
-        registro del turn_attacker y del turn_target <- esto no está bien si
-                                                        necesito un riguroso control
-                                                        sobre attacker/target
-        
-        actualmente cuando llamo a objectives() solo tengo en cuenta apuntar a self.target
-
-        Para cocinar los movimientos, es verdad que necesito solo un standpoint, pero
-        al crear targets, parece que debería poder decidir mejor si enfoco a attacker o a target.
-        Puede que eso sea solo agregar mas if's dentro de estas funciones y no tener que modificar
-        argumentos.
+        Luego llama a todas las funciones objectives().
         '''
         
         # Current target afflictions
-        self.targetColor_KingALLPOS = self.get_king_movements(self.turn_target)
+        '''BUG stamos levantando internamente casillas del rey TURN ATTACKER, necesitamos que sea del TURN TARGET'''
+        king_standpoint: int = self.get_piece_standpoint(color=self.turn_target,piece="Rey").pop()
+        self.king_objectives(king_standpoint) # self.targetColor_KingALLPOS debería ser actualizado aquí
 
-        # Piezas atacando
+        # Current attacker offensive
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
         for _pawn in pawn_standpoints:
             self.pawn_objectives(_pawn)
@@ -539,8 +521,12 @@ class Match(Scene):
         +SUR_ESTE
         "recursivo" hasta limite tablero o pieza aliada/enemiga
         '''
+        
+        # Visual feedback utils
         mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos
         on_target_kill_positions: dict[int,pygame.Rect] = {}
+        
+        # Objectives
         bishop_directions = [NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         for direction in bishop_directions:
             for mult in range(1,8):
@@ -589,6 +575,8 @@ class Match(Scene):
                     verificando qué cosas puede hacer turn_attacker
                                         y en qué "estado" queda turn_target con las posiciones *actuales*
                     ****************************************************************************************************
+
+                    necesito un riguroso control sobre attacker/target y debo actualizar ambas si corresponde.
                     '''
 
                     # if hay King checks (o si dejaría atras king checks?)
@@ -872,16 +860,6 @@ class Match(Scene):
                 if v == piece:
                     _actual_standpoints.append(k)
         return _actual_standpoints
-    
-    def get_king_movements(self, target_color:str) -> list[int]: # searching turn target king
-        _current_king_pos: int = self.get_piece_standpoint(color=target_color,piece="Rey").pop()
-
-        '''BUG hasta que no arreglemos targets, porque aquí estamos levantando casillas del
-        rey TURN ATTACKER, y necesitamos que sea del TURN TARGET'''
-        move_positions, _ = self.king_objectives(_current_king_pos)
-        # ^ descartamos el retorno de on_target_kill_positions, aunque debería haber una forma mejor.
-
-        return list(move_positions.keys()) #king_objectives() ya consideró bloqueos.
 
     def decide_check(self):
         '''
