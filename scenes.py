@@ -205,7 +205,6 @@ class Match(Scene):
         '''Siento que necesitamos un prolijo sistema de turnos
         turn.defender.king
         turn.attacker.all_pieces
-        
         '''
         self.turn_attacker: str = 'White'
         self.turn_target: str = 'Black'
@@ -215,19 +214,23 @@ class Match(Scene):
         
         *>> Mucho cuidado con las perspectivas de TURNO. <<*
 
-        >> Movement / Kill-movement
+        >> Movements
+            Traslado de pieza através del tablero.
             Posibles si: > No hay bloqueos *Y* no exponen a mi rey.
-                         > No hay bloqueos *Y* salvan al rey si está en jaque (siendo turn_attacker en ambos casos). 
+                         > No hay bloqueos *Y* salvan al rey si está en jaque (siendo turn_attacker en ambos casos).
+        
+        > Kill-movement
+            Traslado + asesinato de pieza defender.
 
-        >> Saving-movement
+        > Saving-movement
             Únicos movimientos posibles si el rey está en jaque. Pueden significar MATAR AMENAZA o
             BLOQUEAR AMENAZA.
 
-        >> Threatening squares
+        >> Threat on enemy (king + his legal movements) targets
             PRE-Movimientos que caen en casillero rey target o adyacencias legales.
             Nos sirven para saber donde NO puede moverse el rey. (jaque + rodeado = jaque-mate)
 
-        >> Our-king-in-check squares
+        >> Threat on me (king + his legal movements) squares
             Casilleros ady. de *nuestro* rey bajo kill-movement del *otro* equipo.
             NO es lo mismo la amenaza directa que indirecta, como solucionamos esto?
         
