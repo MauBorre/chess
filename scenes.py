@@ -236,9 +236,9 @@ class Match(Scene):
         >> Color-King-legalMovements
             Posición actual + posibles movimientos.
 
-        Los conjuntos THREAT y COLOR-KING-LEGALMOVES se actualizarán en la función 
+        TODOS Los conjuntos THREAT y COLOR-KING-LEGALMOVES se actualizarán en la función 
         update_turn_objectives() luego de mover una pieza. 
-
+            ¿Debemos entonces diferenciarlos entre attacker/defender?
         '''
         self.defender_threatOnAttacker = self.black_threatOnWhite
         self.defender_kingLegalMoves = self.black_kingLegalMoves
@@ -501,7 +501,6 @@ class Match(Scene):
                         self.attacker_threatOnDefender.add(movement)
                     # ------------------------------------------------
 
-                    #if hay Exposing positions...
                     # Exposing positions -----------------------------
                     '''El movimiento *expone* a nuestro rey a un ataque?'''
                     #if movement in self.attackerColor_checkPositions(): no hacer ...
@@ -509,22 +508,22 @@ class Match(Scene):
 
                     # Movement 
                     # (!! estamos adjuntando sin considerar target, es muy general !!)
+                    # De todas formas necesitamos definir si _objectives() apunta a la 
+                    # generalidad o al "target específico".
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
 
-                    # kill-movements fijadas al targetColor, puede que convenga crear -todas-
                     else:
-
                         if self.turn_defender == 'White':
-                            # Update White's objective restrictions, threats,
-                            # saves and king's-check-adj.
 
                             # Kill-movement
                             if movement in self.white_positions: # valid kill
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
 
-                        if self.turn_defender == 'Black': # valid kill
+                        if self.turn_defender == 'Black':
+
+                            # Kill-movement
                             if movement in self.black_positions:
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
                                 break
