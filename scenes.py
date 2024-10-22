@@ -222,6 +222,11 @@ class Match(Scene):
             Y
             Ninguna pieza *aliada* puede MATAR o BLOQUEAR *TODAS* las amenazas = JAQUE MATE
             (Puede que haya un actual-threat y un future-threat)
+
+            El threat puede matarse o bloquearse, depende de qué pieza esté haciendo
+            threat.
+            Threat de bishop, queen y tower pueden bloquearse, si matarse
+            Threat de pawn y horse no pueden bloquearse, si matarse
             
             ¿Cuál es el mejor formato para registrar estas amenazas?
             Necesito saber "qué casilla" esta en jaque (número)
@@ -231,22 +236,19 @@ class Match(Scene):
         >> Color-King-legalMovements
             Posición actual + posibles movimientos.
 
-        Los conjuntos THREAT y COLOR-KING-LEGALMOVES se actualizarán en la funcion 
-        make_turn_threats() luego de mover una pieza. 
+        Los conjuntos THREAT y COLOR-KING-LEGALMOVES se actualizarán en la función 
+        update_turn_objectives() luego de mover una pieza. 
 
         '''
         self.defender_threatOnAttacker = self.black_threatOnWhite
         self.defender_kingLegalMoves = self.black_kingLegalMoves
         self.attacker_threatOnDefender = self.white_threatOnBlack
         self.attacker_kingLegalMoves = self.white_kingLegalMoves
-        #make_turn_threats() ?
+        #update_turn_objectives() ?
 
-    def make_turn_threats(self): # >TARGET = rey || >ATTACKER = pieces
-        '''Consigue standpoints de:
-            TURN TARGET -> Rey
-            TURN ATTACKER -> Todas las otras piezas
-        Luego llama a todas las funciones objectives().
-        '''
+    def update_turn_objectives(self): # >TARGET = rey || >ATTACKER = pieces
+        '''Actualizando conjuntos threatOn y kingLegalMoves para
+        TODOS los equipos'''
         
         # Current target afflictions
         '''BUG estamos levantando internamente casillas del rey TURN ATTACKER, necesitamos que sea del TURN TARGET'''
@@ -744,7 +746,7 @@ class Match(Scene):
 
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
             # Actualizar todos los registros de posiciones (legales, save, threat, check)
-            self.make_turn_threats() 
+            self.update_turn_objectives() 
             # Evaluación de posiciones (legales, save, threat, check)
             self.decide_check() #<- El juego debe continuar? 
 
