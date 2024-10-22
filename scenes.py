@@ -209,7 +209,7 @@ class Match(Scene):
         self.turn_attacker: str = 'White'
         self.turn_defender: str = 'Black'
 
-        '''Debemos registras AMENAZAS (threat's) y MOVIMIENTOS LEGALES DEL REY *target*: 
+        '''Registraremos AMENAZAS y MOVIMIENTOS LEGALES DEL REY: 
 
         >> Threat-on-black/white - PRE-movements
             kill-movement's *del enemigo* que caen en casillero rey TARGET o adyacencias legales.
@@ -221,6 +221,7 @@ class Match(Scene):
             Si estos casilleros son iguales a los posibles movimientos del rey
             Y
             Ninguna pieza *aliada* puede MATAR o BLOQUEAR *TODAS* las amenazas = JAQUE MATE
+            (Puede que haya un actual-threat y un future-threat)
             
             ¿Cuál es el mejor formato para registrar estas amenazas?
             Necesito saber "qué casilla" esta en jaque (número)
@@ -492,46 +493,6 @@ class Match(Scene):
                     if movement not in row_of_(piece_standpoint+SUR*mult):
                         break
                 if 0 <= movement <= 63: # VALID SQUARE
-                    
-                    '''
-                    MOVIMIENTOS DESCARTADOS:
-                    > INVALID_MOV_T1: Tu rey (persp. turn_attacker) esta en jaque, solo podrás moverte si eso quita
-                        su estado de jaque (MATANDO o BLOQUEANDO amenaza).
-                        !! Requiere que primero evaluemos el jaque. -> ACTUAL-JAQUE__INVALID !!
-
-                    > INVALID_MOV_T2: Tu rey (persp. turn_attacker) no está en jaque, pero *el movimiento que querés
-                        hacer* lo deja en jaque. 
-                        Requiere evaluar el jaque *A FUTURO* (saberlo de antemano) FUTURE-JAQUE__INVALID
-                    
-                    > INVALID_MOV_T3: Pieza aliada bloqueando el camino.
-
-                    MOVIMIENTOS SAVE:
-
-                    MOVIMIENTOS THREAT(amenaza a target):
-
-                    MOVIMIENTOS CHECK(amenaza de target A MI):
-
-                    Ayuda aliada: un aliado puede interceptar/matar la amenaza
-                    ¿TURNCOLOR_SAVING_POSITIONS? > siempre salvo a "mis" piezas
-                        V contra V
-                    ¿TURNCOLOR_THREAT_POSITIONS? > siempre amenazo a "sus" piezas
-
-                    ACTUAL-JAQUE__INVALID -> Tu movimiento no salva a tu rey
-                        > Cómo saber si un movimiento mata/bloquea una amenaza?
-                        ^ - -Debemos tener un conjunto de referencias de amenazas.
-                             Esto es, las amenazas de turn_target contra mí, turn_attacker
-                    
-                    FUTURE-JAQUE__INVALID -> Tu movimiento expone a tu rey
-                        > Cómo saber si nuestro movimiento dejaría atrás una amenaza DIRECTA a nuestro rey?
-
-
-                    ****************************************************************************************************
-                    verificando qué cosas puede hacer turn_attacker
-                                        y en qué "estado" queda turn_target con las posiciones *actuales*
-                    ****************************************************************************************************
-
-                    necesito un riguroso control sobre attacker/target y debo actualizar ambas si corresponde.
-                    '''
 
                     # King checks ------------------------------------
                     if movement in self.defender_kingLegalMoves: 
