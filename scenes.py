@@ -235,6 +235,7 @@ class Match(Scene):
 
         >> Color-King-legalMovements
             Posición actual + posibles movimientos.
+            Que su standpoint esté en threat o no significa dos situaciones distintas.
 
         TODOS Los conjuntos THREAT y COLOR-KING-LEGALMOVES se actualizarán en la función 
         update_turn_objectives() luego de mover una pieza. 
