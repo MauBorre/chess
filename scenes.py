@@ -196,14 +196,16 @@ class Match(Scene):
         self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {} 
 
         # Board defaults ---------------------------------------------------
+        # Black
+        self.black_positions: dict[int, str] = pieces.black_positions
         self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
+        self.black_threatOnWhite: dict[str, int] = {piece:[] for piece in pieces.origins['negras']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
+        self.black_kingLegalMoves: list[int] = []
+        # White
+        self.white_positions: dict[int, str] = pieces.white_positions
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
-        self.black_positions: dict[int,str] = pieces.black_positions
-        self.white_positions: dict[int,str] = pieces.white_positions
-        self.black_threatOnWhite = ... # {'direct': [1,2,3]} ?
-        self.black_kingLegalMoves = ...
-        self.white_threatOnBlack = ... # {'Peón': [1,2,3], 'Alfil': [4,5,6]} ?
-        self.white_kingLegalMoves = ...
+        self.white_threatOnBlack: dict[str, int] = {piece:[] for piece in pieces.origins['blancas']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
+        self.white_kingLegalMoves: list[int] = []
 
         # Turn lookups ---------------------------------------------------
         self.turn_attacker: str = 'White'
@@ -223,10 +225,10 @@ class Match(Scene):
             Ninguna pieza *aliada* puede MATAR o BLOQUEAR *TODAS* las amenazas = JAQUE MATE
             (Puede que haya un actual-threat y un future-threat)
 
-            El threat puede matarse o bloquearse, depende de qué pieza esté haciendo
+            El threat puede MATARSE o BLOQUEARSE, depende de qué pieza esté haciendo
             threat.
-            Threat de bishop, queen y tower pueden bloquearse, si matarse
-            Threat de pawn y horse no pueden bloquearse, si matarse
+            Threat de bishop, queen y tower pueden bloquearse
+            Threat de pawn y horse no pueden bloquearse
             
             ¿Cuál es el mejor formato para registrar estas amenazas?
             Necesito saber "qué casilla" esta en jaque (número)
@@ -241,22 +243,24 @@ class Match(Scene):
         update_turn_objectives() luego de mover una pieza. 
             ¿Debemos entonces diferenciarlos entre attacker/defender?
         '''
-        self.defender_threatOnAttacker = self.black_threatOnWhite
-        self.defender_kingLegalMoves = self.black_kingLegalMoves
-        self.attacker_threatOnDefender = self.white_threatOnBlack
-        self.attacker_kingLegalMoves = self.white_kingLegalMoves
+        self.defender_positions: dict[int, str] = self.black_positions #22/10 NO ESTA HECHO EL SWAP
+        self.defender_threatOnAttacker: dict[str, int] = self.black_threatOnWhite
+        self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
+        self.attacker_positions: dict[int, str] = self.white_positions #22/10 NO ESTA HECHO EL SWAP
+        self.attacker_threatOnDefender: dict[str, int] = self.white_threatOnBlack
+        self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
         #update_turn_objectives() ?
 
     def update_turn_objectives(self): # >TARGET = rey || >ATTACKER = pieces
         '''Actualizando conjuntos threatOn y kingLegalMoves para
         TODOS los equipos'''
         
-        # Current target afflictions
+        # Defender
         '''BUG estamos levantando internamente casillas del rey TURN ATTACKER, necesitamos que sea del TURN TARGET'''
         king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender,piece="Rey").pop()
         self.king_objectives(king_standpoint)
 
-        # Current attacker offensive
+        # Attacker
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
         for _pawn in pawn_standpoints:
             self.pawn_objectives(_pawn)
@@ -483,12 +487,15 @@ class Match(Scene):
         "recursivo" hasta limite tablero o pieza aliada/enemiga
         '''
         
-        # Visual feedback utils
+        # Visual feedback utils <- deberíamos desacoplar esto de aquí
         mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         
         # Objectives
+        _threat_emission: list[int] = []
+        _threatening: bool = False
         bishop_directions = [NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
+
         for direction in bishop_directions:
             for mult in range(1,8):
                 movement = piece_standpoint+direction*mult
@@ -500,39 +507,39 @@ class Match(Scene):
                         break
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    # King checks ------------------------------------
-                    if movement in self.defender_kingLegalMoves: 
-                        self.attacker_threatOnDefender.add(movement)
+                    # Turn updates -----------------------------------
+                    _threat_emission.append(movement)
+                    # King checks
+                    if movement in self.defender_kingLegalMoves:
+                        # Encontramos un spot de interés, eso significa que
+                        # hay threat.
+                        _threatening = True
+                    # Luego de esto corresponde encontrar un STOP:
+                    # > king standpoint O  > ya-no-hay-moves,
+                    if _threatening and self.defender_positions[movement] == 'Rey':
+                        # STOP: adjuntar toda la traza threat.
+                        self.attacker_threatOnDefender['Alfil'].append(_threat_emission)
+                        _threatening = False
+                    elif _threatening and movement not in self.defender_kingLegalMoves:
+                        # STOP: adjuntar toda la traza threat.
+                        self.attacker_threatOnDefender['Alfil'].append(_threat_emission)
+                        _threatening = False
                     # ------------------------------------------------
 
-                    # Exposing positions -----------------------------
-                    '''El movimiento *expone* a nuestro rey a un ataque?'''
-                    #if movement in self.attackerColor_checkPositions(): no hacer ...
-                    # ------------------------------------------------
-
+                    # Exposing movement invalid
+                    if movement in self.defender_threatOnAttacker['Alfil']:
+                        # El movimiento está bloqueando un threat, invalidar.
+                        break
+                    
                     # Movement 
-                    # (!! estamos adjuntando sin considerar target, es muy general !!)
-                    # De todas formas necesitamos definir si _objectives() apunta a la 
-                    # generalidad o al "target específico".
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
 
-                    else:
-                        if self.turn_defender == 'White':
-
-                            # Kill-movement
-                            if movement in self.white_positions: # valid kill
-                                on_target_kill_positions.update({movement:self.boardRects[movement]})
-                                break
-
-                        if self.turn_defender == 'Black':
-
-                            # Kill-movement
-                            if movement in self.black_positions:
-                                on_target_kill_positions.update({movement:self.boardRects[movement]})
-                                break
-
-                        break #previene propagación mas allá del primer bloqueo - rompe el mult
+                    # Kill-movement
+                    if movement in self.defender_positions:
+                        on_target_kill_positions.update({movement:self.boardRects[movement]})
+                        break
+                    break #previene propagación mas allá del primer bloqueo - rompe el mult
 
         return mov_target_positions, on_target_kill_positions
 
@@ -730,7 +737,6 @@ class Match(Scene):
                             if SQUARE_TYPE == "EMPTY":
                                 self.pieceValidMovement_posDisplay.clear()
 
-        # >> Previo a un movimiento: conocer mis movimientos-inválidos <<
         # updating element's positions and game relevant state if a movement/kill was stated
         if self.move_here != None:
             ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
