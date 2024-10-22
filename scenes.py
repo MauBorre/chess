@@ -312,8 +312,11 @@ class Match(Scene):
         Peon NEGRO: SUR_OESTE, SUR_ESTE
         Peon BLANCO: NOR_OESTE, NOR_ESTE
         '''
+
+        # Visual feedback utils
         mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos 
         on_target_kill_positions: dict[int,pygame.Rect] = {}
+        
         kill_positions: list[int] = []
 
         if self.turn_defender == 'White':
