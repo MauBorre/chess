@@ -783,8 +783,6 @@ class Match(Scene):
                 > defender_threatOnAttacker
                 > attacker_threatOnDefender
                 '''
-
-                # Defender threat on me
                 '''Puedo aquí mismo cantar jaque-mate? Debería?
 
                 Revisando los threat-on-me puedo saber si
@@ -798,6 +796,10 @@ class Match(Scene):
 
                 
                 '''
+
+                # Defender threat on me
+                '''Intentemos resolver las preguntas:
+                ¿Me puedo mover? ¿Adónde y por qué?'''
                 for threat_pos_list in self.defender_threatOnAttacker.values():
                     for _pos in threat_pos_list:
                         if piece_standpoint == _pos:
