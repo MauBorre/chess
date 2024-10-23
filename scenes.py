@@ -813,7 +813,7 @@ class Match(Scene):
                         break
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    # Turn updates -----------------------------------
+                    # Threat on defender updates ---------------------
                     _threat_emission.append(movement)
                     # King checks
                     if movement in self.defender_kingLegalMoves:
@@ -822,11 +822,11 @@ class Match(Scene):
                         _threatening = True
                     # Luego de esto corresponde encontrar un STOP:
                     # > king standpoint O  > ya-no-hay-moves,
-                    if _threatening and self.defender_positions[movement] == 'Rey':
+                    if _threatening and self.defender_positions[movement] == 'Rey': # chocamos contra rey
                         # STOP: adjuntar toda la traza threat.
                         self.attacker_threatOnDefender['Reina'].append(_threat_emission)
                         _threatening = False
-                    elif _threatening and movement not in self.defender_kingLegalMoves:
+                    elif _threatening and movement not in self.defender_kingLegalMoves: # fin del área de amenaza
                         # STOP: adjuntar toda la traza threat.
                         self.attacker_threatOnDefender['Reina'].append(_threat_emission)
                         _threatening = False
@@ -993,9 +993,9 @@ class Match(Scene):
                 self.white_positions.update({self.move_here:_piece})
 
             # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
-            # Actualizar todos los registros de posiciones (legales, save, threat, check)
+            # Actualizar todos los registros de posiciones 
             self.update_turn_objectives() 
-            # Evaluación de posiciones (legales, save, threat, check)
+            # Evaluación de posiciones 
             self.decide_check() #<- El juego debe continuar? 
 
             self.turn_swap()
