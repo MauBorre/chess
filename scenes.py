@@ -220,13 +220,8 @@ class Match(Scene):
             Deben ser revisados ANTES DE intentar un movimiento.
             Sirven para saber: Donde NO puede moverse el rey.
                                Si el rey está en jaque/jaque-mate.
-            Si estos casilleros son iguales a los posibles movimientos del rey
-            Y
-            Ninguna pieza *aliada* puede MATAR o BLOQUEAR *TODAS* las amenazas = JAQUE MATE
-            (Puede que haya un actual-threat y un future-threat)
-
-            El threat puede MATARSE o BLOQUEARSE, depende de qué pieza esté haciendo
-            threat.
+            
+            El threat puede MATARSE o BLOQUEARSE (a menos que haya más de un orígen)
             Threat de bishop, queen y tower pueden bloquearse
             Threat de pawn y horse no pueden bloquearse
 
@@ -234,8 +229,8 @@ class Match(Scene):
             Posición actual + posibles movimientos.
             Que su standpoint esté en threat o no significa dos situaciones distintas.
 
-        TODOS Los conjuntos THREAT y COLOR-KING-LEGALMOVES se actualizarán en la función 
-        update_turn_objectives() luego de mover una pieza. 
+        Los conjuntos attacker_threatOnDefender y defender_kingLegalMoves se actualizarán en
+        update_turn_objectives(), llamada luego de realizarse un movimiento en el tablero. 
         '''
         self.defender_positions: dict[int, str] = self.black_positions #22/10 NO ESTA HECHO EL SWAP
         self.defender_threatOnAttacker: dict[str, int] = self.black_threatOnWhite
