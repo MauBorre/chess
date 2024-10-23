@@ -342,7 +342,7 @@ class Match(Scene):
                             if movement == max(threat_pos_list):
                                 _threat_origin_pos = max(threat_pos_list)
                             elif movement == min(threat_pos_list): 
-                                _threat_origin_pos = max(threat_pos_list)
+                                _threat_origin_pos = min(threat_pos_list)
                             continue #skip to next iteration
                         # PERO si hay MAS DE UN origen de amenaza DIRECTA,
                         # invalidar todos los objetivos.
@@ -408,7 +408,7 @@ class Match(Scene):
                             if movement == max(threat_pos_list):
                                 _threat_origin_pos = max(threat_pos_list)
                             elif movement == min(threat_pos_list): 
-                                _threat_origin_pos = max(threat_pos_list)
+                                _threat_origin_pos = min(threat_pos_list)
                             continue #skip to next iteration
                         # PERO si hay MAS DE UN origen de amenaza DIRECTA,
                         # invalidar todos los objetivos.
@@ -519,7 +519,7 @@ class Match(Scene):
                                 if movement == max(threat_pos_list):
                                     _threat_origin_pos = max(threat_pos_list)
                                 elif movement == min(threat_pos_list): 
-                                    _threat_origin_pos = max(threat_pos_list)
+                                    _threat_origin_pos = min(threat_pos_list)
                                 continue #skip to next iteration
                             # PERO si hay MAS DE UN origen de amenaza DIRECTA,
                             # invalidar todos los objetivos.
@@ -603,7 +603,7 @@ class Match(Scene):
                                 if movement == max(threat_pos_list):
                                     _threat_origin_pos = max(threat_pos_list)
                                 elif movement == min(threat_pos_list): 
-                                    _threat_origin_pos = max(threat_pos_list)
+                                    _threat_origin_pos = min(threat_pos_list)
                                 continue #skip to next iteration
                             # PERO si hay MAS DE UN origen de amenaza DIRECTA,
                             # invalidar todos los objetivos.
@@ -692,7 +692,7 @@ class Match(Scene):
                                 if movement == max(threat_pos_list):
                                     _threat_origin_pos = max(threat_pos_list)
                                 elif movement == min(threat_pos_list): 
-                                    _threat_origin_pos = max(threat_pos_list)
+                                    _threat_origin_pos = min(threat_pos_list)
                                 continue #skip to next iteration
                             # PERO si hay MAS DE UN origen de amenaza DIRECTA,
                             # invalidar todos los objetivos.
@@ -846,7 +846,7 @@ class Match(Scene):
                                 if movement == max(threat_pos_list):
                                     _threat_origin_pos = max(threat_pos_list)
                                 elif movement == min(threat_pos_list): 
-                                    _threat_origin_pos = max(threat_pos_list)
+                                    _threat_origin_pos = min(threat_pos_list)
                                 continue #skip to next iteration
                             # PERO si hay MAS DE UN origen de amenaza DIRECTA,
                             # invalidar todos los objetivos.
