@@ -377,7 +377,7 @@ class Match(Scene):
                 if kp in self.white_positions:
                     on_target_kill_positions.update({kp:self.boardRects[kp]})
                 
-                # Threat on deffender king -----------------------
+                # Threat on defender king ------------------------
                 if kp in self.defender_kingLegalMoves:
                     self.attacker_threatOnDefender['Peón'].append(kp)
                 # ------------------------------------------------
@@ -443,8 +443,7 @@ class Match(Scene):
                 if kp in self.black_positions:
                     on_target_kill_positions.update({kp:self.boardRects[kp]})
 
-                # King checks ------------------------------------
-                
+                # Threat on defender king ------------------------
                 if kp in self.defender_kingLegalMoves:
                     self.attacker_threatOnDefender['Peón'].append(kp)
                 # ------------------------------------------------
@@ -474,16 +473,15 @@ class Match(Scene):
         tower_directions = [NORTE,SUR,ESTE,OESTE]
 
         for direction in tower_directions:
-            for mult in range(1,8): # 1 to board size
+            for mult in range(1,8): # 1 to board_size
                 movement = piece_standpoint+direction*mult
                 if direction == ESTE or direction == OESTE:
                     if movement not in row_of_(piece_standpoint):
                         break
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    # Threat on defender updates ---------------------
+                    # Threat on defender king ------------------------
                     _threat_emission.append(movement)
-                    # King checks
                     if movement in self.defender_kingLegalMoves:
                         # Encontramos un spot de interés, eso significa que
                         # hay threat.
@@ -579,7 +577,7 @@ class Match(Scene):
         for movement in horse_movements:
             if 0 <= movement <= 63: # NORTE/SUR LIMIT 
 
-                # Threat on defender updates ---------------------
+                # Threat on defender king ------------------------
                 if movement in self.defender_kingLegalMoves: 
                     self.attacker_threatOnDefender['Caballo'].append(movement)
                 # ------------------------------------------------
@@ -654,7 +652,7 @@ class Match(Scene):
                         break
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    # Threat on defender updates ---------------------
+                    # Threat on defender king ------------------------
                     _threat_emission.append(movement)
                     # King checks
                     if movement in self.defender_kingLegalMoves:
@@ -747,10 +745,7 @@ class Match(Scene):
 
 
                 '''
-                Updatear el conjunto kingLegalMoves del defensor
-                
-                Al llamar a update_turn_objectives() debo inyectar el standpoint
-                del rey defensor, y aquí adentro revisar:
+                Aquí adentro revisar/actualizar:
 
                 > attacker_threatOnDefender -> amenazas que restringen movimientos
 
@@ -760,7 +755,7 @@ class Match(Scene):
                 las amenazas, inversamente a las otras piezas.
                 '''
 
-                if movement not in self.attacker_positions:
+                if movement not in self.attacker_positions: # ally block
 
                     # Attacker threat
                     if movement in self.attacker_kingLegalMoves: # Los reyes no pueden 'tocarse'
@@ -821,7 +816,7 @@ class Match(Scene):
                         break
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    # Threat on defender updates ---------------------
+                    # Threat on defender king ------------------------
                     _threat_emission.append(movement)
                     # King checks
                     if movement in self.defender_kingLegalMoves:
@@ -1034,25 +1029,15 @@ class Match(Scene):
 
     def decide_check(self):
         '''
-        Evaluar posiciones _allPositions, _checkPositions para resolver estados
-        jaque/jaque-mate.
-
-        Estoy pensando que quizás aqui mismo debería restringir movimientos inválidos,
-        porque el camino lógico a deducir qué y por qué no puedo mover esta aquí.
-
-        Es decir, en el momento en q registro un jaque, se qué unicos movimientos
-        puedo hacer, o eso debería deducir.
-
-        De todas formas siento que es mejor delegar esta acción de manipular posiciones
-        a otra función porque es profunda en sí, o al menos eso parece.
+        Evaluar posiciones (...) para resolver estados jaque/jaque-mate.
         
         JAQUE > El rey es apuntado directamente, PUEDE escapar moviendose o siendo
-            salvado por pieza aliada (matando o bloqueando amenaza) <- Square types?
+            salvado por pieza aliada (matando o bloqueando amenaza)
 
         JAQUE-MATE > El rey es apuntado directamente, NO PUEDE escapar moviendose ni
             siendo salvado por pieza aliada. 
 
-        STALE-MATE > Si el rey no es apuntado directamente pero no puede moverse ni
+        STALE-MATE > El rey no es apuntado directamente, pero no puede moverse ni
             ser salvado por pieza aliada. Estado de empate.
         '''
         if self.get_piece_standpoint(self.turn_defender,"Rey").pop() in self.targetColor_KingCHECKPOS:
