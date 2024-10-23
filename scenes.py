@@ -246,11 +246,10 @@ class Match(Scene):
         self.update_turn_objectives() 
 
     def update_turn_objectives(self):
-        '''Actualizando conjuntos threatOn y kingLegalMoves para
-        TODOS los equipos'''
+        '''Llama todas las funciones _objectives() las cuales actualizan
+        internamente attacker_threatOnDefender y defender_kingLegalMoves'''
         
         # Defender
-        '''BUG estamos levantando internamente casillas del rey TURN ATTACKER, necesitamos que sea del TURN TARGET'''
         king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender,piece="Rey").pop()
         self.king_objectives(king_standpoint)
 
@@ -450,6 +449,7 @@ class Match(Scene):
                     on_target_kill_positions.update({kp:self.boardRects[kp]})
 
                 # King checks ------------------------------------
+                
                 if kp in self.defender_kingLegalMoves:
                     self.attacker_threatOnDefender['Peón'].append(kp)
                 # ------------------------------------------------
@@ -750,82 +750,36 @@ class Match(Scene):
                     continue
             if 0 <= movement <= 63: # VALID SQUARE
 
-                '''
-                Aquí realmente lo que debería hacer es updatear
-                los conjuntos kingLegalMoves de ambos equipos.
-                Al menos el que respecta a jaque/jaque-mate: el defensor
-                ^
-                ^- realmente debería caer en esto o sólo
-                   trabajar con una perspectiva ofensiva?
-                   TODAS las otras funciones objectives()
-                   están trabajando con perspectiva ofensiva
-                   y pareciera que están bien.
 
-                   Despues de todo los resultados y estados
-                   siempre se deciden luego de una ofensiva,
-                   lo importante es trasladar esos estados
-                   al equipo que corresponda: attacker <=> defender
+                '''
+                Updatear el conjunto kingLegalMoves del defensor
                 
-                Pero hacer eso realmente no coincide con una función
-                trabajando en base a un standpoint. (perspectiva ofensiva)
-                ^
-                ^- incorrecto, al llamar a update_turn_objecvites() puedo
-                   inyectar el standpoint del rey defensor, y aquí adentro
-                   manejarme con:
-                   attacker_threatOnDefender -> amenazas que me restringen
-                   defender_kingLegalMoves -> actualizar movimientos
-                                              pasar standpoint correspondiente a
-                                              defensor en update_turn_objectives()
+                Al llamar a update_turn_objectives() debo inyectar el standpoint
+                del rey defensor, y aquí adentro revisar:
 
-                Si bien las otras funciones objectives() parecen
-                funcionar, el king es distinto, ya que no
-                amenaza a nadie pero recibe todas las amenazas,
-                inversamente a las otras piezas.
+                > attacker_threatOnDefender -> amenazas que restringen movimientos
 
-                Para confirmar las amenazas, todas las otras
-                objectives() usan defender_kingLegalMoves,
-                realmente tiene uso un attacker_kingLegalMoves?
-                Pareciera que no...
-
-                > defender_threatOnAttacker
-                > attacker_threatOnDefender
+                > defender_kingLegalMoves -> actualizar movimientos
+                                            
+                El king es distinto, ya que no amenaza a nadie pero recibe todas
+                las amenazas, inversamente a las otras piezas.
                 '''
 
-                '''Puedo aquí mismo cantar jaque-mate? Debería?
-                No, debería actualizar posiciones de "rey defensor"
-                y en otro lugar evaluar si dejé, en base al estado actual
-                del tablero, al rey en jaque-mate (el jaque como tal
-                es parte de la funcionalidad, no un estado particular, 
-                aunque como estado puede servir solo para informar
-                al jugador correspondiente)
+                if movement not in self.attacker_positions:
 
-                Revisando los threat-on-me puedo saber si
-                estoy en amenaza directa y si puedo moverme o no,
-                (puedo matar amenaza si eso no implica caer en otra
-                casilla de threat).
+                    # Attacker threat
+                    if movement in self.attacker_kingLegalMoves: # Los reyes no pueden 'tocarse'
+                        '''attacker_kingLegalMoves será resultado del SWAP, nunca se
+                        actualiza independientemente.'''
+                        continue
+                    if movement in self.attacker_threatOnDefender: # amenaza indirecta
+                        continue
+                    # -----------------------------------------------------------
 
-                Lo que no estoy seguro es si debo decidir jaque-mate
-                con una perspectiva totalmente global de todas las 
-                variables o decidirlo en base a "pequeñas deducciones"
-                '''
-
-                # Attacker threat on me (o revisar attacker_threatonme?)
-                '''Intentemos resolver las preguntas:
-                ¿Me puedo mover? ¿Adónde y por qué?'''
-
-                '''ATENCION!! ANTES de poder definir attacker_threatOnDefender,
-                es necesario saber "qué amenazo", por lo que PRIMERO veo a dónde
-                se puede mover el rey (defender_kingLegalMoves) y LUEGO estimo
-                attacker_threatOnDefender'''
-                for threat_pos_list in self.defender_threatOnAttacker.values():
-                    for _pos in threat_pos_list:
-                        if piece_standpoint == _pos:
-                            ...
-
-                if movement in self.defender_kingLegalMoves: #illegal movement
-                    continue
-                if movement not in self.black_positions and movement not in self.white_positions:
-                    mov_target_positions.update({movement:self.boardRects[movement]}) 
+                    else:
+                        # Defender kingLegalMoves update
+                        self.defender_kingLegalMoves.append(movement)
+                        mov_target_positions.update({movement:self.boardRects[movement]}) 
                 
                 elif movement in self.defender_positions:
                     on_target_kill_positions.update({movement:self.boardRects[movement]})
