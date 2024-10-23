@@ -383,7 +383,7 @@ class Match(Scene):
                 if kp in self.white_positions:
                     on_target_kill_positions.update({kp:self.boardRects[kp]})
                 
-                # King checks ------------------------------------
+                # Threat on deffender king -----------------------
                 if kp in self.defender_kingLegalMoves:
                     self.attacker_threatOnDefender['Peón'].append(kp)
                 # ------------------------------------------------
@@ -751,22 +751,31 @@ class Match(Scene):
             if 0 <= movement <= 63: # VALID SQUARE
 
                 '''
-                
                 Aquí realmente lo que debería hacer es updatear
                 los conjuntos kingLegalMoves de ambos equipos.
+                Al menos el que respecta a jaque/jaque-mate: el defensor
                 ^
                 ^- realmente debería caer en esto o sólo
                    trabajar con una perspectiva ofensiva?
                    TODAS las otras funciones objectives()
                    están trabajando con perspectiva ofensiva
                    y pareciera que están bien.
+
                    Despues de todo los resultados y estados
                    siempre se deciden luego de una ofensiva,
                    lo importante es trasladar esos estados
                    al equipo que corresponda: attacker <=> defender
                 
                 Pero hacer eso realmente no coincide con una función
-                trabajando en base a un standpoint.
+                trabajando en base a un standpoint. (perspectiva ofensiva)
+                ^
+                ^- incorrecto, al llamar a update_turn_objecvites() puedo
+                   inyectar el standpoint del rey defensor, y aquí adentro
+                   manejarme con:
+                   attacker_threatOnDefender -> amenazas que me restringen
+                   defender_kingLegalMoves -> actualizar movimientos
+                                              pasar standpoint correspondiente a
+                                              defensor en update_turn_objectives()
 
                 Si bien las otras funciones objectives() parecen
                 funcionar, el king es distinto, ya que no
@@ -776,14 +785,19 @@ class Match(Scene):
                 Para confirmar las amenazas, todas las otras
                 objectives() usan defender_kingLegalMoves,
                 realmente tiene uso un attacker_kingLegalMoves?
-                Pareciera que no... O si...
-
-
+                Pareciera que no...
 
                 > defender_threatOnAttacker
                 > attacker_threatOnDefender
                 '''
+
                 '''Puedo aquí mismo cantar jaque-mate? Debería?
+                No, debería actualizar posiciones de "rey defensor"
+                y en otro lugar evaluar si dejé, en base al estado actual
+                del tablero, al rey en jaque-mate (el jaque como tal
+                es parte de la funcionalidad, no un estado particular, 
+                aunque como estado puede servir solo para informar
+                al jugador correspondiente)
 
                 Revisando los threat-on-me puedo saber si
                 estoy en amenaza directa y si puedo moverme o no,
@@ -793,13 +807,16 @@ class Match(Scene):
                 Lo que no estoy seguro es si debo decidir jaque-mate
                 con una perspectiva totalmente global de todas las 
                 variables o decidirlo en base a "pequeñas deducciones"
-
-                
                 '''
 
-                # Defender threat on me
+                # Attacker threat on me (o revisar attacker_threatonme?)
                 '''Intentemos resolver las preguntas:
                 ¿Me puedo mover? ¿Adónde y por qué?'''
+
+                '''ATENCION!! ANTES de poder definir attacker_threatOnDefender,
+                es necesario saber "qué amenazo", por lo que PRIMERO veo a dónde
+                se puede mover el rey (defender_kingLegalMoves) y LUEGO estimo
+                attacker_threatOnDefender'''
                 for threat_pos_list in self.defender_threatOnAttacker.values():
                     for _pos in threat_pos_list:
                         if piece_standpoint == _pos:
