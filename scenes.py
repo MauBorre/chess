@@ -750,6 +750,40 @@ class Match(Scene):
                     continue
             if 0 <= movement <= 63: # VALID SQUARE
 
+                '''
+                
+                Aquí realmente lo que debería hacer es updatear
+                los conjuntos kingLegalMoves de ambos equipos.
+                ^
+                ^- realmente debería caer en esto o sólo
+                   trabajar con una perspectiva ofensiva?
+                   TODAS las otras funciones objectives()
+                   están trabajando con perspectiva ofensiva
+                   y pareciera que están bien.
+                   Despues de todo los resultados y estados
+                   siempre se deciden luego de una ofensiva,
+                   lo importante es trasladar esos estados
+                   al equipo que corresponda: attacker <=> defender
+                
+                Pero hacer eso realmente no coincide con una función
+                trabajando en base a un standpoint.
+
+                Si bien las otras funciones objectives() parecen
+                funcionar, el king es distinto, ya que no
+                amenaza a nadie pero recibe todas las amenazas,
+                inversamente a las otras piezas.
+
+                Para confirmar las amenazas, todas las otras
+                objectives() usan defender_kingLegalMoves,
+                realmente tiene uso un attacker_kingLegalMoves?
+                Pareciera que no... O si...
+
+
+
+                > defender_threatOnAttacker
+                > attacker_threatOnDefender
+                '''
+
                 # Defender threat on me
                 '''Puedo aquí mismo cantar jaque-mate? Debería?
 
@@ -761,7 +795,13 @@ class Match(Scene):
                 Lo que no estoy seguro es si debo decidir jaque-mate
                 con una perspectiva totalmente global de todas las 
                 variables o decidirlo en base a "pequeñas deducciones"
+
+                
                 '''
+                for threat_pos_list in self.defender_threatOnAttacker.values():
+                    for _pos in threat_pos_list:
+                        if piece_standpoint == _pos:
+                            ...
 
                 if movement in self.defender_kingLegalMoves: #illegal movement
                     continue
