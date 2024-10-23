@@ -243,9 +243,9 @@ class Match(Scene):
         self.attacker_positions: dict[int, str] = self.white_positions #22/10 NO ESTA HECHO EL SWAP
         self.attacker_threatOnDefender: dict[str, int] = self.white_threatOnBlack
         self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
-        #update_turn_objectives() ?
+        self.update_turn_objectives() 
 
-    def update_turn_objectives(self): # >TARGET = rey || >ATTACKER = pieces
+    def update_turn_objectives(self):
         '''Actualizando conjuntos threatOn y kingLegalMoves para
         TODOS los equipos'''
         
@@ -729,9 +729,14 @@ class Match(Scene):
         +SUR_ESTE
         1 casillero a la vez hasta limite tablero o pieza aliada/enemiga
         '''
+        
+        # Visual feedback utils
         mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint: self.boardRects[piece_standpoint]} # standpoint is always first pos
         on_target_kill_positions: dict[int,pygame.Rect] = {}
+        
+        # Objectives
         king_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
+
         for direction in king_directions:
             movement = piece_standpoint+direction
             if direction == ESTE or direction == OESTE:
@@ -743,19 +748,30 @@ class Match(Scene):
             if direction == SUR_ESTE or direction == SUR_OESTE:
                 if movement-SUR not in row_of_(piece_standpoint):
                     continue
-            if 0 <= movement <= 63:
+            if 0 <= movement <= 63: # VALID SQUARE
+
+                # Defender threat on me
+                '''Puedo aquí mismo cantar jaque-mate? Debería?
+
+                Revisando los threat-on-me puedo saber si
+                estoy en amenaza directa y si puedo moverme o no,
+                (puedo matar amenaza si eso no implica caer en otra
+                casilla de threat).
+
+                Lo que no estoy seguro es si debo decidir jaque-mate
+                con una perspectiva totalmente global de todas las 
+                variables o decidirlo en base a "pequeñas deducciones"
+                '''
+
                 if movement in self.defender_kingLegalMoves: #illegal movement
                     continue
                 if movement not in self.black_positions and movement not in self.white_positions:
                     mov_target_positions.update({movement:self.boardRects[movement]}) 
-                else:
-                    if self.turn_defender == 'White':
-                        if movement in self.white_positions:
-                            on_target_kill_positions.update({movement:self.boardRects[movement]})
-                    if self.turn_defender == 'Black':
-                        if movement in self.black_positions:
-                            on_target_kill_positions.update({movement:self.boardRects[movement]})
+                
+                elif movement in self.defender_positions:
+                    on_target_kill_positions.update({movement:self.boardRects[movement]})
                     continue
+
         return mov_target_positions, on_target_kill_positions
 
     def queen_objectives(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
