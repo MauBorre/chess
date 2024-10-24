@@ -799,7 +799,7 @@ class Match(Scene):
         _threatening: bool = False
         _single_origin_threat: bool | None = None
         _threat_origin_pos: int | None = None
-        _blocking_threat: bool = False
+        _standing_on_threat: bool = False
         _direct_threat: bool = False
         queen_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
@@ -837,12 +837,12 @@ class Match(Scene):
                     # ------------------------------------------------
 
                     # Attacker piece blocking Defender direct threat case lookup
-                    '''BUG 
-                    Cuidado, estoy revisando si bloqueo una amenaza, lo cual significa
+                    '''BUG no estoy teniendo en cuenta ciertos casos.
+                    Estoy revisando si bloqueo una amenaza, lo cual significa
                     q no podria moverme a menos que la pueda matar,
                     PERO
-                    Podria no estar bloqueando ninguna amenaza y que el rey este en jaque,
-                    por lo que mis únicos posibles movimientos *podrían* (si es posible)
+                    Podria no estar bloqueando ninguna amenaza y que el rey esté en jaque,
+                    por lo que mis únicos posibles movimientos *deberían* ser
                     MATAR o BLOQUEAR a la amenaza'''
                     for threat_pos_list in self.defender_threatOnAttacker.values():
 
@@ -853,15 +853,34 @@ class Match(Scene):
 
                             # Si la amenaza NO ES DIRECTA no tengo ninguna restricción
                             # de movimiento, cuidado.
-                            _blocking_threat = True # Si esto es TRUE no puedo moverme
+                            _standing_on_threat = True 
+                            # ^ Si esto y direct_threat son TRUE no puedo moverme, solo matar amenaza
+                            # ^ Si esto y single_origin_threat = False no puedo moverme en absoluto
 
                         for _pos in threat_pos_list:
                             '''Sólo me interesa saber si hay amenaza directa'''
+
                             if self.attacker_positions[_pos] == 'Rey':
+                                '''Es muy importante notar que las amenazas al rey,
+                                si las hay, son EL ULTIMO valor de la lista, sea
+                                el mayor o menor num, ya que encontrar al rey
+                                es razon de STOP THREAT'''
+
+
+                                '''Los bloqueos ante amenazas directas no son iguales
+                                si se dan en diagonal o rectas.
+
+                                Las amenazas diagonales puede que recorran los movimientos
+                                del rey pero no lo toquen.
+                                Pero las amenazas rectas SIEMPRE atravesarán al rey.
+
+                                Debería entonces revisar su categoría?
+                                '''
+
                                 # Hay amenaza directa.
                                 # Si hay mas de un orígen de amenaza lo sabré en la siguiente lista
-                                
-                                _direct_threat = True
+                                if not _standing_on_threat:
+                                    _direct_threat = True
                                 _single_origin_threat = True
 
                                 # Entonces mis únicos movimientos posibles son
@@ -879,7 +898,7 @@ class Match(Scene):
                                     mov_target_positions.update({movement:self.boardRects[movement]})
                                     return mov_target_positions, on_target_kill_positions
 
-                            if self.attacker_positions[_pos] == 'Rey' and _blocking_threat:
+                            if self.attacker_positions[_pos] == 'Rey' and _standing_on_threat:
                                 
                                 # La pieza está bloqueando un threat directo al rey
                                 # Esto significa que NO puedo moverme, solo si puedo matar a la amenaza.
@@ -912,7 +931,7 @@ class Match(Scene):
                     # Kill-movement
                     elif movement in self.defender_positions:
                         on_target_kill_positions.update({movement:self.boardRects[movement]})
-                        break
+                        break 
                     break #previene propagación mas allá del primer bloqueo - rompe el mult
         return mov_target_positions, on_target_kill_positions
 
