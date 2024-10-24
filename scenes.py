@@ -797,10 +797,11 @@ class Match(Scene):
         # Objectives
         _threat_emission: list[int] = []
         _threatening: bool = False
-        _single_origin_threat: bool | None = None
-        _threat_origin_pos: int | None = None
+        single_origin_direct_threat: bool | None = None
+        threat_origin_pos: int | None = None
+        direct_threats: list[int] = []
         _standing_on_threat: bool = False
-        _direct_threat: bool = False
+        direct_threat: bool = False
         queen_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
         for direction in queen_directions:
@@ -836,92 +837,36 @@ class Match(Scene):
                         _threatening = False
                     # ------------------------------------------------
 
-                    # Attacker piece blocking Defender direct threat case lookup
-                    '''BUG no estoy teniendo en cuenta ciertos casos.
-                    Estoy revisando si bloqueo una amenaza, lo cual significa
-                    q no podria moverme a menos que la pueda matar,
-                    PERO
-                    Podria no estar bloqueando ninguna amenaza y que el rey esté en jaque,
-                    por lo que mis únicos posibles movimientos *deberían* ser
-                    MATAR o BLOQUEAR a la amenaza'''
-                    for threat_pos_list in self.defender_threatOnAttacker.values():
+                    # Threat on attacker king (us-perspective) -------
+                    for _threats_list in self.defender_threatOnAttacker.values():
+                        if self.attacker_positions[_threats_list[-1]] == 'Rey': # única posicion de la lista que coincida con el rey
+                            if single_origin_direct_threat == True:
+                                '''Ya pasamos por aquí, entonces hay múltiples orígenes y nuestra pieza no puede
+                                moverse en absoluto'''
+                                return {}, {}
+                            else:
+                                # Hay amenaza directa, solo podremos movernos si eso mata o bloquea
+                                # a la amenaza.
+                                single_origin_direct_threat = True
+                                direct_threats = _threats_list
 
-                        if piece_standpoint in threat_pos_list:
-                            # Falta saber si hay amenaza directa
-                            # Entonces no podría moverme a menos
-                            # que sea para matar la amenaza de esta lista
+                    if single_origin_direct_threat:
+                        # killing threat
+                        if movement == max(direct_threats):
+                            threat_origin_pos = max(direct_threats)
+                        elif movement == min(direct_threats): 
+                            threat_origin_pos = min(direct_threats)
 
-                            # Si la amenaza NO ES DIRECTA no tengo ninguna restricción
-                            # de movimiento, cuidado.
-                            _standing_on_threat = True 
-                            # ^ Si esto y direct_threat son TRUE no puedo moverme, solo matar amenaza
-                            # ^ Si esto y single_origin_threat = False no puedo moverme en absoluto
-
-                        for _pos in threat_pos_list:
-                            '''Sólo me interesa saber si hay amenaza directa'''
-
-                            if self.attacker_positions[_pos] == 'Rey':
-                                '''Es muy importante notar que las amenazas al rey,
-                                si las hay, son EL ULTIMO valor de la lista, sea
-                                el mayor o menor num, ya que encontrar al rey
-                                es razon de STOP THREAT'''
-
-
-                                '''Los bloqueos ante amenazas directas no son iguales
-                                si se dan en diagonal o rectas.
-
-                                Las amenazas diagonales puede que recorran los movimientos
-                                del rey pero no lo toquen.
-                                Pero las amenazas rectas SIEMPRE atravesarán al rey.
-
-                                Debería entonces revisar su categoría?
-                                '''
-
-                                # Hay amenaza directa.
-                                # Si hay mas de un orígen de amenaza lo sabré en la siguiente lista
-                                if not _standing_on_threat:
-                                    _direct_threat = True
-                                _single_origin_threat = True
-
-                                # Entonces mis únicos movimientos posibles son
-                                # matar a la amenaza o bloquearla.
-                                '''Todo lo de aquí abajo se invalida si encuentro
-                                que el rey también esta amenazado desde otra fuente'''
-                                if movement == max(threat_pos_list):
-                                    _threat_origin_pos = max(threat_pos_list)
-                                elif movement == min(threat_pos_list): 
-                                    _threat_origin_pos = min(threat_pos_list)
-
-                                # BUG
-                                elif movement == _pos: # puedo bloquearla?
+                        else: # quizás pueda bloquearla
+                            for _pos in direct_threats:
+                                if movement == _pos: 
                                     # Puedo bloquearla - único movimiento posible.
                                     mov_target_positions.update({movement:self.boardRects[movement]})
                                     return mov_target_positions, on_target_kill_positions
-
-                            if self.attacker_positions[_pos] == 'Rey' and _standing_on_threat:
-                                
-                                # La pieza está bloqueando un threat directo al rey
-                                # Esto significa que NO puedo moverme, solo si puedo matar a la amenaza.
-                                _single_origin_threat = True
-                                # Aún puedo matar la amenaza.
-                                # El orígen de la amenaza es el mínimo o máximo de
-                                # la lista de posiciones-amenaza.
-                                if movement == max(threat_pos_list):
-                                    _threat_origin_pos = max(threat_pos_list)
-                                elif movement == min(threat_pos_list): 
-                                    _threat_origin_pos = min(threat_pos_list)
-                                continue #skip to next iteration
-
-                            # PERO si hay MAS DE UN origen de amenaza DIRECTA,
-                            # invalidar todos los objetivos.
-                            # (ninguna pieza puede eliminar dos o más orígenes de amenaza).
-                            if self.attacker_positions[_pos] == 'Rey' and _single_origin_threat:
-                                _single_origin_threat == False
-                                return {}, {}
-                    # sino, devolver la única opcion de movimiento posible (matar amenaza - la esté bloqueando o no)
-                    if _single_origin_threat and _threat_origin_pos != None:
-                        on_target_kill_positions.update({_threat_origin_pos:self.boardRects[_threat_origin_pos]})
-                        return mov_target_positions, on_target_kill_positions
+                        # si existe objetivo de origen, devolver la única opcion de movimiento posible (matar amenaza)
+                        if threat_origin_pos != None:
+                            on_target_kill_positions.update({threat_origin_pos:self.boardRects[threat_origin_pos]})
+                            return mov_target_positions, on_target_kill_positions
                     # ------------------------------------------------
 
                     # Movement
