@@ -837,20 +837,26 @@ class Match(Scene):
                     # ------------------------------------------------
 
                     # Attacker piece blocking Defender direct threat case lookup
-                    '''Cuidado, estoy revisando si bloqueo una amenaza, lo cual significa
+                    '''BUG 
+                    Cuidado, estoy revisando si bloqueo una amenaza, lo cual significa
                     q no podria moverme a menos que la pueda matar,
                     PERO
                     Podria no estar bloqueando ninguna amenaza y que el rey este en jaque,
                     por lo que mis únicos posibles movimientos *podrían* (si es posible)
                     MATAR o BLOQUEAR a la amenaza'''
                     for threat_pos_list in self.defender_threatOnAttacker.values():
-                        for _pos in threat_pos_list:
 
-                            if piece_standpoint == _pos:
-                                # caso no puedo moverme
-                                _blocking_threat = True
-                                continue
-                            
+                        if piece_standpoint in threat_pos_list:
+                            # Falta saber si hay amenaza directa
+                            # Entonces no podría moverme a menos
+                            # que sea para matar la amenaza de esta lista
+
+                            # Si la amenaza NO ES DIRECTA no tengo ninguna restricción
+                            # de movimiento, cuidado.
+                            _blocking_threat = True # Si esto es TRUE no puedo moverme
+
+                        for _pos in threat_pos_list:
+                            '''Sólo me interesa saber si hay amenaza directa'''
                             if self.attacker_positions[_pos] == 'Rey':
                                 # Hay amenaza directa.
                                 # Si hay mas de un orígen de amenaza lo sabré en la siguiente lista
@@ -867,6 +873,7 @@ class Match(Scene):
                                 elif movement == min(threat_pos_list): 
                                     _threat_origin_pos = min(threat_pos_list)
 
+                                # BUG
                                 elif movement == _pos: # puedo bloquearla?
                                     # Puedo bloquearla - único movimiento posible.
                                     mov_target_positions.update({movement:self.boardRects[movement]})
