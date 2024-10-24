@@ -233,10 +233,10 @@ class Match(Scene):
         update_turn_objectives(), llamada luego de realizarse un movimiento en el tablero. 
         '''
         self.defender_positions: dict[int, str] = self.black_positions #22/10 NO ESTA HECHO EL SWAP
-        self.defender_threatOnAttacker: dict[str, int] = self.black_threatOnWhite
+        self.defender_threatOnAttacker: dict[str, list[int]] = self.black_threatOnWhite
         self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
         self.attacker_positions: dict[int, str] = self.white_positions #22/10 NO ESTA HECHO EL SWAP
-        self.attacker_threatOnDefender: dict[str, int] = self.white_threatOnBlack
+        self.attacker_threatOnDefender: dict[str, list[int]] = self.white_threatOnBlack
         self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
         self.update_turn_objectives() 
 
@@ -800,6 +800,7 @@ class Match(Scene):
         _single_origin_threat: bool | None = None
         _threat_origin_pos: int | None = None
         _blocking_threat: bool = False
+        _direct_threat: bool = False
         queen_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
         for direction in queen_directions:
@@ -844,10 +845,37 @@ class Match(Scene):
                     MATAR o BLOQUEAR a la amenaza'''
                     for threat_pos_list in self.defender_threatOnAttacker.values():
                         for _pos in threat_pos_list:
+
                             if piece_standpoint == _pos:
+                                # caso no puedo moverme
                                 _blocking_threat = True
+                                continue
+                            
+                            if self.attacker_positions[_pos] == 'Rey':
+                                # Hay amenaza directa.
+                                # Si hay mas de un orígen de amenaza lo sabré en la siguiente lista
+                                
+                                _direct_threat = True
+                                _single_origin_threat = True
+
+                                # Entonces mis únicos movimientos posibles son
+                                # matar a la amenaza o bloquearla.
+                                '''Todo lo de aquí abajo se invalida si encuentro
+                                que el rey también esta amenazado desde otra fuente'''
+                                if movement == max(threat_pos_list):
+                                    _threat_origin_pos = max(threat_pos_list)
+                                elif movement == min(threat_pos_list): 
+                                    _threat_origin_pos = min(threat_pos_list)
+
+                                elif movement == _pos: # puedo bloquearla?
+                                    # Puedo bloquearla - único movimiento posible.
+                                    mov_target_positions.update({movement:self.boardRects[movement]})
+                                    return mov_target_positions, on_target_kill_positions
+
                             if self.attacker_positions[_pos] == 'Rey' and _blocking_threat:
+                                
                                 # La pieza está bloqueando un threat directo al rey
+                                # Esto significa que NO puedo moverme, solo si puedo matar a la amenaza.
                                 _single_origin_threat = True
                                 # Aún puedo matar la amenaza.
                                 # El orígen de la amenaza es el mínimo o máximo de
@@ -857,13 +885,14 @@ class Match(Scene):
                                 elif movement == min(threat_pos_list): 
                                     _threat_origin_pos = min(threat_pos_list)
                                 continue #skip to next iteration
+
                             # PERO si hay MAS DE UN origen de amenaza DIRECTA,
                             # invalidar todos los objetivos.
                             # (ninguna pieza puede eliminar dos o más orígenes de amenaza).
                             if self.attacker_positions[_pos] == 'Rey' and _single_origin_threat:
                                 _single_origin_threat == False
                                 return {}, {}
-                    # sino, devolver la única opcion de movimiento posible (matar amenaza)
+                    # sino, devolver la única opcion de movimiento posible (matar amenaza - la esté bloqueando o no)
                     if _single_origin_threat and _threat_origin_pos != None:
                         on_target_kill_positions.update({_threat_origin_pos:self.boardRects[_threat_origin_pos]})
                         return mov_target_positions, on_target_kill_positions
