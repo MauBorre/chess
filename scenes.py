@@ -1057,17 +1057,22 @@ class Match(Scene):
         para resolver estados jaque/jaque-mate.
 
         >> attacker_threatOnDefender
+
             Debo recorrer todas estas posiciones, si encuentro que defender king standpoint
             está en este conjunto, es JAQUE.
+
             Lo que resta por reconocer para saber si es J-MATE es identificar si el rey tiene
             salvación o no.
-            Esto se resolvería verificando que el rey no tenga legalMoves y que ninguna pieza aliada
-            pueda salvarlo.
+
+            Para ello, verificaremos si el rey tiene amenaza directa de origen cruzado (ninguna
+            pieza puede bloquear con un solo movimiento dos orígenes de amenaza),
+            si es así, verificaremos que no tenga legalMoves, si es así, es J-MATE
+
 
         >> defender_kingLegalMoves
             Mientras el rey tenga legalMoves será como máximo JAQUE, nunca J-MATE.
-            Si NO tiene legalMoves, su standpoint NO esta en attacker_threatOnDefender (JAQUE)
-            y ninguna pieza puede salvarlo, será STALE-MATE.
+            Si NO tiene legalMoves y su standpoint NO esta en attacker_threatOnDefender (JAQUE)
+            y ninguna pieza puede salvarlo, será STALE-MATE (empate).
 
         '''
 
@@ -1081,35 +1086,21 @@ class Match(Scene):
         STALE-MATE > El rey no es apuntado directamente, pero no puede moverse ni
             ser salvado por pieza aliada. Estado de empate.
         '''
-        if self.get_piece_standpoint(self.turn_defender,"Rey").pop() in self.targetColor_KingCHECKPOS:
-            #ok, está en jaque. ¿pero tiene escapatoria?
-            if set(self.targetColor_KingALLPOS) == self.targetColor_KingCHECKPOS:
-                #ok tampoco puede moverse. ¿pero puede una pieza salvarlo?
-                if self.targetColor_KingCHECKPOS not in self.saving_positions: # JAQUE-MATE
-                    #está apuntado, está rodeado y no puede ser salvado
-                    if self.turn_defender == 'Black': 
-                        self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
-                        self.match_state = 'White gana - Black en jaque-mate'
-                    if self.turn_defender == 'White': 
-                        self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
-                        self.match_state = 'Black gana - White en jaque-mate'
-            else: # JAQUE
-                #puede ser salvado, o no todo su camino no está rodeado
-                if self.turn_defender == 'Black': 
-                    #alertar al jugador
-                    self.match_state = 'Rey Black en jaque'
-                    #modificar posiciones inválidas aquí o no? La lógica para invalidarlas "es por acá"...o no?
-                if self.turn_defender == 'White': 
-                    #alertar al jugador
-                    self.match_state = 'Rey White en jaque'
-                    #modificar posiciones inválidas aquí o no? La lógica para invalidarlas "es por acá"...o no?
-        # Ahogado | stalemate (draw)
-        elif set(self.targetColor_KingALLPOS).discard(self.get_piece_standpoint(self.turn_defender,"Rey").pop()) == self.targetColor_KingCHECKPOS:
-            #ok, está rodeado ¿pero alguna pieza puede salvarlo?
-            if self.targetColor_KingCHECKPOS not in self.saving_positions: # DRAW
-                # nadie puede salvarlo tampoco
-                self.stalemate == True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
-                self.match_state = 'Rey ahogado - Empate'
+        # if self.turn_defender == 'Black': 
+        #     self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+        #     self.match_state = 'White gana - Black en jaque-mate'
+
+        #     self.match_state = 'Rey Black en jaque'
+
+        # if self.turn_defender == 'White': 
+        #     self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+        #     self.match_state = 'Black gana - White en jaque-mate'
+        #     self.match_state = 'Rey White en jaque'
+
+        # self.stalemate == True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
+        # self.match_state = 'Rey ahogado - Empate'
+
+        
 
     def render(self):
         #hud
