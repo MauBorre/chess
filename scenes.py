@@ -836,6 +836,12 @@ class Match(Scene):
                     # ------------------------------------------------
 
                     # Attacker piece blocking Defender direct threat case lookup
+                    '''Cuidado, estoy revisando si bloqueo una amenaza, lo cual significa
+                    q no podria moverme a menos que la pueda matar,
+                    PERO
+                    Podria no estar bloqueando ninguna amenaza y que el rey este en jaque,
+                    por lo que mis únicos posibles movimientos *podrían* (si es posible)
+                    MATAR o BLOQUEAR a la amenaza'''
                     for threat_pos_list in self.defender_threatOnAttacker.values():
                         for _pos in threat_pos_list:
                             if piece_standpoint == _pos:
@@ -1029,8 +1035,25 @@ class Match(Scene):
 
     def decide_check(self):
         '''
-        Evaluar posiciones (...) para resolver estados jaque/jaque-mate.
-        
+        Evaluar "cómo quedaron las piezas en el tablero despues del último movimiento"
+        para resolver estados jaque/jaque-mate.
+
+        >> attacker_threatOnDefender
+            Debo recorrer todas estas posiciones, si encuentro que defender king standpoint
+            está en este conjunto, es JAQUE.
+            Lo que resta por reconocer para saber si es J-MATE es identificar si el rey tiene
+            salvación o no.
+            Esto se resolvería verificando que el rey no tenga legalMoves y que ninguna pieza aliada
+            pueda salvarlo.
+
+        >> defender_kingLegalMoves
+            Mientras el rey tenga legalMoves será como máximo JAQUE, nunca J-MATE.
+            Si NO tiene legalMoves, su standpoint NO esta en attacker_threatOnDefender (JAQUE)
+            y ninguna pieza puede salvarlo, será STALE-MATE.
+
+        '''
+
+        '''
         JAQUE > El rey es apuntado directamente, PUEDE escapar moviendose o siendo
             salvado por pieza aliada (matando o bloqueando amenaza)
 
