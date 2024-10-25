@@ -1019,7 +1019,7 @@ class Match(Scene):
                     self.black_positions.pop(self.move_here) 
                 self.white_positions.update({self.move_here:_piece})
 
-            # POST MOVIMIENTOS / ATAQUES -----------------------------------------------------------------
+            # POST MOVIMIENTOS / ATAQUES ---------------------
             # Actualizar todos los registros de posiciones 
             self.update_turn_objectives() 
             # Evaluación de posiciones 
@@ -1039,7 +1039,7 @@ class Match(Scene):
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''> Argumentar pieza exactamente igual que en pieces.origins
-        > Utilizar .pop() en piezas singulares como Rey y Reina'''
+        > Utilizar .pop() en piezas de posiciones singulares como Rey y Reina'''
         _actual_standpoints: list[int] = []
         if color == 'Black':
             for k,v in self.black_positions.items():
@@ -1086,6 +1086,18 @@ class Match(Scene):
         STALE-MATE > El rey no es apuntado directamente, pero no puede moverse ni
             ser salvado por pieza aliada. Estado de empate.
         '''
+
+        '''IMPORTANTISIME
+        Al momento de checkear este objetivo que tengo revisar el king DEFENSOR en jaque'''
+
+        for threats_list in self.attacker_threatOnDefender.items():
+            for threat_position in threats_list:
+                if threat_position == self.defender_positions[threat_position] == 'Rey':
+                    # Rey enemigo en jaque.
+                    # Si no se puede mover y ninguna puede salvarlo es jaque-mate
+                    ...
+
+
         # if self.turn_defender == 'Black': 
         #     self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
         #     self.match_state = 'White gana - Black en jaque-mate'
