@@ -767,22 +767,28 @@ class Match(Scene):
 
 
                 '''
-                Aquí adentro revisar/actualizar:
+                Aquí adentro revisar:
 
                 > attacker_threatOnDefender -> amenazas que restringen movimientos
 
-                > defender_kingLegalMoves -> actualizar movimientos
+                > defender_kingLegalMoves -> actualizar movimientos en base a esas amenazas
                                             
                 El king es distinto, ya que no amenaza a nadie pero recibe todas
                 las amenazas, inversamente a las otras piezas.
                 '''
 
+                '''Esto esta bugueado, estoy computando algo que modificaría a ambos 
+                reyes como si fueran iguales.'''
+
+                '''BUG al utilizar esta función para updatear "que puede hacer el rey defensor"
+                debería por ejemplo buscar el bloqueo en self.defender_positions, pero debo
+                entonces ramificar esta función mejor para mi perspectiva attacker y defender.'''
                 if movement not in self.attacker_positions: # ally block
 
                     # Attacker threat
                     if movement in self.attacker_kingLegalMoves: # Los reyes no pueden 'tocarse'
                         continue
-                    if movement in self.attacker_threatOnDefender: # amenaza indirecta
+                    if movement in self.attacker_threatOnDefender: # amenazas directas e indirectas
                         continue
                     # -----------------------------------------------------------
 
@@ -790,7 +796,18 @@ class Match(Scene):
                         # Defender kingLegalMoves update
                         '''attacker_kingLegalMoves será resultado del SWAP, nunca se
                         actualiza independientemente.
-                        Si, PERO, el black es black y el white es white.'''
+                        Si, PERO, el black es black y el white es white.
+                        '''
+
+                        '''BUG no siempre voy a "preguntar" por este rey.
+
+                        Tengo que hacer movimientos "normalmente" para mi perspectiva
+                        como atacante y restringir movimientos para mi perspectiva como
+                        defensor.
+
+
+                        
+                        '''
                         self.defender_kingLegalMoves.append(movement)
                         mov_target_positions.update({movement:self.boardRects[movement]}) 
                 
@@ -1093,7 +1110,7 @@ class Match(Scene):
         '''IMPORTANTISIME
         Al momento de checkear este objetivo que tengo revisar el king DEFENSOR en jaque'''
 
-        for threats_list in self.attacker_threatOnDefender.items():
+        for threats_list in self.attacker_threatOnDefender.items(): 
             for threat_position in threats_list:
                 if threat_position == self.defender_positions[threat_position] == 'Rey':
                     # Rey enemigo en jaque.
