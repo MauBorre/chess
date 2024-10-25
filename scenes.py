@@ -796,7 +796,7 @@ class Match(Scene):
                         # Defender kingLegalMoves update
                         '''attacker_kingLegalMoves será resultado del SWAP, nunca se
                         actualiza independientemente.
-                        Si, PERO, el black es black y el white es white.
+                        PERO recordar: el black es black y el white es white.
                         '''
 
                         '''BUG no siempre voy a "preguntar" por este rey.
@@ -804,8 +804,6 @@ class Match(Scene):
                         Tengo que hacer movimientos "normalmente" para mi perspectiva
                         como atacante y restringir movimientos para mi perspectiva como
                         defensor.
-
-
                         
                         '''
                         self.defender_kingLegalMoves.append(movement)
