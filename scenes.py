@@ -277,6 +277,8 @@ class Match(Scene):
         self.winner = False
 
     def turn_swap(self):
+        '''CUIDADO con mezclar amenazas a reyes'''
+
         if self.turn_attacker == 'White':
             self.turn_attacker = 'Black'
             self.turn_defender = 'White'
@@ -779,8 +781,6 @@ class Match(Scene):
 
                     # Attacker threat
                     if movement in self.attacker_kingLegalMoves: # Los reyes no pueden 'tocarse'
-                        '''attacker_kingLegalMoves será resultado del SWAP, nunca se
-                        actualiza independientemente.'''
                         continue
                     if movement in self.attacker_threatOnDefender: # amenaza indirecta
                         continue
@@ -788,6 +788,9 @@ class Match(Scene):
 
                     else:
                         # Defender kingLegalMoves update
+                        '''attacker_kingLegalMoves será resultado del SWAP, nunca se
+                        actualiza independientemente.
+                        Si, PERO, el black es black y el white es white.'''
                         self.defender_kingLegalMoves.append(movement)
                         mov_target_positions.update({movement:self.boardRects[movement]}) 
                 
@@ -1095,7 +1098,11 @@ class Match(Scene):
                 if threat_position == self.defender_positions[threat_position] == 'Rey':
                     # Rey enemigo en jaque.
                     # Si no se puede mover y ninguna puede salvarlo es jaque-mate
-                    ...
+                    if len(self.defender_kingLegalMoves) == 0:
+                        # Cómo identificamos ahora si una pieza puede matar a sus amenazas
+                        # o bloquearlas? Lo estamos computando pero creo que sí necesitamos
+                        # un registro "global".
+                        ...
 
 
         # if self.turn_defender == 'Black': 
