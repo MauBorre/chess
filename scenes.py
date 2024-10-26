@@ -246,7 +246,7 @@ class Match(Scene):
         
         # Defender
         king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender,piece="Rey").pop()
-        self.king_objectives(king_standpoint)
+        self.king_objectives(king_standpoint,perspective='defender')
 
         # Attacker
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
@@ -732,7 +732,7 @@ class Match(Scene):
                     break #previene propagación mas allá del primer bloqueo - rompe el mult
         return mov_target_positions, on_target_kill_positions
 
-    def king_objectives(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
+    def king_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
         '''Movimiento Rey:
         +NORTE
         +SUR
@@ -764,63 +764,21 @@ class Match(Scene):
                 if movement-SUR not in row_of_(piece_standpoint):
                     continue
             if 0 <= movement <= 63: # VALID SQUARE
-
-
-                '''
-                Aquí adentro revisar:
-
-                > attacker_threatOnDefender -> amenazas que restringen movimientos
-
-                > defender_kingLegalMoves -> actualizar movimientos en base a esas amenazas
-                                            
-                El king es distinto, ya que no amenaza a nadie pero recibe todas
-                las amenazas, inversamente a las otras piezas.
-                '''
-
-                '''Esto esta bugueado, estoy computando algo que modificaría a ambos 
-                reyes como si fueran iguales.'''
-
-                '''Cuando yo CLICKEO la pieza, siempre reviso mi perspectiva como atacante, pero
-                cuando yo "UPDATEO LAS POSICIONES" siempre reviso mi perspectiva como defensor.'''
-
-                '''BUG al utilizar esta función para updatear "que puede hacer el rey defensor"
-                debería por ejemplo buscar el bloqueo en self.defender_positions, pero debo
-                entonces ramificar esta función mejor para mi perspectiva attacker y defender.'''
-
-                # Attacker perspective (movement/kill-movement updates | PIEZA CLICKEADA)
-                if movement not in self.attacker_positions: # ally block
-                    ...
-
-                # Defender perspective (defender_kingLegalMoves updates | UPDATE TURN OBJECTIVES)
-                if movement not in self.attacker_positions: # ally block
-
-                    # Attacker threat
-                    if movement in self.attacker_kingLegalMoves: # Los reyes no pueden 'tocarse'
-                        continue # BUG usar continue interrumpiría con la adjudicación a movement de la otra perspectiva
-                    if movement in self.attacker_threatOnDefender: # amenazas directas e indirectas
-                        continue # BUG usar continue interrumpiría con la adjudicación a movement de la otra perspectiva
-                    # -----------------------------------------------------------
-
-                    else:
-                        # Defender kingLegalMoves update
-                        '''attacker_kingLegalMoves será resultado del SWAP, nunca se
-                        actualiza independientemente.
-                        PERO recordar: el black es black y el white es white.
-                        '''
-
-                        '''BUG no siempre voy a "preguntar" por este rey.
-
-                        Tengo que hacer movimientos "normalmente" para mi perspectiva
-                        como atacante y restringir movimientos para mi perspectiva como
-                        defensor.
-                        
-                        '''
-                        self.defender_kingLegalMoves.append(movement)
-                        mov_target_positions.update({movement:self.boardRects[movement]}) 
                 
-                elif movement in self.defender_positions:
-                    on_target_kill_positions.update({movement:self.boardRects[movement]})
-                    continue
+                if perspective == 'attacker': # movement/kill-movement updates | PIEZA CLICKEADA
+                    if movement not in self.defender_threatOnAttacker:
+                        if movement not in self.attacker_positions: # ally block
+                            self.attacker_kingLegalMoves.append(movement)
+                            mov_target_positions.update({movement:self.boardRects[movement]})
+                        elif movement in self.defender_positions:
+                            self.attacker_kingLegalMoves.append(movement)
+                            on_target_kill_positions.update({movement:self.boardRects[movement]})
+
+                if perspective == 'defender': # defender_kingLegalMoves updates | UPDATE_TURN_OBJECTIVES() call
+                    if movement not in self.defender_positions: # ally block
+                        if movement not in self.attacker_kingLegalMoves: # Los reyes no pueden 'tocarse'
+                            if movement not in self.attacker_threatOnDefender: # amenazas directas e indirectas
+                                self.defender_kingLegalMoves.append(movement)
 
         return mov_target_positions, on_target_kill_positions
 
@@ -1020,7 +978,7 @@ class Match(Scene):
                             if SQUARE_TYPE == 'Rey':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.king_objectives(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.king_objectives(board_index,perspective='attacker')
 
                             if SQUARE_TYPE == 'Reina':
                                 self.pieceValidMovement_posDisplay.clear()
