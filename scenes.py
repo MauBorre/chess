@@ -780,16 +780,25 @@ class Match(Scene):
                 '''Esto esta bugueado, estoy computando algo que modificaría a ambos 
                 reyes como si fueran iguales.'''
 
+                '''Cuando yo CLICKEO la pieza, siempre reviso mi perspectiva como atacante, pero
+                cuando yo "UPDATEO LAS POSICIONES" siempre reviso mi perspectiva como defensor.'''
+
                 '''BUG al utilizar esta función para updatear "que puede hacer el rey defensor"
                 debería por ejemplo buscar el bloqueo en self.defender_positions, pero debo
                 entonces ramificar esta función mejor para mi perspectiva attacker y defender.'''
+
+                # Attacker perspective (movement/kill-movement updates | PIEZA CLICKEADA)
+                if movement not in self.attacker_positions: # ally block
+                    ...
+
+                # Defender perspective (defender_kingLegalMoves updates | UPDATE TURN OBJECTIVES)
                 if movement not in self.attacker_positions: # ally block
 
                     # Attacker threat
                     if movement in self.attacker_kingLegalMoves: # Los reyes no pueden 'tocarse'
-                        continue
+                        continue # BUG usar continue interrumpiría con la adjudicación a movement de la otra perspectiva
                     if movement in self.attacker_threatOnDefender: # amenazas directas e indirectas
-                        continue
+                        continue # BUG usar continue interrumpiría con la adjudicación a movement de la otra perspectiva
                     # -----------------------------------------------------------
 
                     else:
