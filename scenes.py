@@ -1076,16 +1076,36 @@ class Match(Scene):
         '''IMPORTANTISIME
         Al momento de checkear este objetivo que tengo revisar el king DEFENSOR en jaque'''
 
-        for threats_list in self.attacker_threatOnDefender.items(): 
-            for threat_position in threats_list:
-                if threat_position == self.defender_positions[threat_position] == 'Rey':
-                    # Rey enemigo en jaque.
-                    # Si no se puede mover y ninguna puede salvarlo es jaque-mate
-                    if len(self.defender_kingLegalMoves) == 0:
-                        # Cómo identificamos ahora si una pieza puede matar a sus amenazas
-                        # o bloquearlas? Lo estamos computando pero creo que sí necesitamos
-                        # un registro "global".
-                        ...
+        defender_king_check: bool = False
+        defender_king_can_be_saved: bool = True
+        defender_king_can_move: bool = True
+
+        if self.get_piece_standpoint(color=self.turn_defender,piece='Rey') in self.attacker_threatOnDefender:
+            defender_king_check = True
+        else:
+            defender_king_check = False
+
+        if len(self.defender_kingLegalMoves) == 0:
+            defender_king_can_move = False
+        else:
+            defender_king_can_move = True
+
+        if ... : #len(self.defender_savingKingPositions) == 0: 
+            defender_king_can_be_saved = False
+        else:
+            defender_king_can_be_saved = True
+        
+        if not defender_king_check and not defender_king_can_move and not defender_king_can_be_saved:
+            #STALE-MATE
+            ...
+        
+        if defender_king_check:
+            if defender_king_can_move or defender_king_can_be_saved:
+                #JAQUE
+                ...
+            elif not defender_king_can_move and not defender_king_can_be_saved:
+                #JAQUE-MATE
+                ...
 
 
         # if self.turn_defender == 'Black': 
@@ -1102,7 +1122,6 @@ class Match(Scene):
         # self.stalemate == True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
         # self.match_state = 'Rey ahogado - Empate'
 
-        
 
     def render(self):
         #hud
