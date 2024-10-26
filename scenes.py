@@ -767,12 +767,13 @@ class Match(Scene):
                 
                 if perspective == 'attacker': # movement/kill-movement updates | PIEZA CLICKEADA
                     if movement not in self.defender_threatOnAttacker:
-                        if movement not in self.attacker_positions: # ally block
-                            self.attacker_kingLegalMoves.append(movement)
-                            mov_target_positions.update({movement:self.boardRects[movement]})
-                        elif movement in self.defender_positions:
-                            self.attacker_kingLegalMoves.append(movement)
-                            on_target_kill_positions.update({movement:self.boardRects[movement]})
+                        if movement not in self.defender_kingLegalMoves:
+                            if movement not in self.attacker_positions: # ally block
+                                self.attacker_kingLegalMoves.append(movement)
+                                mov_target_positions.update({movement:self.boardRects[movement]})
+                            elif movement in self.defender_positions:
+                                self.attacker_kingLegalMoves.append(movement)
+                                on_target_kill_positions.update({movement:self.boardRects[movement]})
 
                 if perspective == 'defender': # defender_kingLegalMoves updates | UPDATE_TURN_OBJECTIVES() call
                     if movement not in self.defender_positions: # ally block
