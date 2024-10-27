@@ -277,8 +277,11 @@ class Match(Scene):
         self.attacker_kingLegalMoves.clear()
         self.defender_kingLegalMoves.clear()
         self.defender_threatOnAttacker.clear()
-
         self.defender_kingSupport.clear()
+
+        '''Hay ciertos mecanismos que son comunes a la generalidad del turno (como: rey en amenaza directa o no?)
+        que actualmente repetimos bastante dentro de las funciones objectives. Tiene mucha pinta que deberíamos/podríamos
+        hacer esos mecanismos aquí afuera y que las funciones objectives() trabajen con variables "globales".'''
         
         # Attacker ----------------------------------------------------------------------------------------
         '''BUG
@@ -388,24 +391,13 @@ class Match(Scene):
 
                 if perspective == 'defender': # debo asegurarme de retornar en esta perspectiva.
 
-                    '''
-                    Llamamos con esta perspectiva pura y exclusivamente para buscar si podemos salvar al rey de
+                    '''Llamamos con esta perspectiva pura y exclusivamente para buscar si podemos salvar al rey de
                     un jaque.
+                    '''
 
-                    No debo revisar si estoy parado en un lugar que protege a mi rey, precisamente debo ver si puedo salvarlo
-                    porque se "por otro lado" que esta en jaque.
-                    
-                    Al llamar perspectiva defender debo pasar el STANDPOINT CORRECTO'''
-
-                    for _threats_list in self.defender_threatOnAttacker.values(): # <- creo que los booleanos contenidos en este for
-                                                                                  # y otras de sus operaciones pueden ser verificados 
-                                                                                  # una única vez en la funcion update_turn_objectives(),
-                                                                                  # porque estamos repidiendo mucho y es un estado general del turno.
+                    for _threats_list in self.defender_threatOnAttacker.values():
 
                         if self.attacker_positions[_threats_list[-1]] == 'Rey': # única posicion de la lista que coincida con el rey
-
-                            '''Esto corresponde a una verificación de saving_positions.'''
-
                             if single_origin_direct_threat == True: # Solo True si pasa una vez (multiple threat origins = nada que hacer)
                                 return # nunca devolvemos objetos en perspectiva defender, solo actualizamos defender_kingSupport
                             else:
@@ -426,13 +418,15 @@ class Match(Scene):
                                 if movement == _pos: 
                                     # Puedo bloquearla - único movimiento posible.
                                     self.defender_kingSupport.add('Peón') # Salva al rey
-                                    mov_target_positions.update({movement:self.boardRects[movement]})
-                                    return mov_target_positions, on_target_kill_positions
+                                    # mov_target_positions.update({movement:self.boardRects[movement]})
+                                    # return mov_target_positions, on_target_kill_positions
+                                    return
                         # si existe objetivo de origen, devolver la única opcion de movimiento posible (matar amenaza)
                         if threat_origin_pos != None:
                             self.defender_kingSupport.add('Peón') # Salva al rey
-                            on_target_kill_positions.update({threat_origin_pos:self.boardRects[threat_origin_pos]})
-                            return mov_target_positions, on_target_kill_positions
+                            # on_target_kill_positions.update({threat_origin_pos:self.boardRects[threat_origin_pos]})
+                            # return mov_target_positions, on_target_kill_positions
+                            return
                     # --------------------------------------------------------------------------------------------
 
                 if perspective == 'attacker':
