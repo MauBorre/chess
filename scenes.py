@@ -294,6 +294,11 @@ class Match(Scene):
         Para evaluar correctamente las saving-positions debo encuadrar 
         
         '''
+
+        '''BUG FALTA AGREGAR EL NUEVO ARGUMENTO DE PERSPECTIVA Y PEDIR LOS CORRESPONDIENTES STANDPOINTS
+        DE PERSPECTIVA='defender'
+        
+        ESTO TAMBIEN CAMBIA CUANDO CLICKEAMOS LAS PIEZAS.'''
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
         for _pawn in pawn_standpoints:
             self.pawn_objectives(_pawn)
@@ -433,6 +438,7 @@ class Match(Scene):
                             if movement+SUR <= 63: #board limit check
 
                                 # Movement
+                                '''Falta revisar si mi movimiento expone mi rey'''
                                 if movement+SUR not in self.black_positions and movement+SUR not in self.white_positions:
                                     mov_target_positions.update({movement+SUR:self.boardRects[movement+SUR]})
                         else:
@@ -464,6 +470,7 @@ class Match(Scene):
             # piece block condition
             if movement >= 0: # NORTE LIMIT
 
+                '''Todo bug esta poronga lo estamos arreglando en white'''
                 # Attacker perspective restricted movements 
                 # from defense. (clicked perspective / update_turn_objectives() offensive) ------------------
                 for _threats_list in self.defender_threatOnAttacker.values():
@@ -498,6 +505,7 @@ class Match(Scene):
                     # ------------------------------------------------
 
                 # Movement
+                '''Falta revisar si mi movimiento expone mi rey'''
                 if movement not in self.black_positions and movement not in self.white_positions:
                     if piece_standpoint in self.in_base_Wpawns:
                         mov_target_positions.update({movement:self.boardRects[movement]})
@@ -506,6 +514,7 @@ class Match(Scene):
                         if movement+NORTE >= 0: # NORTE LIMIT
 
                             # Movement
+                            '''Falta revisar si mi movimiento expone mi rey'''
                             if movement+NORTE not in self.black_positions and movement+NORTE not in self.white_positions:
                                 mov_target_positions.update({movement+NORTE:self.boardRects[movement+NORTE]})
                     else:
@@ -521,6 +530,7 @@ class Match(Scene):
                 kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
 
             for kp in kill_positions:
+                '''Falta revisar si mi movimiento expone mi rey'''
                 if kp in self.black_positions:
                     on_target_kill_positions.update({kp:self.boardRects[kp]})
 
