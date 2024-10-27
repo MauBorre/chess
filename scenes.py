@@ -379,8 +379,8 @@ class Match(Scene):
                     Llamamos con esta perspectiva pura y exclusivamente para buscar si podemos salvar al rey de
                     un jaque.
 
-                    En esta comprobacion debo ver (TAMBIEN) si estoy parado en una posicion q bloquea y por lo tanto
-                    no puedo moverme (SALVAR) <- o donde reviso esto?
+                    No debo revisar si estoy parado en un lugar que protege a mi rey, precisamente debo ver si puedo salvarlo
+                    porque se "por otro lado" que esta en jaque.
                     
                     Al llamar perspectiva defender debo pasar el STANDPOINT CORRECTO'''
 
@@ -612,10 +612,12 @@ class Match(Scene):
                     # ------------------------------------------------
 
                     # Movement
+                    '''Falta revisar si mi movimiento expone mi rey'''
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
                     
                     # Kill-movement
+                    # '''Falta revisar si mi movimiento expone mi rey'''
                     elif movement in self.defender_positions:
                         on_target_kill_positions.update({movement:self.boardRects[movement]})
                         break   
@@ -700,10 +702,12 @@ class Match(Scene):
                     # ------------------------------------------------
 
                 # Movement
+                '''Falta revisar si mi movimiento expone mi rey'''
                 if movement not in self.black_positions and movement not in self.white_positions:
                     mov_target_positions.update({movement:self.boardRects[movement]})
                 
                 # Kill-movement
+                # '''Falta revisar si mi movimiento expone mi rey'''
                 elif movement in self.defender_positions:
                     on_target_kill_positions.update({movement:self.boardRects[movement]})
                     
@@ -793,10 +797,12 @@ class Match(Scene):
                     # ------------------------------------------------
                     
                     # Movement 
+                    '''Falta revisar si mi movimiento expone mi rey'''
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]})
 
                     # Kill-movement
+                    # '''Falta revisar si mi movimiento expone mi rey'''
                     elif movement in self.defender_positions:
                         on_target_kill_positions.update({movement:self.boardRects[movement]})
                         break
@@ -943,10 +949,12 @@ class Match(Scene):
                     # ------------------------------------------------
 
                     # Movement
+                    '''Falta revisar si mi movimiento expone mi rey'''
                     if movement not in self.black_positions and movement not in self.white_positions:
                         mov_target_positions.update({movement:self.boardRects[movement]}) 
                     
                     # Kill-movement
+                    # '''Falta revisar si mi movimiento expone mi rey'''
                     elif movement in self.defender_positions:
                         on_target_kill_positions.update({movement:self.boardRects[movement]})
                         break 
