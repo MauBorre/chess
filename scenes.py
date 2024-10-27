@@ -241,13 +241,15 @@ class Match(Scene):
         self.update_turn_objectives() 
 
     def update_turn_objectives(self):
-        '''Llama todas las funciones _objectives() las cuales actualizan
-        internamente attacker_threatOnDefender y defender_kingLegalMoves'''
+        '''Llama todas las funciones _objectives() las cuales actualizan y utilizan
+        internamente:
+        attacker_threatOnDefender
+        attacker_kingLegalMoves
+        defender_kingLegalMoves
+        defender_threatOnAttacker
         
-        # Defender
-        king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender,piece="Rey").pop()
-        self.king_objectives(king_standpoint,perspective='defender')
-
+        Primero debemos actualizar la ofensiva, y luego la defensiva'''
+        
         # Attacker
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
         for _pawn in pawn_standpoints:
@@ -267,6 +269,10 @@ class Match(Scene):
 
         queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker,piece="Reina").pop()
         self.queen_objectives(queen_standpoint)
+
+        # Defender
+        king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender,piece="Rey").pop()
+        self.king_objectives(king_standpoint,perspective='defender')
 
     def reset_board(self):
         self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['negras']['Peón']]
@@ -324,7 +330,8 @@ class Match(Scene):
             # piece block condition
             if movement <= 63: # SUR LIMIT
 
-                # Threat on attacker (us-perspective) ------------
+                # Attacker perspective restricted movements 
+                # from defense. (clicked perspective / update_turn_objectives() offensive) ------------------
                 for _threats_list in self.defender_threatOnAttacker.values():
                     if self.attacker_positions[_threats_list[-1]] == 'Rey': # única posicion de la lista que coincida con el rey
                         if single_origin_direct_threat == True:
@@ -335,10 +342,10 @@ class Match(Scene):
                             # Hay amenaza directa, solo podremos movernos si eso mata o bloquea
                             # a la amenaza.
                             single_origin_direct_threat = True
-                            direct_threats = _threats_list
+                            direct_threats = _threats_list # direct_threats solo puede contener una lista.
 
                 if single_origin_direct_threat:
-                    # killing threat
+                    # killing threat - la pieza que amenaza siempre coincide con el principio o el fin de direct_threats
                     if movement == max(direct_threats):
                         threat_origin_pos = max(direct_threats)
                     elif movement == min(direct_threats): 
@@ -353,8 +360,22 @@ class Match(Scene):
                     # si existe objetivo de origen, devolver la única opcion de movimiento posible (matar amenaza)
                     if threat_origin_pos != None:
                         on_target_kill_positions.update({threat_origin_pos:self.boardRects[threat_origin_pos]})
+
+                        '''
+                        esto significa que PUEDO SALVAR AL REY, y es lo que pareciera que debo registrar.
+
+                        Como conviene personificar estas posiciones salvadas?
+                        Si acumulo posiciones en una lista, en un punto debería tambien quitarlos
+                        o limpiarla.
+                        
+                        De hecho no es este el mismo caso que para todas las posiciones threat, legalmoves, etc?
+                        Porque si no las quito se siguen acumulando indefinidamente xd
+
+                        xd
+                        
+                        '''
                         return mov_target_positions, on_target_kill_positions
-                    # ------------------------------------------------
+                # --------------------------------------------------------------------------------------------
 
                 # Movement
                 if movement not in self.black_positions and movement not in self.white_positions:
@@ -777,7 +798,7 @@ class Match(Scene):
 
                 if perspective == 'defender': # defender_kingLegalMoves updates | UPDATE_TURN_OBJECTIVES() call
                     if movement not in self.defender_positions: # ally block
-                        if movement not in self.attacker_kingLegalMoves: # Los reyes no pueden 'tocarse'
+                        if movement not in self.attacker_kingLegalMoves: # Los reyes no pueden sobreponer sus posiciones
                             if movement not in self.attacker_threatOnDefender: # amenazas directas e indirectas
                                 self.defender_kingLegalMoves.append(movement)
 
