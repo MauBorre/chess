@@ -366,7 +366,7 @@ class Match(Scene):
         direct_threats: list[int] = []
         kill_positions: list[int] = []
 
-        if self.turn_defender == 'White':
+        if self.turn_defender == 'White': #<- puede esto complicar mi mecanismo de perspectiva?
             # SUR
             movement: int = piece_standpoint+SUR
 
