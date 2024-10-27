@@ -409,25 +409,33 @@ class Match(Scene):
                 movement: int = piece_standpoint+SUR
                 if movement <= 63: # SUR LIMIT
 
-                    if single_origin_direct_threat:
-                        # killing threat - la pieza que amenaza siempre coincide con el principio o el fin de direct_threats
-                        if movement == max(direct_threats):
-                            threat_origin_pos = max(direct_threats)
-                        elif movement == min(direct_threats): 
-                            threat_origin_pos = min(direct_threats)
-                        else: # quizás pueda bloquearla
-                            for _pos in direct_threats:
-                                if movement == _pos: 
-                                    # Puedo bloquearla - único movimiento posible.
-                                    self.defender_kingSupport.add('Peón') # Salva al rey
-                                    return
-                        # si existe objetivo de origen, devolver la única opcion de movimiento posible (matar amenaza)
-                        if threat_origin_pos != None:
-                            self.defender_kingSupport.add('Peón') # Salva al rey
-                            return
+                    '''Para realizar cualquier movimiento debemos también revisar que ese casillero
+                    no esté "ocupado".'''
 
-                    
-                    '''Dónde estamos verificando si nuestro movimiento expone al rey?'''
+                    if single_origin_direct_threat:
+                        '''ESTAMOS EVALUANDO EL MOVIMIENTO DEL PEON QUE NO MATA AQUI '''
+                        for _pos in direct_threats:
+                            if movement == _pos:
+                                self.defender_kingSupport.add('Peón')
+                                # OJO aún necesitamos revisar el segundo movimiento -particular- del peón
+
+                        # killing threat - la pieza que amenaza siempre coincide con el principio o el fin de direct_threats
+                        # if movement == max(direct_threats):
+                        #     threat_origin_pos = max(direct_threats)
+                        # elif movement == min(direct_threats): 
+                        #     threat_origin_pos = min(direct_threats)
+                        # else: # quizás pueda bloquearla
+                        #     for _pos in direct_threats:
+                        #         if movement == _pos: 
+                        #             # Puedo bloquearla - único movimiento posible.
+                        #             self.defender_kingSupport.add('Peón') # Salva al rey
+                        #             return
+
+                        # si existe objetivo de origen, devolver la única opcion de movimiento posible (matar amenaza)
+                        # if threat_origin_pos != None:
+                        #     self.defender_kingSupport.add('Peón') # Salva al rey
+                        #     return
+
                     if movement not in self.black_positions and movement not in self.white_positions:
                         if piece_standpoint in self.in_base_Bpawns:
                             mov_target_positions.update({movement:self.boardRects[movement]})
