@@ -282,17 +282,8 @@ class Match(Scene):
         
         # Attacker ----------------------------------------------------------------------------------------
         '''BUG
-        
-        Yo estoy llamando a esto para ver que tanto estoy acorralando al rey, pero el tipo de
-        movimiento-pieza kingSupport también debe ser revisado por los mecanismos objectives()
-
-        De hecho creo que lo estoy haciendo pero confundiendo todo xd
-
-        De todas formas parece no tan dificil, no parece necesario por lo pronto argumentar
-        objectives() distintamente.
-
-        Para evaluar correctamente las saving-positions debo encuadrar 
-        
+        Estoy mezclando "ver si salvo al rey" (perspectiva pre-ofensiva) con threats y otras cuestiones
+        de perspectiva actual-ofensiva.
         '''
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
         for _pawn in pawn_standpoints:
