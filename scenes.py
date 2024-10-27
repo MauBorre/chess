@@ -386,13 +386,17 @@ class Match(Scene):
             # SUR
             movement: int = piece_standpoint+SUR
 
-            # piece block condition
             if movement <= 63: # SUR LIMIT
 
                 if perspective == 'defender': # debo asegurarme de retornar en esta perspectiva.
 
-                    '''Llamamos con esta perspectiva pura y exclusivamente para buscar si podemos salvar al rey de
-                    un jaque.
+                    '''Utilizamos esta perspectiva pura y exclusivamente para buscar si podemos/debemos/es-nuestro-
+                    único-movimiento posible salvar al rey de un jaque directo.
+
+                    Debemos asegurarnos que los conjuntos THREATS estén vacíos primero,
+                    verificar que puedan mantener ese estado a través de los mecanismos (threats es primero y
+                    kingSupport es último.) y al llegar a este punto verificaremos que si la longitud del conjunto
+                    es 0 (no hay amenazas) o más de 0 (hay amenazas)
                     '''
 
                     for _threats_list in self.defender_threatOnAttacker.values():
@@ -427,6 +431,8 @@ class Match(Scene):
                             # on_target_kill_positions.update({threat_origin_pos:self.boardRects[threat_origin_pos]})
                             # return mov_target_positions, on_target_kill_positions
                             return
+
+                    
                     # --------------------------------------------------------------------------------------------
 
                 if perspective == 'attacker':
@@ -438,6 +444,9 @@ class Match(Scene):
 
                             # 2nd piece block condition
                             if movement+SUR <= 63: #board limit check
+
+                                '''DEBEMOS REVISAR SI ESTE PARTICULAR MOVIMIENTO TAMBIÉN AYUDA AL REY (aunque
+                                en el caso del peon nunca será comer, solo BLOQUEAR.)'''
 
                                 # Movement
                                 '''Falta revisar si mi movimiento expone mi rey'''
@@ -1166,7 +1175,7 @@ class Match(Scene):
         Al momento de checkear este objetivo que tengo revisar el king DEFENSOR en jaque'''
 
         defender_king_check: bool = False
-        defender_king_can_be_saved: bool = True
+        defender_king_support: bool = True
         defender_king_can_move: bool = True
 
         if self.get_piece_standpoint(color=self.turn_defender,piece='Rey') in self.attacker_threatOnDefender:
@@ -1179,22 +1188,36 @@ class Match(Scene):
         else:
             defender_king_can_move = True
 
-        if ... : #len(self.defender_savingKingPositions) == 0: 
-            defender_king_can_be_saved = False
+        if len(self.defender_savingKingPositions) == 0 :
+            defender_king_support = False
         else:
-            defender_king_can_be_saved = True
+            defender_king_support = True
         
-        if not defender_king_check and not defender_king_can_move and not defender_king_can_be_saved:
+        if not defender_king_check and not defender_king_can_move and not defender_king_support:
             #STALE-MATE
+            '''Termina el juego en empate. -> Spawn OptionsMenu -> try-again          /
+                                                                  return-to-MainMenu / 
+                                                                  change-sides       /
+                                                                  change-rules       /
+                                                                  change-difficulty  /
+            '''
             ...
         
         if defender_king_check:
-            if defender_king_can_move or defender_king_can_be_saved:
+            if defender_king_can_move or defender_king_support:
                 #JAQUE
+                '''Esto requiere solo una notificación al jugador correspondiente.
+                defender_color -> notificate CHECK (highlight possible solutions)'''
                 ...
-            elif not defender_king_can_move and not defender_king_can_be_saved:
+
+            elif not defender_king_can_move and not defender_king_support:
                 #JAQUE-MATE
+                '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
                 ...
+        
+        if not defender_king_check:
+            # El juego debe continuar normalmente
+            return
 
 
         # if self.turn_defender == 'Black': 
