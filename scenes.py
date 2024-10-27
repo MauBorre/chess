@@ -280,7 +280,7 @@ class Match(Scene):
 
         self.defender_kingSupport.clear()
         
-        # Attacker
+        # Attacker ----------------------------------------------------------------------------------------
         '''BUG
         
         Yo estoy llamando a esto para ver que tanto estoy acorralando al rey, pero el tipo de
@@ -294,33 +294,50 @@ class Match(Scene):
         Para evaluar correctamente las saving-positions debo encuadrar 
         
         '''
-
-        '''BUG FALTA AGREGAR EL NUEVO ARGUMENTO DE PERSPECTIVA Y PEDIR LOS CORRESPONDIENTES STANDPOINTS
-        DE PERSPECTIVA='defender'
-        
-        ESTO TAMBIEN CAMBIA CUANDO CLICKEAMOS LAS PIEZAS.'''
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
         for _pawn in pawn_standpoints:
-            self.pawn_objectives(_pawn)
+            self.pawn_objectives(_pawn, perspective='attacker')
 
         tower_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Torre")
         for _tower in tower_standpoints:
-            self.tower_objectives(_tower)
+            self.tower_objectives(_tower, perspective='attacker')
 
         bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Alfil")
         for _bishop in bishop_standpoints:
-            self.bishop_objectives(_bishop)
+            self.bishop_objectives(_bishop, perspective='attacker')
 
-        horse_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Caballo")
+        horse_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="Caballo")
         for _horse in horse_standpoints:
-            self.horse_objectives(_horse)
+            self.horse_objectives(_horse, perspective='attacker')
 
-        queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker,piece="Reina").pop()
-        self.queen_objectives(queen_standpoint)
+        queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece="Reina").pop()
+        self.queen_objectives(queen_standpoint, perspective='attacker')
+        # --------------------------------------------------------------------------------------------------
 
-        # Defender
-        king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender,piece="Rey").pop()
+        # Defender -----------------------------------------------------------------------------------------
+        king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Rey").pop()
         self.king_objectives(king_standpoint,perspective='defender')
+
+        # Defender kingSupport
+        pawn_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='Peón')
+        for _pawn in pawn_standpoints:
+            self.pawn_objectives(_pawn, perspective='defender')
+
+        tower_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="Torre")
+        for _tower in tower_standpoints:
+            self.tower_objectives(_tower, perspective='defender')
+        
+        bishop_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='Alfil')
+        for _bishop in bishop_standpoints:
+            self.bishop_objectives(_bishop, perspective='defender')
+        
+        horse_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="Caballo")
+        for _horse in horse_standpoints:
+            self.horse_objectives(_horse, perspective='defender')
+        
+        queen_standpoint = self.get_piece_standpoint(color=self.turn_defender, piece="Reina").pop()
+        self.queen_objectives(queen_standpoint, perspective='defender')
+        # -------------------------------------------------------------------------------------------------
 
     def reset_board(self):
         self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['negras']['Peón']]
@@ -541,7 +558,7 @@ class Match(Scene):
 
         return mov_target_positions, on_target_kill_positions
 
-    def tower_objectives(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
+    def tower_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
         '''Movimiento Torre:
         +NORTE
         +SUR
@@ -634,7 +651,7 @@ class Match(Scene):
                     break #previene propagación mas allá del primer bloqueo - rompe el mult
         return mov_target_positions, on_target_kill_positions
 
-    def horse_objectives(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
+    def horse_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
         '''Movimiento Caballo:
         doble-norte + este
         doble-norte + oeste
@@ -723,7 +740,7 @@ class Match(Scene):
                     
         return mov_target_positions, on_target_kill_positions
 
-    def bishop_objectives(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
+    def bishop_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
         '''Movimiento Alfil:
         +NOR_OESTE
         +NOR_ESTE
@@ -819,6 +836,109 @@ class Match(Scene):
                     break #previene propagación mas allá del primer bloqueo - rompe el mult
         return mov_target_positions, on_target_kill_positions
 
+    def queen_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
+            '''Movimiento Reina:
+            +NORTE
+            +SUR
+            +ESTE
+            +OESTE
+            +NOR_OESTE
+            +NOR_ESTE
+            +SUR_OESTE
+            +SUR_ESTE
+            "recursivo" hasta limite tablero o pieza aliada/enemiga
+            '''
+        
+            # Visual feedback utils
+            mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos
+            on_target_kill_positions: dict[int,pygame.Rect] = {}
+
+            # Objectives
+            _threat_emission: list[int] = []
+            _threatening: bool = False
+            single_origin_direct_threat: bool | None = None
+            threat_origin_pos: int | None = None
+            direct_threats: list[int] = []
+            queen_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
+
+            for direction in queen_directions:
+                for mult in range(1,8):
+                    movement = piece_standpoint+direction*mult
+                    if direction == ESTE or direction == OESTE:
+                        if movement not in row_of_(piece_standpoint):     
+                            break
+                    if direction == NOR_ESTE or direction == NOR_OESTE:
+                        if movement not in row_of_(piece_standpoint+NORTE*mult):
+                            break
+                    if direction == SUR_ESTE or direction == SUR_OESTE:
+                        if movement not in row_of_(piece_standpoint+SUR*mult):
+                            break
+                    if 0 <= movement <= 63: # VALID SQUARE
+
+                        # Threat on defender king ------------------------
+                        _threat_emission.append(movement)
+                        # King checks
+                        if movement in self.defender_kingLegalMoves:
+                            # Encontramos un spot de interés, eso significa que
+                            # hay threat.
+                            _threatening = True
+                        # Luego de esto corresponde encontrar un STOP:
+                        # > king standpoint O  > ya-no-hay-moves,
+                        if _threatening and self.defender_positions[movement] == 'Rey': # chocamos contra rey
+                            # STOP: adjuntar toda la traza threat.
+                            self.attacker_threatOnDefender['Reina'].append(_threat_emission)
+                            _threatening = False
+                        elif _threatening and movement not in self.defender_kingLegalMoves: # fin del área de amenaza
+                            # STOP: adjuntar toda la traza threat.
+                            self.attacker_threatOnDefender['Reina'].append(_threat_emission)
+                            _threatening = False
+                        # ------------------------------------------------
+
+                        # Threat on attacker (us-perspective) ------------
+                        for _threats_list in self.defender_threatOnAttacker.values():
+                            if self.attacker_positions[_threats_list[-1]] == 'Rey': # única posicion de la lista que coincida con el rey
+                                if single_origin_direct_threat == True:
+                                    '''Ya pasamos por aquí, entonces hay múltiples orígenes y nuestra pieza no puede
+                                    moverse en absoluto'''
+                                    return {}, {}
+                                else:
+                                    # Hay amenaza directa, solo podremos movernos si eso mata o bloquea
+                                    # a la amenaza.
+                                    single_origin_direct_threat = True
+                                    direct_threats = _threats_list
+
+                        if single_origin_direct_threat:
+                            # killing threat
+                            if movement == max(direct_threats):
+                                threat_origin_pos = max(direct_threats)
+                            elif movement == min(direct_threats): 
+                                threat_origin_pos = min(direct_threats)
+
+                            else: # quizás pueda bloquearla
+                                for _pos in direct_threats:
+                                    if movement == _pos: 
+                                        # Puedo bloquearla - único movimiento posible.
+                                        mov_target_positions.update({movement:self.boardRects[movement]})
+                                        return mov_target_positions, on_target_kill_positions
+                            # si existe objetivo de origen, devolver la única opcion de movimiento posible (matar amenaza)
+                            if threat_origin_pos != None:
+                                on_target_kill_positions.update({threat_origin_pos:self.boardRects[threat_origin_pos]})
+                                return mov_target_positions, on_target_kill_positions
+                        # ------------------------------------------------
+
+                        # Movement
+                        '''Falta revisar si mi movimiento expone mi rey'''
+                        if movement not in self.black_positions and movement not in self.white_positions:
+                            mov_target_positions.update({movement:self.boardRects[movement]}) 
+                        
+                        # Kill-movement
+                        # '''Falta revisar si mi movimiento expone mi rey'''
+                        elif movement in self.defender_positions:
+                            on_target_kill_positions.update({movement:self.boardRects[movement]})
+                            break 
+                        break #previene propagación mas allá del primer bloqueo - rompe el mult
+            return mov_target_positions, on_target_kill_positions
+
     def king_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
         '''Movimiento Rey:
         +NORTE
@@ -866,109 +986,6 @@ class Match(Scene):
                             if movement not in self.attacker_threatOnDefender: # amenazas directas e indirectas
                                 self.defender_kingLegalMoves.append(movement)
 
-        return mov_target_positions, on_target_kill_positions
-
-    def queen_objectives(self, piece_standpoint: int) -> dict[int,pygame.Rect]:
-        '''Movimiento Reina:
-        +NORTE
-        +SUR
-        +ESTE
-        +OESTE
-        +NOR_OESTE
-        +NOR_ESTE
-        +SUR_OESTE
-        +SUR_ESTE
-        "recursivo" hasta limite tablero o pieza aliada/enemiga
-        '''
-       
-        # Visual feedback utils
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos
-        on_target_kill_positions: dict[int,pygame.Rect] = {}
-
-        # Objectives
-        _threat_emission: list[int] = []
-        _threatening: bool = False
-        single_origin_direct_threat: bool | None = None
-        threat_origin_pos: int | None = None
-        direct_threats: list[int] = []
-        queen_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
-
-        for direction in queen_directions:
-            for mult in range(1,8):
-                movement = piece_standpoint+direction*mult
-                if direction == ESTE or direction == OESTE:
-                    if movement not in row_of_(piece_standpoint):     
-                        break
-                if direction == NOR_ESTE or direction == NOR_OESTE:
-                    if movement not in row_of_(piece_standpoint+NORTE*mult):
-                        break
-                if direction == SUR_ESTE or direction == SUR_OESTE:
-                    if movement not in row_of_(piece_standpoint+SUR*mult):
-                        break
-                if 0 <= movement <= 63: # VALID SQUARE
-
-                    # Threat on defender king ------------------------
-                    _threat_emission.append(movement)
-                    # King checks
-                    if movement in self.defender_kingLegalMoves:
-                        # Encontramos un spot de interés, eso significa que
-                        # hay threat.
-                        _threatening = True
-                    # Luego de esto corresponde encontrar un STOP:
-                    # > king standpoint O  > ya-no-hay-moves,
-                    if _threatening and self.defender_positions[movement] == 'Rey': # chocamos contra rey
-                        # STOP: adjuntar toda la traza threat.
-                        self.attacker_threatOnDefender['Reina'].append(_threat_emission)
-                        _threatening = False
-                    elif _threatening and movement not in self.defender_kingLegalMoves: # fin del área de amenaza
-                        # STOP: adjuntar toda la traza threat.
-                        self.attacker_threatOnDefender['Reina'].append(_threat_emission)
-                        _threatening = False
-                    # ------------------------------------------------
-
-                    # Threat on attacker (us-perspective) ------------
-                    for _threats_list in self.defender_threatOnAttacker.values():
-                        if self.attacker_positions[_threats_list[-1]] == 'Rey': # única posicion de la lista que coincida con el rey
-                            if single_origin_direct_threat == True:
-                                '''Ya pasamos por aquí, entonces hay múltiples orígenes y nuestra pieza no puede
-                                moverse en absoluto'''
-                                return {}, {}
-                            else:
-                                # Hay amenaza directa, solo podremos movernos si eso mata o bloquea
-                                # a la amenaza.
-                                single_origin_direct_threat = True
-                                direct_threats = _threats_list
-
-                    if single_origin_direct_threat:
-                        # killing threat
-                        if movement == max(direct_threats):
-                            threat_origin_pos = max(direct_threats)
-                        elif movement == min(direct_threats): 
-                            threat_origin_pos = min(direct_threats)
-
-                        else: # quizás pueda bloquearla
-                            for _pos in direct_threats:
-                                if movement == _pos: 
-                                    # Puedo bloquearla - único movimiento posible.
-                                    mov_target_positions.update({movement:self.boardRects[movement]})
-                                    return mov_target_positions, on_target_kill_positions
-                        # si existe objetivo de origen, devolver la única opcion de movimiento posible (matar amenaza)
-                        if threat_origin_pos != None:
-                            on_target_kill_positions.update({threat_origin_pos:self.boardRects[threat_origin_pos]})
-                            return mov_target_positions, on_target_kill_positions
-                    # ------------------------------------------------
-
-                    # Movement
-                    '''Falta revisar si mi movimiento expone mi rey'''
-                    if movement not in self.black_positions and movement not in self.white_positions:
-                        mov_target_positions.update({movement:self.boardRects[movement]}) 
-                    
-                    # Kill-movement
-                    # '''Falta revisar si mi movimiento expone mi rey'''
-                    elif movement in self.defender_positions:
-                        on_target_kill_positions.update({movement:self.boardRects[movement]})
-                        break 
-                    break #previene propagación mas allá del primer bloqueo - rompe el mult
         return mov_target_positions, on_target_kill_positions
 
     def draw_board(self):
@@ -1046,32 +1063,32 @@ class Match(Scene):
                             if SQUARE_TYPE == 'Peón':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.pawn_objectives(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.pawn_objectives(board_index, perspective='attacker')
 
                             if SQUARE_TYPE == 'Torre':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.tower_objectives(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.tower_objectives(board_index, perspective='attacker')
                             
                             if SQUARE_TYPE == 'Caballo':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.horse_objectives(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.horse_objectives(board_index, perspective='attacker')
                         
                             if SQUARE_TYPE == 'Alfil':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.bishop_objectives(board_index)
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.bishop_objectives(board_index, perspective='attacker')
+                            
+                            if SQUARE_TYPE == 'Reina':
+                                self.pieceValidMovement_posDisplay.clear()
+                                if interacted_PColor == self.turn_attacker:
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.queen_objectives(board_index, perspective='attacker')
 
                             if SQUARE_TYPE == 'Rey':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
                                     self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.king_objectives(board_index,perspective='attacker')
-
-                            if SQUARE_TYPE == 'Reina':
-                                self.pieceValidMovement_posDisplay.clear()
-                                if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.queen_objectives(board_index)
                                 
                             if SQUARE_TYPE == "EMPTY":
                                 self.pieceValidMovement_posDisplay.clear()
