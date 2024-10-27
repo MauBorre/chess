@@ -243,12 +243,21 @@ class Match(Scene):
     def update_turn_objectives(self):
         '''Llama todas las funciones _objectives() las cuales actualizan y utilizan
         internamente:
+
         attacker_threatOnDefender
         attacker_kingLegalMoves
         defender_kingLegalMoves
         defender_threatOnAttacker
         
-        Primero debemos actualizar la ofensiva, y luego la defensiva'''
+        Primero debemos actualizar la ofensiva, y luego la defensiva.
+        
+        Antes de ser utilizadas, estas variables deben limpiarse para evitar
+        superposiciones posiciones indefinidamente.'''
+
+        self.attacker_threatOnDefender.clear()
+        self.attacker_kingLegalMoves.clear()
+        self.defender_kingLegalMoves.clear()
+        self.defender_threatOnAttacker.clear()
         
         # Attacker
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
@@ -372,7 +381,7 @@ class Match(Scene):
                         Porque si no las quito se siguen acumulando indefinidamente xd
 
                         xd
-                        
+
                         '''
                         return mov_target_positions, on_target_kill_positions
                 # --------------------------------------------------------------------------------------------
@@ -790,17 +799,16 @@ class Match(Scene):
                     if movement not in self.defender_threatOnAttacker:
                         if movement not in self.defender_kingLegalMoves:
                             if movement not in self.attacker_positions: # ally block
-                                self.attacker_kingLegalMoves.append(movement)
                                 mov_target_positions.update({movement:self.boardRects[movement]})
                             elif movement in self.defender_positions:
-                                self.attacker_kingLegalMoves.append(movement)
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
 
                 if perspective == 'defender': # defender_kingLegalMoves updates | UPDATE_TURN_OBJECTIVES() call
                     if movement not in self.defender_positions: # ally block
-                        if movement not in self.attacker_kingLegalMoves: # Los reyes no pueden sobreponer sus posiciones
+                        if movement not in self.attacker_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
                             if movement not in self.attacker_threatOnDefender: # amenazas directas e indirectas
                                 self.defender_kingLegalMoves.append(movement)
+
 
         return mov_target_positions, on_target_kill_positions
 
