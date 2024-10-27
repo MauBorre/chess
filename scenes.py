@@ -382,7 +382,17 @@ class Match(Scene):
         direct_threats: list[int] = []
         kill_positions: list[int] = []
 
-        if self.turn_defender == 'White': # <- puede esto complicar mi mecanismo de perspectiva?
+        '''
+        BUG
+        Esta comprobación está bugueada, desde una perspectiva white y defender nos movemos AL NORTE,
+        mientras que desde una perspectiva attacker -contra white- nos movemos AL SUR.
+
+        Creo que lo solucionamos haciendo que nuestra comprobación de perspectiva "importe más" que
+        la comprobación de "qué color defiende".
+
+        '''
+        if self.turn_defender == 'White': # BUG
+
             if perspective == 'defender': # debo asegurarme de RETORNAR en esta perspectiva.
                 '''
                 Utilizamos esta perspectiva pura y exclusivamente para buscar si podemos/debemos/es-nuestro-
@@ -394,6 +404,7 @@ class Match(Scene):
                 es 0 (no hay amenazas) o más de 0 (hay amenazas).
                 '''
 
+                # ESTO DEFINITIVAMENTE CORRESPONDE A UPDATE_TURN_OBJECTIVES() ------------------------------------------------------------
                 for _threats_list in self.defender_threatOnAttacker.values():
                         if self.attacker_positions[_threats_list[-1]] == 'Rey': # única posicion de la lista que coincida con el rey
                             if single_origin_direct_threat == True: # Solo True si pasa una vez (multiple threat origins = nada que hacer)
@@ -403,23 +414,43 @@ class Match(Scene):
                                 # a la amenaza.
                                 single_origin_direct_threat = True
                                 direct_threats = _threats_list # direct_threats solo puede contener una lista.
+                # ------------------------------------------------------------------------------------------------------------------------
             
                 # 1st Movement -block savingposition-
                 # SUR
                 movement: int = piece_standpoint+SUR
                 if movement <= 63: # SUR LIMIT
-
-                    '''Para realizar cualquier movimiento debemos también revisar que ese casillero
-                    no esté "ocupado".'''
-
                     if single_origin_direct_threat:
-                        '''ESTAMOS EVALUANDO EL MOVIMIENTO DEL PEON QUE NO MATA AQUI '''
+                        '''
+                        ESTAMOS EVALUANDO EL MOVIMIENTO DEL PEON QUE NO MATA AQUI 
+                        
+                        Evaluar single_origin_direct_threat automáticamente significa que no hay ni
+                        pieza aliada ni enemiga en esa traza de amenaza, sino no sería amenaza en un
+                        principio.
+
+                        '''
                         for _pos in direct_threats:
                             if movement == _pos:
                                 self.defender_kingSupport.add('Peón')
                                 # OJO aún necesitamos revisar el segundo movimiento -particular- del peón
 
-                        # killing threat - la pieza que amenaza siempre coincide con el principio o el fin de direct_threats
+                        if piece_standpoint in self.in_base_Bpawns:
+                            # 2nd Movement -block savingposition-
+                            if movement+SUR <= 63: #board limit check
+                                ...
+
+                            
+
+                    # kill positions (kill savingposition?)
+                    # Verificamos que el movimiento no rompa los límites del tablero
+                    if piece_standpoint+OESTE not in row_of_(piece_standpoint):
+                        kill_positions.append(piece_standpoint+SUR_ESTE)
+                    if piece_standpoint+ESTE not in row_of_(piece_standpoint):
+                        kill_positions.append(piece_standpoint+SUR_OESTE)
+                    elif len(kill_positions) == 0:
+                        kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
+
+                    # killing threat - la pieza que amenaza siempre coincide con el principio o el fin de direct_threats
                         # if movement == max(direct_threats):
                         #     threat_origin_pos = max(direct_threats)
                         # elif movement == min(direct_threats): 
@@ -435,32 +466,6 @@ class Match(Scene):
                         # if threat_origin_pos != None:
                         #     self.defender_kingSupport.add('Peón') # Salva al rey
                         #     return
-
-                    if movement not in self.black_positions and movement not in self.white_positions:
-                        if piece_standpoint in self.in_base_Bpawns:
-                            mov_target_positions.update({movement:self.boardRects[movement]})
-
-                            # 2nd Movement -block savingposition-
-                            if movement+SUR <= 63: #board limit check
-
-                                '''DEBEMOS REVISAR SI ESTE PARTICULAR MOVIMIENTO TAMBIÉN AYUDA AL REY (aunque
-                                en el caso del peon nunca será comer, solo BLOQUEAR.)'''
-
-                                # Movement
-                                '''Falta revisar si mi movimiento expone mi rey'''
-                                if movement+SUR not in self.black_positions and movement+SUR not in self.white_positions:
-                                    mov_target_positions.update({movement+SUR:self.boardRects[movement+SUR]})
-                        else:
-                            mov_target_positions.update({movement:self.boardRects[movement]})
-
-                    # kill positions (kill savingposition?)
-                    # Verificamos que el movimiento no rompa los límites del tablero
-                    if piece_standpoint+OESTE not in row_of_(piece_standpoint):
-                        kill_positions.append(piece_standpoint+SUR_ESTE)
-                    if piece_standpoint+ESTE not in row_of_(piece_standpoint):
-                        kill_positions.append(piece_standpoint+SUR_OESTE)
-                    elif len(kill_positions) == 0:
-                        kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
 
                     for kp in kill_positions:
                         if kp in self.white_positions:
