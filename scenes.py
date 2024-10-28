@@ -693,7 +693,6 @@ class Match(Scene):
                             # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
                             self.defender_kingSupport.add('Torre') 
                             return
-
                         else: continue
             return
 
@@ -711,13 +710,20 @@ class Match(Scene):
                         if 0 <= movement <= 63: # VALID SQUARE
                             if movement in self.defender_directThreatTrace:
                                 if movement not in self.defender_positions:
-                                    # entonces es movimiento de bloqueo
+
+                                    # BLOCK saving position.
                                     mov_target_positions.update({movement: self.boardRects[movement]})
                                 elif movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
+
+                                    # KILL saving position.
                                     on_target_kill_positions.update({movement: self.boardRects[movement]})
                             else: continue        
                 if len(mov_target_positions) == 0 or len(on_target_kill_positions) == 0:
-                    return {},{}
+                    '''BUG buscamos un caso donde no hayamos podido salvar nada,
+                    pero no corresponde a lengitudes en 0 de mov_target_positions y
+                    on_target_kill_positions.
+                    '''
+                    return {}, {}
             else:
                 for direction in tower_directions:
                     for mult in range(1,8): # 1 to board_size
@@ -777,9 +783,7 @@ class Match(Scene):
         on_target_kill_positions: dict[int,pygame.Rect] = {}
 
         # Objectives
-        single_origin_direct_threat: bool | None = None
-        threat_origin_pos: int | None = None
-        direct_threats: list[int] = []
+        _exposing_movement: bool = False
         horse_movements = []
 
         # ESTE / OESTE LIMITS
@@ -796,57 +800,63 @@ class Match(Scene):
                 horse_movements.extend([piece_standpoint+OESTE+NOR_OESTE,
                                         piece_standpoint+OESTE+SUR_OESTE])
         
-        for movement in horse_movements:
-            if 0 <= movement <= 63: # NORTE/SUR LIMIT 
+        if perspective == 'defender':
+            for movement in horse_movements:
+                if 0 <= movement <= 63: # NORTE/SUR LIMIT
 
-                # Threat on defender king ------------------------
-                if movement in self.defender_kingLegalMoves: 
-                    self.attacker_threatOnDefender['Caballo'].append(movement)
-                # ------------------------------------------------
+                    if movement in self.attacker_directThreatTrace:
+                        self.defender_kingSupport.add('Caballo')
+                        return
+                    else: continue 
+            return
 
-                # Threat on attacker (us-perspective) ------------
-                    for _threats_list in self.defender_threatOnAttacker.values():
-                        if self.attacker_positions[_threats_list[-1]] == 'Rey': # única posicion de la lista que coincida con el rey
-                            if single_origin_direct_threat == True:
-                                '''Ya pasamos por aquí, entonces hay múltiples orígenes y nuestra pieza no puede
-                                moverse en absoluto'''
-                                return {}, {}
-                            else:
-                                # Hay amenaza directa, solo podremos movernos si eso mata o bloquea
-                                # a la amenaza.
-                                single_origin_direct_threat = True
-                                direct_threats = _threats_list
+        if perspective == 'attacker':
+            if self.defender_singleOriginDirectThreat:
+                '''Entonces mis únicos movimientos posibles son salvarlo,
+                bloqueando o matando la amenaza.
+                Matar la amenaza es min o max de defender_directThreatTrace'''
 
-                    if single_origin_direct_threat:
-                        # killing threat
-                        if movement == max(direct_threats):
-                            threat_origin_pos = max(direct_threats)
-                        elif movement == min(direct_threats): 
-                            threat_origin_pos = min(direct_threats)
+                for movement in horse_movements:
+                    if 0 <= movement <= 63: # NORTE/SUR LIMIT 
+                        if movement in self.defender_directThreatTrace:
+                            if movement not in self.defender_positions:
 
-                        else: # quizás pueda bloquearla
-                            for _pos in direct_threats:
-                                if movement == _pos: 
-                                    # Puedo bloquearla - único movimiento posible.
-                                    mov_target_positions.update({movement:self.boardRects[movement]})
-                                    return mov_target_positions, on_target_kill_positions
-                        # si existe objetivo de origen, devolver la única opcion de movimiento posible (matar amenaza)
-                        if threat_origin_pos != None:
-                            on_target_kill_positions.update({threat_origin_pos:self.boardRects[threat_origin_pos]})
-                            return mov_target_positions, on_target_kill_positions
-                    # ------------------------------------------------
+                                # BLOCK saving position.
+                                mov_target_positions.update({movement: self.boardRects[movement]})
+                            elif movement == max(self.defender_directThreatTrace) or movement == min(self.black_directThreats):
 
-                # Movement
-                '''Falta revisar si mi movimiento expone mi rey'''
-                if movement not in self.black_positions and movement not in self.white_positions:
-                    mov_target_positions.update({movement:self.boardRects[movement]})
-                
-                # Kill-movement
-                # '''Falta revisar si mi movimiento expone mi rey'''
-                elif movement in self.defender_positions:
-                    on_target_kill_positions.update({movement:self.boardRects[movement]})
-                    
-        return mov_target_positions, on_target_kill_positions
+                                # KILL saving position.
+                                on_target_kill_positions.update({movement: self.boardRects[movement]})
+                            else: continue
+                if len(mov_target_positions) == 0 or len(on_target_kill_positions) == 0:
+                    '''BUG buscamos un caso donde no hayamos podido salvar nada,
+                    pero no corresponde a lengitudes en 0 de mov_target_positions y
+                    on_target_kill_positions.
+                    '''
+                    return {}, {}
+            else:
+                for movement in horse_movements:
+                    if 0 <= movement <= 63: # NORTE/SUR LIMIT 
+
+                        _exposing_movement = self.try_movement_doesnt_expose_attacker_king(movement)
+                        if _exposing_movement: return {}, {}
+
+                        # Threat on defender king ------------------------
+                        if movement in self.defender_kingLegalMoves: 
+                            self.attacker_threatOnDefender['Caballo'].append(movement)
+                        # ------------------------------------------------
+
+                        # Movement
+                        '''Falta revisar si mi movimiento expone mi rey'''
+                        if movement not in self.black_positions and movement not in self.white_positions:
+                            mov_target_positions.update({movement:self.boardRects[movement]})
+                        
+                        # Kill-movement
+                        # '''Falta revisar si mi movimiento expone mi rey'''
+                        elif movement in self.defender_positions:
+                            on_target_kill_positions.update({movement:self.boardRects[movement]})
+                        
+            return mov_target_positions, on_target_kill_positions
 
     def bishop_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
         '''Movimiento Alfil:
