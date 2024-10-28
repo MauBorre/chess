@@ -422,17 +422,17 @@ class Match(Scene):
     def try_movement_doesnt_expose_attacker_king(movement: int):
         '''Cómo verificamos si nuestro movimiento expone al rey?
                 
-                Necesitamos un mecanismo para hacer-verificar todo el movimiento "sin dejarlo
-                hecho en el tablero ni en ninguna variable global?"
+        Necesitamos un mecanismo para hacer-verificar todo el movimiento "sin dejarlo
+        hecho en el tablero ni en ninguna variable global?"
 
-                Verificar esto está relacionado con el -en este punto- self.defender_threatOnAttacker
+        Verificar esto está relacionado con el -en este punto- self.defender_threatOnAttacker
 
-                Deberíamos comprobar si "el casillero que se desocupa" *ELIMINARIA UN BLOQUEO QUE
-                DEJARIA AL REY EN AMENAZA DIRECTA*
+        Deberíamos comprobar si "el casillero que se desocupa" *ELIMINARIA UN BLOQUEO QUE
+        DEJARIA AL REY EN AMENAZA DIRECTA*
 
-                Mi información desde la pieza es un movimiento: int
-                    > Si hiciera este movimiento, como quedaría la amenaza self.defender_threatOnAttacker?
-                '''
+        Mi información desde la pieza es un movimiento: int
+            > Si hiciera este movimiento, como quedaría la amenaza self.defender_threatOnAttacker?
+        '''
         '''Lo importante es la celda que se vacía'''
         #agarrar el tablero / copiar tablero
         #inyectar este movimiento / hacer el movimiento
