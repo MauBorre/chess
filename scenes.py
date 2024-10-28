@@ -458,17 +458,19 @@ class Match(Scene):
                         self.defender_kingSupport.add('Peón')
 
         if perspective == 'attacker':
-            if self.turn_attacker == 'Black':
+            '''
+            Desde esta perspectiva es importante revisar qué movimientos podemos hacer
+            en base a las restricciones que nos impone nuestro actual defensor.
+            
+            Si existe jaque, solo puedo moverme si eso salva a mi rey. <- es necesario buscar esto?
+                                                                          Puede que sea necesario para validarlo.
+            
+            Aunque no exista jaque, debo revisar si "salirme del casillero" -moviendome o matando-
+            expone a mi rey a un jaque.
+            '''
+            if self.turn_attacker == 'Black': # Ataca hacia el SUR
 
-                '''
-                Desde esta perspectiva es importante revisar qué movimientos podemos hacer
-                en base a las restricciones que nos impone nuestro actual defensor.
-                
-                Si existe jaque, solo puedo moverme si eso salva a mi rey. <- es necesario buscar esto?
-                
-                Aunque no exista jaque, debo revisar si "salirme del casillero" -moviendome o matando-
-                expone a mi rey a un jaque.
-                '''
+
 
                 # SUR
                 movement: int = piece_standpoint+SUR
@@ -514,7 +516,7 @@ class Match(Scene):
                         # ------------------------------------------------
 
 
-            if self.turn_attacker == 'White': 
+            if self.turn_attacker == 'White': # Ataca hacia el NORTE
                 # NORTE
                 movement: int = piece_standpoint+NORTE
                 # piece block condition
