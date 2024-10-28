@@ -280,11 +280,7 @@ class Match(Scene):
         self.defender_threatOnAttacker.clear()
         self.defender_kingSupport.clear()
 
-        single_origin_direct_threat: bool | None = None
-
-        '''Hay ciertos mecanismos que son comunes a la generalidad del turno (como: rey en amenaza directa o no?)
-        que actualmente repetimos bastante dentro de las funciones objectives. Tiene mucha pinta que deberíamos/podríamos
-        hacer esos mecanismos aquí afuera y que las funciones objectives() trabajen con variables "globales".'''
+        single_origin_direct_threat: bool | None = None # Si existe orígen cruzado de amenaza NUNCA habrá kingSupport.
         
         # Attacker ----------------------------------------------------------------------------------------
         '''BUG
@@ -313,6 +309,7 @@ class Match(Scene):
 
         # Defender -----------------------------------------------------------------------------------------
         king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Rey").pop()
+        self.king_objectives(king_standpoint,perspective='defender') # genero defender_kingLegalMoves.
 
         '''En base a lo que ya evalué del atacante, ya puedo saber al menos si
         las piezas pueden siquiera salvar al rey. La piedra angular son las amenazas
@@ -328,8 +325,6 @@ class Match(Scene):
                 else:
                     single_origin_direct_threat = True
                     self.direct_threats = _threats_list # direct_threats solo puede contener una lista.
-
-        self.king_objectives(king_standpoint,perspective='defender') # genero defender_kingLegalMoves.
 
         if single_origin_direct_threat:
             # Defender kingSupport (evalúan self.direct_threats)
@@ -403,17 +398,19 @@ class Match(Scene):
         kill_positions: list[int] = []
 
         if perspective == 'defender' : # SIEMPRE retornar antes de tiempo en esta perspectiva
+            '''Desde esta perspectiva buscamos revisar la posibilidad de kingSupport de la pieza.
+            (bloqueando / matando amenaza)'''
             if self.turn_defender == 'Black': # defiende hacia el SUR
             
-                # if piece_standpoint not in self.in_base_Bpawns:
                 # 1st Movement -BLOCK saving position-
                 movement: int = piece_standpoint+SUR
                 if movement <= 63: # board limit
                     for _pos in self.direct_threats:
                         if movement == _pos:
                             self.defender_kingSupport.add('Peón')
+
+                # 2nd Movement -BLOCK saving position-
                 if piece_standpoint in self.in_base_Bpawns:
-                    # 2nd Movement -BLOCK saving position-
                     if movement+SUR <= 63: # 'useless' board limit
                         for _pos in self.direct_threats:
                             if movement+SUR == _pos:
@@ -432,7 +429,33 @@ class Match(Scene):
                     if kp == max(self.direct_threats) or kp == min(self.direct_threats):
                         self.defender_kingSupport.add('Peón')
 
-            if self.turn_defender == 'White': ... # defiende hacia el norte
+            if self.turn_defender == 'White': # defiende hacia el NORTE
+                # 1st Movement -BLOCK saving position-
+                movement: int = piece_standpoint+NORTE
+                if movement <= 63: # board limit
+                    for _pos in self.direct_threats:
+                        if movement == _pos:
+                            self.defender_kingSupport.add('Peón')
+
+                # 2nd Movement -BLOCK saving position-
+                if piece_standpoint in self.in_base_Bpawns:
+                    if movement+NORTE <= 63: # 'useless' board limit
+                        for _pos in self.direct_threats:
+                            if movement+NORTE == _pos:
+                                self.defender_kingSupport.add('Peón')
+
+                # KILL saving positions
+                # Verificamos que el movimiento no rompa los límites del tablero
+                if piece_standpoint+OESTE not in row_of_(piece_standpoint):
+                    kill_positions.append(piece_standpoint+NOR_ESTE)
+                if piece_standpoint+ESTE not in row_of_(piece_standpoint):
+                    kill_positions.append(piece_standpoint+NOR_OESTE)
+                elif len(kill_positions) == 0:
+                    kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
+
+                for kp in kill_positions:
+                    if kp == max(self.direct_threats) or kp == min(self.direct_threats):
+                        self.defender_kingSupport.add('Peón')
 
         if perspective == 'attacker':
             if self.turn_attacker == 'Black':
@@ -441,7 +464,7 @@ class Match(Scene):
                 Desde esta perspectiva es importante revisar qué movimientos podemos hacer
                 en base a las restricciones que nos impone nuestro actual defensor.
                 
-                Si existe jaque, solo puedo moverme si eso salva a mi rey.
+                Si existe jaque, solo puedo moverme si eso salva a mi rey. <- es necesario buscar esto?
                 
                 Aunque no exista jaque, debo revisar si "salirme del casillero" -moviendome o matando-
                 expone a mi rey a un jaque.
