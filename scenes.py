@@ -511,6 +511,7 @@ class Match(Scene):
                 for kp in kill_positions:
                     if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
                         self.defender_kingSupport.add('Peón')
+            return
 
         if perspective == 'attacker':
             if self.turn_attacker == 'Black': # Ataca hacia el SUR
@@ -623,7 +624,7 @@ class Match(Scene):
                         self.attacker_threatOnDefender['Peón'].append(kp)
                     # ------------------------------------------------
 
-        return mov_target_positions, on_target_kill_positions
+            return mov_target_positions, on_target_kill_positions
 
     def tower_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
         '''Movimiento Torre:
