@@ -677,28 +677,27 @@ class Match(Scene):
         # Objectives
         _threat_emission: list[int] = []
         _threatening: bool = False
-        single_origin_direct_threat: bool | None = None
-        threat_origin_pos: int | None = None
-        direct_threats: list[int] = []
         _exposing_movement: bool = False
         tower_directions = [NORTE,SUR,ESTE,OESTE]
 
-        if perspective == 'defender': 
-            for mult in range(1,8): # 1 to board_size
-                movement = piece_standpoint+direction*mult
-                if direction == ESTE or direction == OESTE:
-                    if movement not in row_of_(piece_standpoint):
-                        break
-                if 0 <= movement <= 63: # VALID SQUARE
-                    if movement in self.attacker_directThreatTrace:
-                        # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
-                        self.defender_kingSupport.add('Torre') 
-                        return
-                    else: continue
+        if perspective == 'defender':
+            for direction in tower_directions:
+                for mult in range(1,8): # 1 to board_size
+                    movement = piece_standpoint+direction*mult
+                    if direction == ESTE or direction == OESTE:
+                        if movement not in row_of_(piece_standpoint):
+                            break
+                    if 0 <= movement <= 63: # VALID SQUARE
+
+                        if movement in self.attacker_directThreatTrace:
+                            # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
+                            self.defender_kingSupport.add('Torre') 
+                            return
+
+                        else: continue
             return
 
         if perspective == 'attacker': 
-
             for direction in tower_directions:
                 for mult in range(1,8): # 1 to board_size
                     movement = piece_standpoint+direction*mult
