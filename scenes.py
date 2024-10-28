@@ -282,7 +282,9 @@ class Match(Scene):
         Primero debemos actualizar la ofensiva, y luego la defensiva.
         Pero cuidado que la ofensiva puede estar ya siendo restringida por la defensiva.'''
 
-        self.attacker_threatOnDefender.clear()
+        self.attacker_threatOnDefender.clear() # esto está bien que se reinicie, pero debemos siempre
+                                               # "acarrear" el defender_threatOnAttacker porque contiene el 
+                                               # *posible jaque* actual.
         self.attacker_kingLegalMoves.clear()
         self.defender_kingLegalMoves.clear()
 
@@ -293,13 +295,6 @@ class Match(Scene):
         self.defender_kingSupport.clear()
         self.direct_threats.clear()
 
-        '''El single_origin_direct_threat es también usado y adjudicable al -actual- atacante.
-        Debemos revisarlo "antes de atacar" también, o que de alguna forma las piezas
-        lo tengan en cuenta (idealmente llamando al attacker/defender_singleOriginDirectThreat).
-
-        En casos de múltiple origen de amenaza directa solo el rey puede responder moviendose.
-        '''
-
         # Attacker ----------------------------------------------------------------------------------------
         '''BUG
         Arreglando bugs de perspectivas, conjuntos threat, kingSupport, etc...
@@ -309,7 +304,9 @@ class Match(Scene):
         '''
 
         '''
-        
+        Debo preparar, revisar y utilizar defender_singleOriginDirectThreat porque es de alto valor
+        dentro de las funciones objectives() perspective='attacker'
+
         Debo verificar, aquí o en algún lugar, si el perspective='attacker' está en situacion
         simple/multiple direct threat origin.
 
