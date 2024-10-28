@@ -341,7 +341,7 @@ class Match(Scene):
 
             tower_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Torre")
             for _tower in tower_standpoints:
-                self.tower_objectives(_tower, perspective='attacker')
+                self.rook_objectives(_tower, perspective='attacker')
 
             bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Alfil")
             for _bishop in bishop_standpoints:
@@ -376,7 +376,7 @@ class Match(Scene):
 
             tower_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="Torre")
             for _tower in tower_standpoints:
-                self.tower_objectives(_tower, perspective='defender')
+                self.rook_objectives(_tower, perspective='defender')
             
             bishop_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='Alfil')
             for _bishop in bishop_standpoints:
@@ -616,10 +616,10 @@ class Match(Scene):
                                     else: # no puedo matar ni bloquear, todos los movimientos invalidados.
                                         return {}, {}
                                 elif movement+NORTE != max(self.defender_directThreatTrace) or movement+NORTE != min(self.defender_directThreatTrace):
-                                    # BLOCK saving position
+                                    # BLOCK 2nd mov. saving position
                                     mov_target_positions.update({movement+NORTE: self.boardRects[movement+NORTE]})
                         elif movement != max(self.defender_directThreatTrace) or movement != min(self.defender_directThreatTrace):
-                            # BLOCK saving position
+                            # BLOCK 1st mov. saving position
                             mov_target_positions.update({movement: self.boardRects[movement]})
                     else:
                         # Si el primer movimiento no es válido, tampoco lo será el segundo.
@@ -660,7 +660,7 @@ class Match(Scene):
 
             return mov_target_positions, on_target_kill_positions
 
-    def tower_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
+    def rook_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
         '''Movimiento Torre:
         +NORTE
         +SUR
@@ -1191,7 +1191,7 @@ class Match(Scene):
                             if SQUARE_TYPE == 'Torre':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.tower_objectives(board_index, perspective='attacker')
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.rook_objectives(board_index, perspective='attacker')
                             
                             if SQUARE_TYPE == 'Caballo':
                                 self.pieceValidMovement_posDisplay.clear()
