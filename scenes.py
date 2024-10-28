@@ -239,7 +239,7 @@ class Match(Scene):
             pueden salvar al rey de un jaque-mate BLOQUEANDO o MATANDO una amenaza.
             Es crucial para definir jaque/jaque-mate/stale-mate(empate).
 
-            Usaremos un set que contenga los nombres de las categoría de pieza -salvando-
+            Usaremos un set que contenga los nombres de las piezas -salvando-
             {'peón','alfil','...'}
 
             Solo necesitamos una version defender de este conjunto y no necesitaría
