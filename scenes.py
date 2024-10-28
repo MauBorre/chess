@@ -248,7 +248,7 @@ class Match(Scene):
         en el tablero. 
         '''
         self.defender_positions: dict[int, str] = self.black_positions #22/10 NO ESTA HECHO EL SWAP
-        self.defender_threatOnAttacker: dict[str, list[int]] = self.black_threatOnWhite
+        self.defender_threatOnAttacker: dict[str, list[int]] = self.black_threatOnWhite  # será siempre resultado de SWAP, contiene *posible jaque* actual.
         self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
         self.attacker_positions: dict[int, str] = self.white_positions #22/10 NO ESTA HECHO EL SWAP
         self.attacker_threatOnDefender: dict[str, list[int]] = self.white_threatOnBlack
@@ -267,31 +267,41 @@ class Match(Scene):
         self.update_turn_objectives() # turn lookups init and update
 
     def update_turn_objectives(self):
-        '''Llama todas las funciones _objectives() las cuales actualizan y utilizan
-        internamente:
+        '''Llama todas las funciones _objectives() con sus correctas perspectivas
+        del turno en juego.
 
-        attacker_threatOnDefender
-        attacker_kingLegalMoves
-        defender_kingLegalMoves
-        defender_threatOnAttacker
-        defender_kingSupport
+        Internamente se revisará:
+            >> attacker_threatOnDefender
+            >> attacker_kingLegalMoves
+            >> defender_kingLegalMoves
+            >> defender_threatOnAttacker
+            >> defender_kingSupport
+            >> singleOriginDirectThreat
         
-        Antes de ser utilizadas, estas variables deben limpiarse para evitar
-        superposiciones posiciones indefinidamente.
+        Antes de ser utilizadas, estas variables (excepto defender_threatOnAttacker que puede contener
+        información del *jaque actual* y es resultado de transferencia/SWAP ) deben limpiarse para evitar
+        un solapamiento infinito de posiciones.
         
-        Primero debemos actualizar la ofensiva, y luego la defensiva.
-        Pero cuidado que la ofensiva puede estar ya siendo restringida por la defensiva.'''
+        Primero debemos actualizar la ofensiva -siendo restringido por la defensiva-, y luego la defensiva,
+        revisando especialmente si puede salvar a su rey de ser necesario por la última jugada ofensiva.
 
-        self.attacker_threatOnDefender.clear() # esto está bien que se reinicie, pero debemos siempre
-                                               # "acarrear" el defender_threatOnAttacker porque contiene el 
-                                               # *posible jaque* actual.
+        singleOriginDirectThreat será siempre y unicamente calculado luego de evaluar la ofensiva,
+        Si es NONE no hay ninguna amenaza directa, pero si es FALSE significa que HAY MULTIPLES AMENAZAS
+        DIRECTAS, por lo tanto el rey depende de su propio movimiento (o será jaque-mate).
+
+        DEBO revisar defender_threatOnAttacker en perspectivas ofensivas de piezas,
+        y, si llego a su llamada y singleOriginDirectThreat es TRUE, DEBO revisar SELF.DIRECT_THREATS .
+        
+        Al terminar estos cálculos, la funcion decide_check() establecerá si la partida debe continuar o
+        terminarse con determinado veredicto.
+        
+        '''
+
+        self.attacker_threatOnDefender.clear()
+        # self.defender_threatOnAttacker será siempre resultado de SWAP, contiene *posible jaque* actual.
+
         self.attacker_kingLegalMoves.clear()
         self.defender_kingLegalMoves.clear()
-
-        '''BUG si limpiamos esto no podemos saber cosas relacionadas
-           al posible JAQUE que nos dejó la defensa cuando era su turno.'''
-        # self.defender_threatOnAttacker.clear() 
-
         self.defender_kingSupport.clear()
         self.direct_threats.clear()
 
@@ -302,28 +312,6 @@ class Match(Scene):
         El pawn_objectives() será la primer referencia para solucionar definitivamente el resto de las
         piezas antes de terminar todo el mecanismo de jaque/mate en decide_check().
         '''
-
-        '''
-        Debo preparar, revisar y utilizar defender_singleOriginDirectThreat porque es de alto valor
-        dentro de las funciones objectives() perspective='attacker'
-
-        Debo verificar, aquí o en algún lugar, si el perspective='attacker' está en situacion
-        simple/multiple direct threat origin.
-
-        Antes de que pueda siquiera emitir alguna amenaza quizás ni pueda hacerlo debido a 
-        esta variable.
-        
-        '''
-        king_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece="Rey").pop()
-        for _threats_list in self.defender_threatOnAttacker: # BUG al comienzo de esta función estamos llamando a .clear()
-                                                             # de defender_threatOnAttacker, sin embargo esa llamada
-                                                             # parece correcta para el caso de attacker_threatOnDefender.
-            if king_standpoint in _threats_list:
-                if self.defender_singleOriginDirectThreat == True:
-                    self.defender_singleOriginDirectThreat == False
-                else:
-                    self.defender_singleOriginDirectThreat = True
-                    self.direct_threats = _threats_list
 
         if self.defender_singleOriginDirectThreat != False:
             pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
@@ -350,13 +338,6 @@ class Match(Scene):
         king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Rey").pop()
         self.king_objectives(king_standpoint,perspective='defender') # genero defender_kingLegalMoves.
 
-        '''En base a lo que ya evalué del atacante, ya puedo saber al menos si
-        las piezas pueden siquiera salvar al rey. La piedra angular son las amenazas
-        de múltiples orígenes, esto ninguna pieza puede salvarlo, solo el rey moviendose.
-        
-        Por lo tanto decretaremos este estado previamente para saber si -quizás- solo debo
-        revisar las posiciones del rey porque revisar kingSupport es inútil.'''
-
         for _threats_list in self.attacker_threatOnDefender.values():
             if king_standpoint in _threats_list:
                 if self.attacker_singleOriginDirectThreat == True: # Solo resulta True si conecta una vez
@@ -364,6 +345,7 @@ class Match(Scene):
                 else:
                     self.attacker_singleOriginDirectThreat = True
                     self.direct_threats = _threats_list # direct_threats solo puede contener una lista.
+            else: self.attacker_singleOriginDirectThreat = None
 
         if self.attacker_singleOriginDirectThreat != False: # False es el caso multiple origen
             # Defender kingSupport (evalúan self.direct_threats)
