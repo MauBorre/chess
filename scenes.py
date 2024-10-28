@@ -376,6 +376,26 @@ class Match(Scene):
             #...
             return
     
+    def try_movement_doesnt_expose_attacker_king(movement: int):
+        '''Cómo verificamos si nuestro movimiento expone al rey?
+                
+                Necesitamos un mecanismo para hacer-verificar todo el movimiento "sin dejarlo
+                hecho en el tablero ni en ninguna variable global?"
+
+                Verificar esto está relacionado con el -en este punto- self.defender_threatOnAttacker
+
+                Deberíamos comprobar si "el casillero que se desocupa" *ELIMINARIA UN BLOQUEO QUE
+                DEJARIA AL REY EN AMENAZA DIRECTA*
+
+                Mi información desde la pieza es un movimiento: int
+                    > Si hiciera este movimiento, como quedaría la amenaza self.defender_threatOnAttacker?
+                '''
+        '''Lo importante es la celda que se vacía'''
+        #agarrar el tablero / copiar tablero
+        #inyectar este movimiento / hacer el movimiento
+        #aplicar revision de defender_threatOnAttackerTEST
+        ...
+    
     def pawn_objectives(self,piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
         '''Movimiento Peón:
         NORTE (white)
@@ -396,6 +416,8 @@ class Match(Scene):
         threat_origin_pos: int | None = None
         direct_threats: list[int] = []
         kill_positions: list[int] = []
+
+        _exposing_movement: bool = False
 
         if perspective == 'defender' : # SIEMPRE retornar antes de tiempo en esta perspectiva
             '''Desde esta perspectiva buscamos revisar la posibilidad de kingSupport de la pieza.
@@ -459,75 +481,63 @@ class Match(Scene):
 
         if perspective == 'attacker':
             '''
-            Desde esta perspectiva es importante revisar qué movimientos podemos hacer
-            en base a las restricciones que nos impone nuestro actual defensor.
+            Desde esta perspectiva es importante revisar que si existe jaque, solo puedo moverme si
+            eso salva a mi rey.
             
-            Si existe jaque, solo puedo moverme si eso salva a mi rey. <- es necesario buscar esto?
-                                                                          Puede que sea necesario para validarlo.
-            
-            Aunque no exista jaque, debo revisar si "salirme del casillero" -moviendome o matando-
+            Aunque no exista jaque, debo revisar TAMBIEN si "salirme del casillero" -moviendome o matando-
             expone a mi rey a un jaque.
+
+            Tambíen porsupuesto actualizaremos self.attacker_threatOnDefender (fin de turno checker)
             '''
             if self.turn_attacker == 'Black': # Ataca hacia el SUR
 
                 '''Cómo verificamos si nuestro movimiento expone al rey?
-                
-                Necesitamos un mecanismo para hacer-verificar todo el movimiento "sin dejarlo
-                hecho en el tablero ni en ninguna variable global?"
-
-                Verificar esto está relacionado con el -en este punto- self.defender_threatOnAttacker
-
-                Deberíamos comprobar si "el casillero que se desocupa" *ELIMINARIA UN BLOQUEO QUE
-                DEJARIA AL REY EN AMENAZA DIRECTA*
-
                 Mi información aquí es un movimiento: int
                     > Si hiciera este movimiento, como quedaría la amenaza self.defender_threatOnAttacker?
-                    
                 '''
 
                 # 1st Movement (expone al rey?)
                 movement: int = piece_standpoint+SUR
                 if movement <= 63: # board limit
-
-                    '''# -Revisar que no expone a rey attacker-'''
-
                     if movement not in self.black_positions and movement not in self.white_positions: # piece block
                         
-                        if piece_standpoint in self.in_base_Bpawns:
-                            mov_target_positions.update({movement:self.boardRects[movement]})
+                        '''La revisión de dejar-nuestro-rey-expuesto importa por "el hueco que dejamos", entonces con solo
+                        el primer movimiento del peón ya es suficiente ver si podemos abandonar ese casillero.
+                        '''
+                        _exposing_movement = self.try_movement_doesnt_expose_attacker_king(movement)
+                        if _exposing_movement: return {}, {}
 
-                            # 2nd piece block condition
-                            if movement+SUR <= 63: #board limit check
+                        # '''Debo revisar también'''
 
-                                '''# -Revisar que no expone a rey attacker-'''
-
-                                if movement+SUR not in self.black_positions and movement+SUR not in self.white_positions: # piece block
-                                    mov_target_positions.update({movement+SUR:self.boardRects[movement+SUR]})
                         else:
-                            mov_target_positions.update({movement:self.boardRects[movement]})
 
-                    # kill positions
-                    # Verificamos que el movimiento no rompa los límites del tablero
-                    if piece_standpoint+OESTE not in row_of_(piece_standpoint):
-                        kill_positions.append(piece_standpoint+SUR_ESTE)
-                    if piece_standpoint+ESTE not in row_of_(piece_standpoint):
-                        kill_positions.append(piece_standpoint+SUR_OESTE)
-                    elif len(kill_positions) == 0:
-                        kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
+                            if piece_standpoint in self.in_base_Bpawns:
+                                mov_target_positions.update({movement:self.boardRects[movement]})
 
-                    for kp in kill_positions:
+                                # 2nd piece block condition
+                                if movement+SUR <= 63: #board limit check
+                                    if movement+SUR not in self.black_positions and movement+SUR not in self.white_positions: # piece block
+                                        mov_target_positions.update({movement+SUR:self.boardRects[movement+SUR]})
+                            else:
+                                mov_target_positions.update({movement:self.boardRects[movement]})
 
-                        '''# -Revisar que no expone a rey attacker- (anula incluso threat)'''
+                            # kill positions
+                            # Verificamos que el movimiento no rompa los límites del tablero
+                            if piece_standpoint+OESTE not in row_of_(piece_standpoint):
+                                kill_positions.append(piece_standpoint+SUR_ESTE)
+                            if piece_standpoint+ESTE not in row_of_(piece_standpoint):
+                                kill_positions.append(piece_standpoint+SUR_OESTE)
+                            elif len(kill_positions) == 0:
+                                kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
 
-                        if kp in self.white_positions: #<- turn defender
-
-                            on_target_kill_positions.update({kp:self.boardRects[kp]})
-                        
-                        # Threat on defender king ------------------------
-                        if kp in self.defender_kingLegalMoves:
-                            self.attacker_threatOnDefender['Peón'].append(kp)
-                        # ------------------------------------------------
-
+                            for kp in kill_positions:
+                                if kp in self.white_positions: #<- turn defender
+                                    on_target_kill_positions.update({kp:self.boardRects[kp]})
+                                
+                                # Threat on defender king ------------------------
+                                if kp in self.defender_kingLegalMoves:
+                                    self.attacker_threatOnDefender['Peón'].append(kp)
+                                # ------------------------------------------------
 
             if self.turn_attacker == 'White': # Ataca hacia el NORTE
                 # NORTE
