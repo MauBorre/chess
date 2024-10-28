@@ -430,6 +430,7 @@ class Match(Scene):
                         self.defender_kingSupport.add('Peón')
 
             if self.turn_defender == 'White': # defiende hacia el NORTE
+
                 # 1st Movement -BLOCK saving position-
                 movement: int = piece_standpoint+NORTE
                 if movement <= 63: # board limit
@@ -439,7 +440,6 @@ class Match(Scene):
 
                 # 2nd Movement -BLOCK saving position-
                 if piece_standpoint in self.in_base_Bpawns:
-                    if movement+NORTE <= 63: # 'useless' board limit
                         for _pos in self.direct_threats:
                             if movement+NORTE == _pos:
                                 self.defender_kingSupport.add('Peón')
@@ -470,27 +470,38 @@ class Match(Scene):
             '''
             if self.turn_attacker == 'Black': # Ataca hacia el SUR
 
+                '''Cómo verificamos si nuestro movimiento expone al rey?
+                
+                Necesitamos un mecanismo para hacer-verificar todo el movimiento "sin dejarlo
+                hecho en el tablero ni en ninguna variable global?"
 
+                Verificar esto está relacionado con el -en este punto- self.defender_threatOnAttacker
 
-                # SUR
+                Deberíamos comprobar si "el casillero que se desocupa" *ELIMINARIA UN BLOQUEO QUE
+                DEJARIA AL REY EN AMENAZA DIRECTA*
+
+                Mi información aquí es un movimiento: int
+                    > Si hiciera este movimiento, como quedaría la amenaza self.defender_threatOnAttacker?
+                    
+                '''
+
+                # 1st Movement (expone al rey?)
                 movement: int = piece_standpoint+SUR
+                if movement <= 63: # board limit
 
-                if movement <= 63: # SUR LIMIT
-                    # 1st Movement
-                    '''Dónde estamos verificando si nuestro movimiento expone al rey?'''
+                    '''# -Revisar que no expone a rey attacker-'''
+
                     if movement not in self.black_positions and movement not in self.white_positions: # piece block
+                        
                         if piece_standpoint in self.in_base_Bpawns:
                             mov_target_positions.update({movement:self.boardRects[movement]})
 
                             # 2nd piece block condition
                             if movement+SUR <= 63: #board limit check
 
-                                '''DEBEMOS REVISAR SI ESTE PARTICULAR MOVIMIENTO TAMBIÉN AYUDA AL REY (aunque
-                                en el caso del peon nunca será comer, solo BLOQUEAR.)'''
+                                '''# -Revisar que no expone a rey attacker-'''
 
-                                # Movement
-                                '''Falta revisar si mi movimiento expone mi rey'''
-                                if movement+SUR not in self.black_positions and movement+SUR not in self.white_positions:
+                                if movement+SUR not in self.black_positions and movement+SUR not in self.white_positions: # piece block
                                     mov_target_positions.update({movement+SUR:self.boardRects[movement+SUR]})
                         else:
                             mov_target_positions.update({movement:self.boardRects[movement]})
@@ -505,9 +516,11 @@ class Match(Scene):
                         kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
 
                     for kp in kill_positions:
-                        if kp in self.white_positions:
-                            '''No podemos hacer esta operación si expone al rey, no lo
-                            estamos comprobando.'''
+
+                        '''# -Revisar que no expone a rey attacker- (anula incluso threat)'''
+
+                        if kp in self.white_positions: #<- turn defender
+
                             on_target_kill_positions.update({kp:self.boardRects[kp]})
                         
                         # Threat on defender king ------------------------
