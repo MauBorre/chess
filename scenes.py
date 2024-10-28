@@ -481,13 +481,18 @@ class Match(Scene):
 
         if perspective == 'attacker':
             '''
-            Desde esta perspectiva es importante revisar que si existe jaque, solo puedo moverme si
-            eso salva a mi rey.
+            Desde esta perspectiva es importante:
             
-            Aunque no exista jaque, debo revisar TAMBIEN si "salirme del casillero" -moviendome o matando-
-            expone a mi rey a un jaque.
+            >> revisar que si existe jaque, solo puedo moverme si
+               eso salva a mi rey.
+            
+            >> Aunque no exista jaque, debo revisar TAMBIEN si "salirme del casillero" -moviendome o matando-
+               expone a mi rey a un jaque.
+               ^
+               ^ - No deberíamos entonces revisar -posicionalmente- el resultado de la evaluación con perspectiva
+                   de defensor?
 
-            Tambíen porsupuesto actualizaremos self.attacker_threatOnDefender (fin de turno checker)
+            >> actualizaremos self.attacker_threatOnDefender (fin de turno checker | kill-movements aún no hechos)
             '''
             if self.turn_attacker == 'Black': # Ataca hacia el SUR
 
