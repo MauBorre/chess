@@ -483,9 +483,15 @@ class Match(Scene):
             '''
             Desde esta perspectiva es importante:
             
-            >> revisar que si existe jaque, solo puedo moverme si
+            >> Atender que si existe amenaza directa singular, solo puedo moverme si
                eso salva a mi rey.
-            
+               ^
+               ^ - Necesitamos entonces el mecanismo de revisión de multiples orígenes de amenaza?
+                   El punto de muestra es cuando -el actual equipo defensor- nos dejó en amenaza_directa_singular
+                   -en el turno anterior-.
+                   OJO, NO necesito levantar saving positions aquí, solo verificar a la pieza con la actual amenaza
+                   defensora.
+                   
             >> Aunque no exista jaque, debo revisar TAMBIEN si "salirme del casillero" -moviendome o matando-
                expone a mi rey a un jaque.
                ^
