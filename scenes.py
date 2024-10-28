@@ -400,7 +400,7 @@ class Match(Scene):
         self.winner = False
 
     def turn_swap(self):
-        '''CUIDADO con mezclar amenazas a reyes'''
+        '''CUIDADO con mezclar las cosas'''
 
         if self.turn_attacker == 'White':
             self.turn_attacker = 'Black'
@@ -455,27 +455,23 @@ class Match(Scene):
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         
         # Objectives
-        single_origin_direct_threat: bool | None = None
-        threat_origin_pos: int | None = None
-        direct_threats: list[int] = []
         kill_positions: list[int] = []
-
         _exposing_movement: bool = False
+        movement: int
 
         if perspective == 'defender' :
             if self.turn_defender == 'Black': # defiende hacia el SUR
             
                 # 1st Movement -BLOCK saving position-
-                movement: int = piece_standpoint+SUR
+                movement = piece_standpoint+SUR
                 if movement <= 63: # board limit
                     if movement in self.attacker_directThreatTrace:
                         self.defender_kingSupport.add('Peón')
 
                 # 2nd Movement -BLOCK saving position-
                 if piece_standpoint in self.in_base_Bpawns:
-                    if movement+SUR <= 63: # 'useless' board limit
-                        if movement+SUR in self.attacker_directThreatTrace:
-                            self.defender_kingSupport.add('Peón')
+                    if movement+SUR in self.attacker_directThreatTrace:
+                        self.defender_kingSupport.add('Peón')
 
                 # KILL saving positions
                 # Verificamos que el movimiento no rompa los límites del tablero
@@ -493,7 +489,7 @@ class Match(Scene):
             if self.turn_defender == 'White': # defiende hacia el NORTE
 
                 # 1st Movement -BLOCK saving position-
-                movement: int = piece_standpoint+NORTE
+                movement = piece_standpoint+NORTE
                 if movement <= 63: # board limit
                     if movement in self.attacker_directThreatTrace:
                         self.defender_kingSupport.add('Peón')
@@ -519,7 +515,7 @@ class Match(Scene):
         if perspective == 'attacker':
             if self.turn_attacker == 'Black': # Ataca hacia el SUR
                 # 1st Movement
-                movement: int = piece_standpoint+SUR
+                movement = piece_standpoint+SUR
                 if movement <= 63: # board limit
                     
                     # Si el primer movimiento no es válido, tampoco lo será el segundo.
@@ -574,7 +570,7 @@ class Match(Scene):
 
             if self.turn_attacker == 'White': # Ataca hacia el NORTE
                 # 1st Movement
-                movement: int = piece_standpoint+NORTE
+                movement = piece_standpoint+NORTE
                 if movement >= 0: # board limit
                     
                     # Si el primer movimiento no es válido, tampoco lo será el segundo.
