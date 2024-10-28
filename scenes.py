@@ -256,6 +256,12 @@ class Match(Scene):
 
         self.defender_kingSupport: set[str] = {}
         self.direct_threats: list[int] = []
+
+        ''' Si existe múltiple orígen de amenaza NUNCA habrá kingSupport.'''
+        self.black_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
+        self.white_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
+        self.attacker_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
+        self.defender_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
         # ---------------------------------------------------------------------------------------------
 
         self.update_turn_objectives() # turn lookups init and update
@@ -268,43 +274,79 @@ class Match(Scene):
         attacker_kingLegalMoves
         defender_kingLegalMoves
         defender_threatOnAttacker
-        
-        Primero debemos actualizar la ofensiva, y luego la defensiva.
+        defender_kingSupport
         
         Antes de ser utilizadas, estas variables deben limpiarse para evitar
-        superposiciones posiciones indefinidamente.'''
+        superposiciones posiciones indefinidamente.
+        
+        Primero debemos actualizar la ofensiva, y luego la defensiva.
+        Pero cuidado que la ofensiva puede estar ya siendo restringida por la defensiva.'''
 
         self.attacker_threatOnDefender.clear()
         self.attacker_kingLegalMoves.clear()
         self.defender_kingLegalMoves.clear()
-        self.defender_threatOnAttacker.clear()
-        self.defender_kingSupport.clear()
 
-        single_origin_direct_threat: bool | None = None # Si existe orígen cruzado de amenaza NUNCA habrá kingSupport.
-        
+        '''BUG si limpiamos esto no podemos saber cosas relacionadas
+           al posible JAQUE que nos dejó la defensa cuando era su turno.'''
+        # self.defender_threatOnAttacker.clear() 
+
+        self.defender_kingSupport.clear()
+        self.direct_threats.clear()
+
+        '''El single_origin_direct_threat es también usado y adjudicable al -actual- atacante.
+        Debemos revisarlo "antes de atacar" también, o que de alguna forma las piezas
+        lo tengan en cuenta (idealmente llamando al attacker/defender_singleOriginDirectThreat).
+
+        En casos de múltiple origen de amenaza directa solo el rey puede responder moviendose.
+        '''
+
         # Attacker ----------------------------------------------------------------------------------------
         '''BUG
-        Estoy mezclando "ver si salvo al rey" (perspectiva pre-ofensiva) con threats y otras cuestiones
-        de perspectiva actual-ofensiva.
+        Arreglando bugs de perspectivas, conjuntos threat, kingSupport, etc...
+
+        El pawn_objectives() será la primer referencia para solucionar definitivamente el resto de las
+        piezas antes de terminar todo el mecanismo de jaque/mate en decide_check().
         '''
-        pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
-        for _pawn in pawn_standpoints:
-            self.pawn_objectives(_pawn, perspective='attacker')
 
-        tower_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Torre")
-        for _tower in tower_standpoints:
-            self.tower_objectives(_tower, perspective='attacker')
+        '''
+        
+        Debo verificar, aquí o en algún lugar, si el perspective='attacker' está en situacion
+        simple/multiple direct threat origin.
 
-        bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Alfil")
-        for _bishop in bishop_standpoints:
-            self.bishop_objectives(_bishop, perspective='attacker')
+        Antes de que pueda siquiera emitir alguna amenaza quizás ni pueda hacerlo debido a 
+        esta variable.
+        
+        '''
+        king_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece="Rey").pop()
+        for _threats_list in self.defender_threatOnAttacker: # BUG al comienzo de esta función estamos llamando a .clear()
+                                                             # de defender_threatOnAttacker, sin embargo esa llamada
+                                                             # parece correcta para el caso de attacker_threatOnDefender.
+            if king_standpoint in _threats_list:
+                if self.defender_singleOriginDirectThreat == True:
+                    self.defender_singleOriginDirectThreat == False
+                else:
+                    self.defender_singleOriginDirectThreat = True
+                    self.direct_threats = _threats_list
 
-        horse_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="Caballo")
-        for _horse in horse_standpoints:
-            self.horse_objectives(_horse, perspective='attacker')
+        if self.defender_singleOriginDirectThreat != False:
+            pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
+            for _pawn in pawn_standpoints:
+                self.pawn_objectives(_pawn, perspective='attacker')
 
-        queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece="Reina").pop()
-        self.queen_objectives(queen_standpoint, perspective='attacker')
+            tower_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Torre")
+            for _tower in tower_standpoints:
+                self.tower_objectives(_tower, perspective='attacker')
+
+            bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Alfil")
+            for _bishop in bishop_standpoints:
+                self.bishop_objectives(_bishop, perspective='attacker')
+
+            horse_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="Caballo")
+            for _horse in horse_standpoints:
+                self.horse_objectives(_horse, perspective='attacker')
+
+            queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece="Reina").pop()
+            self.queen_objectives(queen_standpoint, perspective='attacker')
         # --------------------------------------------------------------------------------------------------
 
         # Defender -----------------------------------------------------------------------------------------
@@ -320,13 +362,13 @@ class Match(Scene):
 
         for _threats_list in self.attacker_threatOnDefender.values():
             if king_standpoint in _threats_list:
-                if single_origin_direct_threat == True: # Solo resulta True si conecta una vez
-                    single_origin_direct_threat == False
+                if self.attacker_singleOriginDirectThreat == True: # Solo resulta True si conecta una vez
+                    self.attacker_singleOriginDirectThreat == False # False es el caso multiple origen
                 else:
-                    single_origin_direct_threat = True
+                    self.attacker_singleOriginDirectThreat = True
                     self.direct_threats = _threats_list # direct_threats solo puede contener una lista.
 
-        if single_origin_direct_threat:
+        if self.attacker_singleOriginDirectThreat != False: # False es el caso multiple origen
             # Defender kingSupport (evalúan self.direct_threats)
             pawn_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='Peón')
             for _pawn in pawn_standpoints:
@@ -346,6 +388,7 @@ class Match(Scene):
             
             queen_standpoint = self.get_piece_standpoint(color=self.turn_defender, piece="Reina").pop()
             self.queen_objectives(queen_standpoint, perspective='defender')
+        #else? <- responsabilidad de decide_check?
         # -------------------------------------------------------------------------------------------------
 
     def reset_board(self):
@@ -483,7 +526,7 @@ class Match(Scene):
             '''
             Desde esta perspectiva es importante:
             
-            >> Atender que si existe amenaza directa singular, solo puedo moverme si
+            >> Atender que si existe amenaza directa singular, solo puedo moverme/atacar si
                eso salva a mi rey.
                ^
                ^ - Necesitamos entonces el mecanismo de revisión de multiples orígenes de amenaza?
