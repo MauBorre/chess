@@ -201,11 +201,14 @@ class Match(Scene):
         self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
         self.black_threatOnWhite: dict[str, int] = {piece:[] for piece in pieces.origins['negras']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
         self.black_kingLegalMoves: list[int] = []
+        self.black_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
+        
         # White
         self.white_positions: dict[int, str] = pieces.white_positions
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
         self.white_threatOnBlack: dict[str, int] = {piece:[] for piece in pieces.origins['blancas']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
         self.white_kingLegalMoves: list[int] = []
+        self.white_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
 
         # Turn lookups --------------------------------------------------------------------------------
         self.turn_attacker: str = 'White'
@@ -258,10 +261,9 @@ class Match(Scene):
         self.direct_threats: list[int] = []
 
         ''' Si existe múltiple orígen de amenaza NUNCA habrá kingSupport.'''
-        self.black_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
-        self.white_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
-        self.attacker_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
-        self.defender_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
+        
+        self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat # ATENCION SWAP
+        self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat # ATENCION SWAP
         # ---------------------------------------------------------------------------------------------
 
         self.update_turn_objectives() # turn lookups init and update
@@ -293,7 +295,7 @@ class Match(Scene):
         y, si llego a su llamada y singleOriginDirectThreat es TRUE, DEBO revisar SELF.DIRECT_THREATS .
         
         Al terminar estos cálculos, la funcion decide_check() establecerá si la partida debe continuar o
-        terminarse con determinado veredicto.
+        terminarse con algún veredicto.
         
         '''
 
@@ -506,21 +508,15 @@ class Match(Scene):
             Desde esta perspectiva es importante:
             
             >> Atender que si existe amenaza directa singular, solo puedo moverme/atacar si
-               eso salva a mi rey.
-               ^
-               ^ - Necesitamos entonces el mecanismo de revisión de multiples orígenes de amenaza?
-                   El punto de muestra es cuando -el actual equipo defensor- nos dejó en amenaza_directa_singular
-                   -en el turno anterior-.
-                   OJO, NO necesito levantar saving positions aquí, solo verificar a la pieza con la actual amenaza
-                   defensora.
+               eso salva a mi rey. 
+               -> if self.defender_singleOriginDirectThreat == True)
                    
             >> Aunque no exista jaque, debo revisar TAMBIEN si "salirme del casillero" -moviendome o matando-
                expone a mi rey a un jaque.
-               ^
-               ^ - No deberíamos entonces revisar -posicionalmente- el resultado de la evaluación con perspectiva
-                   de defensor?
+               -> self.try_movement_doesnt_expose_attacker_king(movement)
 
-            >> actualizaremos self.attacker_threatOnDefender (fin de turno checker | kill-movements aún no hechos)
+            >> actualizaremos self.attacker_threatOnDefender
+               -> kill-movements aún no hechos pero que "amenazan" al rey defender
             '''
             if self.turn_attacker == 'Black': # Ataca hacia el SUR
 
