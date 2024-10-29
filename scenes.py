@@ -734,6 +734,9 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
                             if movement in fake_pos:
+
+                                '''No deberíamos revisar bloqueos?...'''
+
                                 if fake_pos[movement] == 'Rey':
                                     return True
                             continue
@@ -946,6 +949,9 @@ class Match(Scene):
                             break
                     if 0 <= movement <= 63: # VALID SQUARE
                         if movement in fake_pos:
+
+                            '''No deberíamos revisar bloqueos?...'''
+
                             if fake_pos[movement] == 'Rey':
                                 return True
                         continue
@@ -1086,6 +1092,9 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
                             if movement in fake_pos:
+                                
+                                '''No deberíamos revisar bloqueos?...'''
+
                                 if fake_pos[movement] == 'Rey':
                                     return True
                                 continue
