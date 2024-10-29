@@ -1285,8 +1285,9 @@ class Match(Scene):
 
     def decide_check(self):
         '''
-        Evaluar "cómo quedaron las piezas en el tablero despues del último movimiento"
-        para resolver estados jaque/jaque-mate.
+        Evalua "cómo quedaron las piezas en el tablero despues del último movimiento"
+        para resolver estados jaque/jaque-mate/stale-mate.
+        Al momento de checkear este objetivo que tengo revisar el king DEFENSOR en jaque.
 
         JAQUE > El rey es apuntado directamente, PUEDE escapar moviendose o siendo
             salvado por pieza aliada (matando O bloqueando amenaza)
@@ -1295,23 +1296,22 @@ class Match(Scene):
             siendo salvado por pieza aliada. 
 
         STALE-MATE > El rey no es apuntado directamente, pero no puede moverse ni
-            ser salvado por pieza aliada. Estado de empate.
-
-        IMPORTANTISIME
-            Al momento de checkear este objetivo que tengo revisar el king DEFENSOR en jaque
+            ser salvado por pieza aliada. Estado de empate.        
         '''
 
         if self.attacker_singleOriginDirectThreat == None:
             if len(self.defender_kingLegalMoves) == 0 and len(self.defender_kingSupport) == 0:
+
                 #STALE-MATE
-                '''
-                Termina el juego en empate. -> Spawn OptionsMenu -> try-again        /
-                                                                  return-to-MainMenu / 
-                                                                  change-sides       /
-                                                                  change-rules       /
-                                                                  change-difficulty  /
-                '''
-                ...
+                '''Termina el juego en empate.'''
+                if self.turn_attacker == 'Black':
+                    self.stalemate = True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
+                    self.match_state = 'Rey White ahogado.  -  Empate.'
+
+                if self.turn_attacker == 'White':
+                    self.stalemate = True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
+                    self.match_state = 'Rey Black ahogado.  -  Empate.'
+
             else: return # La partida continúa con normalidad.
 
         if self.attacker_singleOriginDirectThreat:
@@ -1320,41 +1320,54 @@ class Match(Scene):
                 '''Esto requiere solo una notificación al jugador correspondiente.
                 defender_color -> notificate CHECK (highlight possible solutions)'''
                 ...
+                if self.turn_attacker == 'Black':
+                    self.match_state = 'White en jaque.'
+
+                if self.turn_attacker == 'White':
+                    self.match_state = 'Black en jaque.'
+
             elif len(self.defender_kingLegalMoves) == 0 and len(self.defender_kingSupport) == 0:
+
                 #JAQUE-MATE
                 '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
                 ...
+                if self.turn_attacker == 'Black':
+                    self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                    self.match_state = 'Black gana.  -  White en jaque-mate.'
+
+                if self.turn_attacker == 'White':
+                    self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                    self.match_state = 'White gana  -  Black en jaque-mate.'
 
         if self.attacker_singleOriginDirectThreat == False: # múltiple origen de amenaza.
             if len(self.defender_kingLegalMoves) == 0:
+
                 #JAQUE-MATE
                 '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
                 ...
+                if self.turn_attacker == 'Black':
+                    self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                    self.match_state = 'Black gana.  -  White en jaque-mate.'
+
+                if self.turn_attacker == 'White':
+                    self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                    self.match_state = 'White gana  -  Black en jaque-mate.'
             else:
+
                 # JAQUE
                 '''Esto requiere solo una notificación al jugador correspondiente.
                 defender_color -> notificate CHECK (highlight possible solutions)'''
-                ...
-
-        # if self.turn_defender == 'Black': 
-        #     self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
-        #     self.match_state = 'White gana - Black en jaque-mate'
-
-        #     self.match_state = 'Rey Black en jaque'
-
-        # if self.turn_defender == 'White': 
-        #     self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
-        #     self.match_state = 'Black gana - White en jaque-mate'
-        #     self.match_state = 'Rey White en jaque'
-
-        # self.stalemate == True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
-        # self.match_state = 'Rey ahogado - Empate'
-
+                if self.turn_attacker == 'Black':
+                    self.match_state = 'White en jaque.'
+                    
+                if self.turn_attacker == 'White':
+                    self.match_state = 'Black en jaque.'
 
     def render(self):
         #hud
         self.draw_text('Match scene','black',20,20,center=False)
         self.draw_text(f'{self.match_mode['mode']}','black',200,20,center=False)
+        self.draw_text(self.match_state, 'black', 400, 20, center=False)
         self.draw_board()
         self.draw_text(self.turn_attacker,'black',self.midScreen_pos.x - 25, board.height+70,center=False)
         if self.master.paused:
@@ -1427,9 +1440,12 @@ class Match(Scene):
         pygame.draw.rect(self.screen,(100,100,100),
                         pygame.Rect(self.master.screen.get_width()-400,150,width,height))
         # tooltip
-        self.draw_text('$jugador wins','black',self.screen.get_width()-400,150,center=False)
+        self.draw_text(self.match_state, 'black', self.screen.get_width()-400, 150, center=False)
         self.draw_play_again_btn()
         self.draw_exit_to_mainMenu_btn()
+        #opciones de cambiar equipo...
+        #opciones de cambiar reglas...
+        #opciones de cambiar dificultad(IA)...
 
     def draw_pause_menu(self,width=300,height=400):
         # frame
@@ -1443,10 +1459,10 @@ class Match(Scene):
         self.draw_exit_game_btn()
 
     def draw_play_again_btn(self):
-        self.draw_text('Reiniciar partida', 'white', self.screen.get_width()-400,400,center=False)
+        self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400,400,center=False)
         play_again_rect = pygame.Rect(self.screen.get_width()-400,400,200,50)
         if play_again_rect.collidepoint((self.master.mx, self.master.my)):
             #hover
             pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
             if self.master.click:
-                self.player_deciding_match = True
+                self.reset_board()
