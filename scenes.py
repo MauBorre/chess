@@ -733,13 +733,11 @@ class Match(Scene):
                             if movement not in row_of_(piece_standpoint):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
-                            if movement in fake_pos:
-
-                                '''No deberíamos revisar bloqueos?...'''
-
+                            if movement in self.defender_positions:
+                                break # recorrer otra dirección
+                            elif movement in fake_pos:
                                 if fake_pos[movement] == 'Rey':
                                     return True
-                            continue
             return False
         
         if perspective == 'defender':
@@ -948,13 +946,11 @@ class Match(Scene):
                         if movement not in row_of_(piece_standpoint+SUR*mult):
                             break
                     if 0 <= movement <= 63: # VALID SQUARE
-                        if movement in fake_pos:
-
-                            '''No deberíamos revisar bloqueos?...'''
-
+                        if movement in self.defender_positions:
+                            break # recorrer otra posición
+                        elif movement in fake_pos:
                             if fake_pos[movement] == 'Rey':
                                 return True
-                        continue
             return False
 
         if perspective == 'defender':
@@ -1091,13 +1087,11 @@ class Match(Scene):
                             if movement not in row_of_(piece_standpoint+SUR*mult):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
-                            if movement in fake_pos:
-                                
-                                '''No deberíamos revisar bloqueos?...'''
-
+                            if movement in self.defender_positions:
+                                break # recorrer otra dirección.
+                            elif movement in fake_pos:
                                 if fake_pos[movement] == 'Rey':
                                     return True
-                                continue
                 return False
 
             if perspective == 'defender':
