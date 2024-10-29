@@ -410,16 +410,12 @@ class Match(Scene):
         LUEGO los intercambiamos por el color-equipo que corresponde. "COMO RESULTAN AHORA"
         '''
 
-        '''
-        CUIDADO con mezclar las cosas
-        '''
-
         if self.turn_attacker == 'White':
 
             self.turn_attacker = 'Black'
             self.turn_defender = 'White'
 
-            # Target Transfer -------------------------------------------------------------
+            # Target Transfer (white <- attacker | black <- defender) -----------------
             # > positions
             self.white_positions = self.attacker_positions
             self.black_positions = self.defender_positions
@@ -440,7 +436,7 @@ class Match(Scene):
             self.white_directThreatTrace = self.attacker_directThreatTrace
             self.black_directThreatTrace = self.defender_directThreatTrace
 
-            # Target Swap -----------------------------------------------------------------
+            # Target Swap (attacker = black | defender = white ) ---------------------------
             # > positions
             self.attacker_positions = self.black_positions
             self.defender_positions = self.white_positions
@@ -468,27 +464,47 @@ class Match(Scene):
             self.turn_attacker = 'White'
             self.turn_defender = 'Black'
 
-            # Target Transfer -----------------
+            # Target Transfer (white <- defender | black <- attacker) -----------------
             # > positions
+            self.white_positions = self.defender_positions
+            self.black_positions = self.attacker_positions
 
             # > threatOn
+            self.white_threatOnBlack = self.defender_threatOnAttacker
+            self.black_threatOnWhite = self.attacker_threatOnDefender
 
             # > kingLegalMoves
+            self.white_kingLegalMoves = self.defender_kingLegalMoves
+            self.black_kingLegalMoves = self.attacker_kingLegalMoves
 
             # > singleOriginDirectThreat
+            self.white_singleOriginDirectThreat = self.defender_singleOriginDirectThreat
+            self.black_singleOriginDirectThreat = self.attacker_singleOriginDirectThreat
 
             # > directThreatTrace
+            self.white_directThreatTrace = self.defender_directThreatTrace
+            self.black_directThreatTrace = self.attacker_directThreatTrace
 
-            # Target Swap ---------------------
+            # Target Swap (attacker = white | defender = black) ---------------------
             # > positions
+            self.attacker_positions = self.white_positions
+            self.defender_positions = self.black_positions
 
             # > threatOn
+            self.attacker_threatOnDefender = self.white_threatOnBlack
+            self.defender_threatOnAttacker = self.black_threatOnWhite
 
             # > kingLegalMoves
+            self.attacker_kingLegalMoves = self.white_kingLegalMoves
+            self.defender_kingLegalMoves = self.black_kingLegalMoves
 
             # > singleOriginDirectThreat
+            self.attacker_singleOriginDirectThreat = self.white_singleOriginDirectThreat
+            self.defender_singleOriginDirectThreat = self.black_singleOriginDirectThreat
 
             # > directThreatTrace
+            self.attacker_directThreatTrace = self.white_directThreatTrace
+            self.defender_directThreatTrace = self.black_directThreatTrace
 
             return
     
