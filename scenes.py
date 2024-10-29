@@ -331,9 +331,9 @@ class Match(Scene):
             for _pawn in pawn_standpoints:
                 self.pawn_objectives(_pawn, perspective='attacker')
 
-            tower_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Torre")
-            for _tower in tower_standpoints:
-                self.rook_objectives(_tower, perspective='attacker')
+            rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Torre")
+            for _rook in rook_standpoints:
+                self.rook_objectives(_rook, perspective='attacker')
 
             bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Alfil")
             for _bishop in bishop_standpoints:
@@ -366,9 +366,9 @@ class Match(Scene):
             for _pawn in pawn_standpoints:
                 self.pawn_objectives(_pawn, perspective='defender')
 
-            tower_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="Torre")
-            for _tower in tower_standpoints:
-                self.rook_objectives(_tower, perspective='defender')
+            rook_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="Torre")
+            for _rook in rook_standpoints:
+                self.rook_objectives(_rook, perspective='defender')
             
             bishop_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='Alfil')
             for _bishop in bishop_standpoints:
@@ -412,46 +412,53 @@ class Match(Scene):
             return
     
     def exposing_direction(self, standpoint: int, direction: int) -> bool:
-        '''Cómo verificamos si nuestro movimiento expone al rey?
-
-        Debo tener la habilidad de "falsificar" un movimiento y un estado completo
+        '''Para verificar si un movimiento expone a "nuestro" rey debo tener
+        la habilidad de "falsificar" un movimiento y un estado completo
         del tablero sin "molestar" el estado actual.
-        '''
 
-        _king_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece='Rey').pop()
+        Llamaremos a las piezas correspondientes en su perspectiva="fake" e inyectandoles
+        posiciones falsas del atacante.
+
+        >> perspectiva="fake"
+            Devolverá TRUE si encontró al rey en su "falso objetivo".
+            Devolverá FALSE si NO lo encontró.
+        '''
         fake_move: int = standpoint+direction
         fake_attacker_positions: dict[int, str] = {}
-        fake_defender_threatOnAttacker: dict[str, list[int]] = {}
 
-        # buscar en la lista original attacker_positions el standpoint y
+        # Buscar en la lista original attacker_positions el standpoint y
         # y crear una fake_attacker_positions reemplazando el standpoint por fake_move.
+        # esto deja un "hueco" por donde ahora el rey podría ser amenazado.
         for ap in self.attacker_positions.keys():
             if standpoint != ap:
                 fake_attacker_positions.update({ap: self.attacker_positions[ap]})
             else:
                 fake_attacker_positions.update({fake_move: self.attacker_positions[ap]})
 
-        # ahora debo crear un fake-defender_threatOnAttacker que "amenace" PUNTUALMENTE
-        # y DESCARTABLEMENTE a la nueva fake_attacker_positions.
-        '''
-        Para amenazar debo llamar a los objectives() de una forma particular?
-        Creo que debo llamar a toda mi actual defensa como ofensa, pero cómo
-        hago que apunten a mi nuevo conjunto fake_attacker_positions?
+        # Crear objetivos fake inyectando fake_attacker_positions.
+        # try fake pawns
+        '''Los peones nunca influyen en exposing-movements'''
+        # try fake horses
+        '''Los caballos nunca influyen en exposing-movements'''
 
-        Si hago eso debo tener en cuenta usar los .clear()? O eso de todas
-        formas se hará con la importancia correspondiente despues de haber
-        movido lo que tenía que mover y no importa?
+        # try fake rooks
+        rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender,piece="Torre")
+        for _rook in rook_standpoints:
+            if self.rook_objectives(_rook, perspective='fake', fake_pos=fake_attacker_positions):
+                return True
 
-        El punto es que NO se modifique el verdadero defender_threatOnAttacker.
+        # try fake bishops
+        bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender,piece="Alfil")
+        for _bishop in bishop_standpoints:
+            if self.bishop_objectives(_bishop, perspective='fake', fake_pos=fake_attacker_positions):
+                return True
 
-        PUEDO CREAR UNA NUEVA PERSPECTIVA FAKE
-        pero como le alimento el fake_attacker_positions?
-        '''
+        # try fake queen
+        queen_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Reina").pop()
+        if self.queen_objectives(queen_standpoint, perspective='fake', fake_pos=fake_attacker_positions):
+            return True
+        return False
 
-        if _king_standpoint in fake_defender_threatOnAttacker:
-            return True # exposing direction, invalidate
-        else: return False # not exposing direction, continue
-    
     def pawn_objectives(self,piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
         '''Movimiento Peón:
         NORTE (white)
@@ -694,7 +701,12 @@ class Match(Scene):
 
             return mov_target_positions, on_target_kill_positions
 
-    def rook_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
+    def rook_objectives(
+        self,
+        piece_standpoint: int,
+        perspective: str,
+        fake_pos: dict[str, list[int]]
+        ) -> dict[int,pygame.Rect] | None:
         '''Movimiento Torre:
         +NORTE
         +SUR
@@ -714,6 +726,20 @@ class Match(Scene):
         _can_support: bool = False
         tower_directions = [NORTE,SUR,ESTE,OESTE]
 
+        if perspective == 'fake':
+            for direction in tower_directions:
+                    for mult in range(1,8): # 1 to board_size
+                        movement = piece_standpoint+direction*mult
+                        if direction == ESTE or direction == OESTE:
+                            if movement not in row_of_(piece_standpoint):
+                                break
+                        if 0 <= movement <= 63: # VALID SQUARE
+                            if movement in fake_pos:
+                                if fake_pos[movement] == 'Rey':
+                                    return True
+                            continue
+            return False
+        
         if perspective == 'defender':
             for direction in tower_directions:
                 for mult in range(1,8): # 1 to board_size
@@ -885,7 +911,12 @@ class Match(Scene):
                         
             return mov_target_positions, on_target_kill_positions
 
-    def bishop_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
+    def bishop_objectives(
+        self,
+        piece_standpoint: int,
+        perspective: str,
+        fake_pos: dict[str, list[int]]
+        ) -> dict[int,pygame.Rect] | None:
         '''Movimiento Alfil:
         +NOR_OESTE
         +NOR_ESTE
@@ -903,6 +934,23 @@ class Match(Scene):
         _threatening: bool = False
         _can_support: bool = False
         bishop_directions = [NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
+
+        if perspective == 'fake':
+            for direction in bishop_directions:
+                for mult in range(1,8):
+                    movement = piece_standpoint+direction*mult
+                    if direction == NOR_ESTE or direction == NOR_OESTE:
+                        if movement not in row_of_(piece_standpoint+NORTE*mult):
+                            break
+                    if direction == SUR_ESTE or direction == SUR_OESTE:
+                        if movement not in row_of_(piece_standpoint+SUR*mult):
+                            break
+                    if 0 <= movement <= 63: # VALID SQUARE
+                        if movement in fake_pos:
+                            if fake_pos[movement] == 'Rey':
+                                return True
+                        continue
+            return False
 
         if perspective == 'defender':
             for direction in bishop_directions:
@@ -996,7 +1044,12 @@ class Match(Scene):
                             else: break # rompe hasta la siguiente dirección.
             return mov_target_positions, on_target_kill_positions
 
-    def queen_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
+    def queen_objectives(
+        self,
+        piece_standpoint: int,
+        perspective: str,
+        fake_pos: dict[str, list[int]],
+        ) -> dict[int,pygame.Rect] | None:
             '''Movimiento Reina:
             +NORTE
             +SUR
@@ -1019,6 +1072,26 @@ class Match(Scene):
             _can_support: bool = False
             queen_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
+            if perspective == 'fake':
+                for direction in queen_directions:
+                    for mult in range(1,8):
+                        movement = piece_standpoint+direction*mult
+                        if direction == ESTE or direction == OESTE:
+                            if movement not in row_of_(piece_standpoint):     
+                                break
+                        if direction == NOR_ESTE or direction == NOR_OESTE:
+                            if movement not in row_of_(piece_standpoint+NORTE*mult):
+                                break
+                        if direction == SUR_ESTE or direction == SUR_OESTE:
+                            if movement not in row_of_(piece_standpoint+SUR*mult):
+                                break
+                        if 0 <= movement <= 63: # VALID SQUARE
+                            if movement in fake_pos:
+                                if fake_pos[movement] == 'Rey':
+                                    return True
+                                continue
+                return False
+
             if perspective == 'defender':
                 for direction in queen_directions:
                     for mult in range(1,8):
@@ -1039,6 +1112,7 @@ class Match(Scene):
                                 return
                             else: continue
                 return
+            
             if perspective == 'attacker':
                 if self.defender_singleOriginDirectThreat:
                     '''Entonces mis únicos movimientos posibles son bloquear o matar la amenaza.
