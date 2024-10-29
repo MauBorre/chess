@@ -411,7 +411,7 @@ class Match(Scene):
             #...
             return
     
-    def try_movement_doesnt_expose_attacker_king(standpoint: int, movement: int) -> bool:
+    def try_exposing_direction(standpoint: int, direction: int) -> bool:
         '''Cómo verificamos si nuestro movimiento expone al rey?
 
         Procesar:
@@ -548,11 +548,14 @@ class Match(Scene):
                             # BLOCK saving position
                             mov_target_positions.update({movement: self.boardRects[movement]})
                     else:
-                        # Si el primer movimiento no es válido, tampoco lo será el segundo ni los kill-movements.
-                        _exposing_movement = self.try_movement_doesnt_expose_attacker_king(piece_standpoint, movement)
-                        if _exposing_movement: return {}, {} # BUG podría NO hacer mov pero si kill-mov
-                        
                         if movement not in self.black_positions and movement not in self.white_positions: # piece block
+
+                            _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=SUR)
+                            #si da true debemos anular esta dirección
+                            if _exposing_movement: return {}, {} # BUG es un error retornar prematuramente.
+                                                                # hay otras direcciones por confirmar, en el caso
+                                                                # del peón las direcciones de kill-movement.
+
                             if piece_standpoint in self.in_base_Bpawns:
                                 mov_target_positions.update({movement:self.boardRects[movement]})
 
@@ -567,8 +570,17 @@ class Match(Scene):
                         # Verificamos que el movimiento no rompa los límites del tablero
                         if piece_standpoint+OESTE not in row_of_(piece_standpoint):
                             kill_positions.append(piece_standpoint+SUR_ESTE)
+
+
+                            _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=SUR_ESTE)
+                            #si da true debemos anular esta dirección
+
                         if piece_standpoint+ESTE not in row_of_(piece_standpoint):
                             kill_positions.append(piece_standpoint+SUR_OESTE)
+
+                            _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=SUR_OESTE)
+                            #si da true debemos anular esta dirección
+
                         elif len(kill_positions) == 0:
                             kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
 
@@ -619,41 +631,52 @@ class Match(Scene):
                             # BLOCK 1st mov. saving position
                             mov_target_positions.update({movement: self.boardRects[movement]})
                     else:
-                        # Si el primer movimiento no es válido, tampoco lo será el segundo.
-                        _exposing_movement = self.try_movement_doesnt_expose_attacker_king(movement)
-                        if _exposing_movement: return {}, {} # BUG podría NO hacer mov pero si kill-mov
+                        if movement not in self.black_positions and movement not in self.white_positions: # piece block
+                            
+                            
+                            _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=NORTE)
+                            #si da true debemos anular esta dirección
+                            if _exposing_movement: return {}, {} # BUG es un error retornar prematuramente.
+                                                                # hay otras direcciones por confirmar, en el caso
+                                                                # del peón las direcciones de kill-movement.
 
-                        
-                    if movement not in self.black_positions and movement not in self.white_positions: # piece block
-                        if piece_standpoint in self.in_base_Wpawns:
-                            mov_target_positions.update({movement:self.boardRects[movement]})
+                            if piece_standpoint in self.in_base_Wpawns:
+                                mov_target_positions.update({movement:self.boardRects[movement]})
 
-                            # 2nd Movement
-                            if movement+NORTE >= 0: # board limit check
-                                        
-                                if movement+NORTE not in self.black_positions and movement+NORTE not in self.white_positions: # piece block
-                                    mov_target_positions.update({movement+NORTE:self.boardRects[movement+NORTE]})
-                        else:
-                            mov_target_positions.update({movement:self.boardRects[movement]})
-                
-                        # kill positions
-                        # Verificamos que el movimiento no rompa los límites del tablero
-                        if piece_standpoint+OESTE not in row_of_(piece_standpoint):
-                            kill_positions.append(piece_standpoint+NOR_ESTE)
-                        if piece_standpoint+ESTE not in row_of_(piece_standpoint):
-                            kill_positions.append(piece_standpoint+NOR_OESTE)
-                        elif len(kill_positions) == 0:
-                            kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
-
-                        for kp in kill_positions:
+                                # 2nd Movement
+                                if movement+NORTE >= 0: # board limit check
                                             
-                            if kp in self.black_positions: #<- turn defender
-                                on_target_kill_positions.update({kp:self.boardRects[kp]})
+                                    if movement+NORTE not in self.black_positions and movement+NORTE not in self.white_positions: # piece block
+                                        mov_target_positions.update({movement+NORTE:self.boardRects[movement+NORTE]})
+                            else:
+                                mov_target_positions.update({movement:self.boardRects[movement]})
+                    
+                            # kill positions
+                            # Verificamos que el movimiento no rompa los límites del tablero
+                            if piece_standpoint+OESTE not in row_of_(piece_standpoint):
+                                kill_positions.append(piece_standpoint+NOR_ESTE)
 
-                            # Threat on defender king ------------------------
-                            if kp in self.defender_kingLegalMoves:
-                                self.attacker_threatOnDefender['Peón'].append(kp)
-                            # ------------------------------------------------
+                                _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=NOR_ESTE)
+                                #si da true debemos anular esta dirección
+
+                            if piece_standpoint+ESTE not in row_of_(piece_standpoint):
+                                kill_positions.append(piece_standpoint+NOR_OESTE)
+
+                                _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=NOR_OESTE)
+                                #si da true debemos anular esta dirección
+
+                            elif len(kill_positions) == 0:
+                                kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
+
+                            for kp in kill_positions:
+                                                
+                                if kp in self.black_positions: #<- turn defender
+                                    on_target_kill_positions.update({kp:self.boardRects[kp]})
+
+                                # Threat on defender king ------------------------
+                                if kp in self.defender_kingLegalMoves:
+                                    self.attacker_threatOnDefender['Peón'].append(kp)
+                                # ------------------------------------------------
 
             return mov_target_positions, on_target_kill_positions
 
@@ -729,7 +752,7 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
 
-                            _exposing_movement = self.try_movement_doesnt_expose_attacker_king(movement)
+                            _exposing_movement = self.try_exposing_direction(movement)
                             if _exposing_movement: return {}, {} # BUG podría NO hacer HORIZONTAL pero si VERTICAL
                         
                             # Threat on defender king ------------------------
@@ -833,7 +856,7 @@ class Match(Scene):
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT 
 
                         '''Unica pieza la cual podemos descartar todos sus movimientos si uno solo expone.'''
-                        _exposing_movement = self.try_movement_doesnt_expose_attacker_king(piece_standpoint, movement)
+                        _exposing_movement = self.try_exposing_direction(piece_standpoint, movement)
                         if _exposing_movement: return {}, {}
 
                         # Threat on defender king ------------------------
@@ -930,7 +953,7 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
 
-                            _exposing_movement = self.try_movement_doesnt_expose_attacker_king(piece_standpoint, movement)
+                            _exposing_movement = self.try_exposing_direction(piece_standpoint, movement)
                             if _exposing_movement: return {}, {} # BUG podría NO hacer IZQ pero SI DER
 
                             # Threat on defender king ------------------------
@@ -1054,7 +1077,7 @@ class Match(Scene):
                                     break
                             if 0 <= movement <= 63: # VALID SQUARE
 
-                                _exposing_movement = self.try_movement_doesnt_expose_attacker_king(piece_standpoint, movement)
+                                _exposing_movement = self.try_exposing_direction(piece_standpoint, movement)
                                 if _exposing_movement: return {}, {} # BUG podría NO hacer HORIZONTAL pero si VERTICAL
                                                                      # pero SI IZQ(diag.) pero SI DER(diag.)
 
