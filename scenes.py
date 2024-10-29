@@ -411,21 +411,26 @@ class Match(Scene):
             #...
             return
     
-    def try_movement_doesnt_expose_attacker_king(movement: int) -> bool:
+    def try_movement_doesnt_expose_attacker_king(standpoint: int, movement: int) -> bool:
         '''Cómo verificamos si nuestro movimiento expone al rey?
+
+        Procesar:
+            standpoint: int
+            movimiento: int
+        Nos dará como resultado un casillero_vacío.
                 
         Necesitamos un mecanismo para hacer-verificar todo el movimiento "sin dejarlo
         hecho en el tablero ni en ninguna variable global?"
 
         Verificar esto está relacionado con el -en este punto- self.defender_threatOnAttacker
 
-        Deberíamos comprobar si "el casillero que se desocupa" *ELIMINARIA UN BLOQUEO QUE
-        DEJARIA AL REY EN AMENAZA DIRECTA*
+            si -EL CASILLERO QUE ESTOY VACIANDO- genera un pseudo_directThreat
+                devolvemos TRUE (Detendrá el mecanismo de movimiento de la pieza llamante.)
 
-        Mi información desde la pieza es un movimiento: int
-            > Si hiciera este movimiento, como quedaría la amenaza self.defender_threatOnAttacker?
+            si -EL CASILLERO QUE ESTOY VACIANDO- NO genera un pseudo_directThreat
+                devolvemos FALSE (Continuará el mecanismo de movimiento de la pieza llamante.)
         '''
-        '''Lo importante es la celda que se vacía'''
+
         #agarrar el tablero / copiar tablero
         #inyectar este movimiento / hacer el movimiento
         #aplicar revision de defender_threatOnAttackerTEST
@@ -544,8 +549,8 @@ class Match(Scene):
                             mov_target_positions.update({movement: self.boardRects[movement]})
                     else:
                         # Si el primer movimiento no es válido, tampoco lo será el segundo ni los kill-movements.
-                        _exposing_movement = self.try_movement_doesnt_expose_attacker_king(movement)
-                        if _exposing_movement: return {}, {}
+                        _exposing_movement = self.try_movement_doesnt_expose_attacker_king(piece_standpoint, movement)
+                        if _exposing_movement: return {}, {} # BUG podría NO hacer mov pero si kill-mov
                         
                         if movement not in self.black_positions and movement not in self.white_positions: # piece block
                             if piece_standpoint in self.in_base_Bpawns:
@@ -616,7 +621,7 @@ class Match(Scene):
                     else:
                         # Si el primer movimiento no es válido, tampoco lo será el segundo.
                         _exposing_movement = self.try_movement_doesnt_expose_attacker_king(movement)
-                        if _exposing_movement: return {}, {}
+                        if _exposing_movement: return {}, {} # BUG podría NO hacer mov pero si kill-mov
 
                         
                     if movement not in self.black_positions and movement not in self.white_positions: # piece block
@@ -725,7 +730,7 @@ class Match(Scene):
                         if 0 <= movement <= 63: # VALID SQUARE
 
                             _exposing_movement = self.try_movement_doesnt_expose_attacker_king(movement)
-                            if _exposing_movement: return {}, {}
+                            if _exposing_movement: return {}, {} # BUG podría NO hacer HORIZONTAL pero si VERTICAL
                         
                             # Threat on defender king ------------------------
                             _threat_emission.append(movement)
@@ -827,7 +832,8 @@ class Match(Scene):
                 for movement in horse_movements:
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT 
 
-                        _exposing_movement = self.try_movement_doesnt_expose_attacker_king(movement)
+                        '''Unica pieza la cual podemos descartar todos sus movimientos si uno solo expone.'''
+                        _exposing_movement = self.try_movement_doesnt_expose_attacker_king(piece_standpoint, movement)
                         if _exposing_movement: return {}, {}
 
                         # Threat on defender king ------------------------
@@ -924,8 +930,8 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
 
-                            _exposing_movement = self.try_movement_doesnt_expose_attacker_king(movement)
-                            if _exposing_movement: return {}, {}
+                            _exposing_movement = self.try_movement_doesnt_expose_attacker_king(piece_standpoint, movement)
+                            if _exposing_movement: return {}, {} # BUG podría NO hacer IZQ pero SI DER
 
                             # Threat on defender king ------------------------
                             _threat_emission.append(movement)
@@ -1048,8 +1054,9 @@ class Match(Scene):
                                     break
                             if 0 <= movement <= 63: # VALID SQUARE
 
-                                _exposing_movement = self.try_movement_doesnt_expose_attacker_king(movement)
-                                if _exposing_movement: return {}, {}
+                                _exposing_movement = self.try_movement_doesnt_expose_attacker_king(piece_standpoint, movement)
+                                if _exposing_movement: return {}, {} # BUG podría NO hacer HORIZONTAL pero si VERTICAL
+                                                                     # pero SI IZQ(diag.) pero SI DER(diag.)
 
                                 # Threat on defender king ------------------------
                                 _threat_emission.append(movement)
