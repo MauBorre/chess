@@ -411,7 +411,7 @@ class Match(Scene):
             #...
             return
     
-    def try_exposing_direction(standpoint: int, direction: int) -> bool:
+    def exposing_direction(standpoint: int, direction: int) -> bool:
         '''Cómo verificamos si nuestro movimiento expone al rey?
 
         Procesar:
@@ -453,7 +453,6 @@ class Match(Scene):
         
         # Objectives
         kill_positions: list[int] = []
-        _exposing_movement: bool = False
         movement: int
 
         if perspective == 'defender' :
@@ -550,42 +549,44 @@ class Match(Scene):
                     else:
                         if movement not in self.black_positions and movement not in self.white_positions: # piece block
 
-                            _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=SUR)
-                            #si da true debemos anular esta dirección
-                            if _exposing_movement: return {}, {} # BUG es un error retornar prematuramente.
-                                                                # hay otras direcciones por confirmar, en el caso
-                                                                # del peón las direcciones de kill-movement.
+                            if not self.exposing_direction(piece_standpoint, direction=SUR): 
+                                if piece_standpoint in self.in_base_Bpawns:
+                                    mov_target_positions.update({movement:self.boardRects[movement]})
 
-                            if piece_standpoint in self.in_base_Bpawns:
-                                mov_target_positions.update({movement:self.boardRects[movement]})
-
-                                # 2nd Movement 
-                                if movement+SUR <= 63: # board limit check
-                                    if movement+SUR not in self.black_positions and movement+SUR not in self.white_positions: # piece block
-                                        mov_target_positions.update({movement+SUR:self.boardRects[movement+SUR]})
-                            else:
-                                mov_target_positions.update({movement:self.boardRects[movement]})
+                                    # 2nd Movement 
+                                    if movement+SUR <= 63: # board limit check
+                                        if movement+SUR not in self.black_positions and movement+SUR not in self.white_positions: # piece block
+                                            mov_target_positions.update({movement+SUR:self.boardRects[movement+SUR]})
+                                else:
+                                    mov_target_positions.update({movement:self.boardRects[movement]})
+                            else: pass
 
                         # kill positions
                         # Verificamos que el movimiento no rompa los límites del tablero
                         if piece_standpoint+OESTE not in row_of_(piece_standpoint):
-                            kill_positions.append(piece_standpoint+SUR_ESTE)
 
-
-                            _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=SUR_ESTE)
-                            #si da true debemos anular esta dirección
+                            if not self.exposing_direction(piece_standpoint, direction=SUR_ESTE):
+                                kill_positions.append(piece_standpoint+SUR_ESTE)
+                            else: pass
 
                         if piece_standpoint+ESTE not in row_of_(piece_standpoint):
-                            kill_positions.append(piece_standpoint+SUR_OESTE)
 
-                            _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=SUR_OESTE)
-                            #si da true debemos anular esta dirección
+                            if not self.exposing_direction(piece_standpoint, direction=SUR_OESTE):
+                                kill_positions.append(piece_standpoint+SUR_OESTE)
+                            else: pass
 
                         elif len(kill_positions) == 0:
-                            kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
+
+                            if not self.exposing_direction(piece_standpoint, direction=SUR_OESTE):
+                                kill_positions.append(piece_standpoint+SUR_OESTE)
+                            else: pass
+
+                            if not self.exposing_direction(piece_standpoint, direction=SUR_ESTE):
+                                kill_positions.append(piece_standpoint+SUR_ESTE)
+                            else: pass
 
                         for kp in kill_positions:
-                                
+
                             if kp in self.white_positions: #<- turn defender
                                 on_target_kill_positions.update({kp:self.boardRects[kp]})
                             
@@ -633,40 +634,42 @@ class Match(Scene):
                     else:
                         if movement not in self.black_positions and movement not in self.white_positions: # piece block
                             
-                            
-                            _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=NORTE)
-                            #si da true debemos anular esta dirección
-                            if _exposing_movement: return {}, {} # BUG es un error retornar prematuramente.
-                                                                # hay otras direcciones por confirmar, en el caso
-                                                                # del peón las direcciones de kill-movement.
+                            if not self.exposing_direction(piece_standpoint, direction=NORTE):
+                                if piece_standpoint in self.in_base_Wpawns:
+                                    mov_target_positions.update({movement:self.boardRects[movement]})
 
-                            if piece_standpoint in self.in_base_Wpawns:
-                                mov_target_positions.update({movement:self.boardRects[movement]})
-
-                                # 2nd Movement
-                                if movement+NORTE >= 0: # board limit check
-                                            
-                                    if movement+NORTE not in self.black_positions and movement+NORTE not in self.white_positions: # piece block
-                                        mov_target_positions.update({movement+NORTE:self.boardRects[movement+NORTE]})
-                            else:
-                                mov_target_positions.update({movement:self.boardRects[movement]})
+                                    # 2nd Movement
+                                    if movement+NORTE >= 0: # board limit check
+                                                
+                                        if movement+NORTE not in self.black_positions and movement+NORTE not in self.white_positions: # piece block
+                                            mov_target_positions.update({movement+NORTE:self.boardRects[movement+NORTE]})
+                                else:
+                                    mov_target_positions.update({movement:self.boardRects[movement]})
+                            else: pass
                     
                             # kill positions
                             # Verificamos que el movimiento no rompa los límites del tablero
                             if piece_standpoint+OESTE not in row_of_(piece_standpoint):
-                                kill_positions.append(piece_standpoint+NOR_ESTE)
-
-                                _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=NOR_ESTE)
-                                #si da true debemos anular esta dirección
+                                
+                                if not self.exposing_direction(piece_standpoint, direction=NOR_ESTE):
+                                    kill_positions.append(piece_standpoint+NOR_ESTE)
+                                else: pass
 
                             if piece_standpoint+ESTE not in row_of_(piece_standpoint):
-                                kill_positions.append(piece_standpoint+NOR_OESTE)
-
-                                _exposing_movement = self.try_exposing_direction(piece_standpoint, direction=NOR_OESTE)
-                                #si da true debemos anular esta dirección
+                                
+                                if not self.exposing_direction(piece_standpoint, direction=NOR_OESTE):
+                                    kill_positions.append(piece_standpoint+NOR_OESTE)
+                                else: pass
 
                             elif len(kill_positions) == 0:
-                                kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
+                                
+                                if not self.exposing_direction(piece_standpoint, direction=NOR_OESTE):
+                                    kill_positions.append(piece_standpoint+NOR_OESTE)
+                                else: pass
+
+                                if not self.exposing_direction(piece_standpoint, direction=NOR_ESTE):
+                                    kill_positions.append(piece_standpoint+NOR_ESTE)
+                                else: pass
 
                             for kp in kill_positions:
                                                 
@@ -752,7 +755,7 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
 
-                            _exposing_movement = self.try_exposing_direction(movement)
+                            _exposing_movement = self.exposing_direction(movement)
                             if _exposing_movement: return {}, {} # BUG podría NO hacer HORIZONTAL pero si VERTICAL
                         
                             # Threat on defender king ------------------------
@@ -856,7 +859,7 @@ class Match(Scene):
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT 
 
                         '''Unica pieza la cual podemos descartar todos sus movimientos si uno solo expone.'''
-                        _exposing_movement = self.try_exposing_direction(piece_standpoint, movement)
+                        _exposing_movement = self.exposing_direction(piece_standpoint, movement)
                         if _exposing_movement: return {}, {}
 
                         # Threat on defender king ------------------------
@@ -953,7 +956,7 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
 
-                            _exposing_movement = self.try_exposing_direction(piece_standpoint, movement)
+                            _exposing_movement = self.exposing_direction(piece_standpoint, movement)
                             if _exposing_movement: return {}, {} # BUG podría NO hacer IZQ pero SI DER
 
                             # Threat on defender king ------------------------
@@ -1077,7 +1080,7 @@ class Match(Scene):
                                     break
                             if 0 <= movement <= 63: # VALID SQUARE
 
-                                _exposing_movement = self.try_exposing_direction(piece_standpoint, movement)
+                                _exposing_movement = self.exposing_direction(piece_standpoint, movement)
                                 if _exposing_movement: return {}, {} # BUG podría NO hacer HORIZONTAL pero si VERTICAL
                                                                      # pero SI IZQ(diag.) pero SI DER(diag.)
 
