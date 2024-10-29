@@ -411,13 +411,15 @@ class Match(Scene):
             #...
             return
     
-    def exposing_direction(standpoint: int, direction: int) -> bool:
+    def exposing_direction(self, standpoint: int, direction: int) -> bool:
         '''Cómo verificamos si nuestro movimiento expone al rey?
 
         Procesar:
             standpoint: int
-            movimiento: int
-        Nos dará como resultado un casillero_vacío.
+            +
+            direction: int (en el caso del caballo vendrá un movimiento mas que un direction)
+        Nos dará como resultado un movimiento-falso que dejará atras un 
+        casillero_vacío (ex-standpoint).
                 
         Necesitamos un mecanismo para hacer-verificar todo el movimiento "sin dejarlo
         hecho en el tablero ni en ninguna variable global?"
@@ -431,10 +433,39 @@ class Match(Scene):
                 devolvemos FALSE (Continuará el mecanismo de movimiento de la pieza llamante.)
         '''
 
-        #agarrar el tablero / copiar tablero
-        #inyectar este movimiento / hacer el movimiento
-        #aplicar revision de defender_threatOnAttackerTEST
-        return True or False
+        # agarrar el tablero / copiar tablero?
+        # aplicar fake_move a fake_attacker_positions
+        # revisar si _king_standpoint se encuentra en fake_defender_threatOnAttacker
+
+        _king_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece='Rey').pop()
+        fake_move: int = standpoint+direction
+        fake_attacker_positions: dict[int, str] = {}
+        fake_defender_threatOnAttacker: dict[str, list[int]] = {}
+        # debo buscar en la lista attacker_positions el standpoint y
+        # reemplazarlo por fake_move, creando una fake_attacker_positions
+        for ap in self.attacker_positions.keys():
+            if standpoint != ap:
+                fake_attacker_positions.update({ap: self.attacker_positions[ap]})
+            else:
+                fake_attacker_positions.update({fake_move: self.attacker_positions[ap]})
+
+        # ahora debo crear un fake-defender_threatOnAttacker que "amenace"
+        # a la nueva fake_attacker_positions
+        '''
+        Para amenazar debo llamar a los objectives() de una forma particular?
+        Creo que debo llamar a toda mi actual defensa como ofensa, pero cómo
+        hago que apunten a mi nuevo conjunto fake_attacker_positions?
+
+        Si hago eso debo tener en cuenta usar los .clear()? O eso de todas
+        formas se hará con la importancia correspondiente despues de haber
+        movido lo que tenía que mover y no importa?
+
+        El punto es que no se modifique el verdadero defender_threatOnAttacker.
+        '''
+
+        if _king_standpoint in fake_defender_threatOnAttacker:
+            return True # exposing direction, invalidate
+        else: return False # not exposing direction, continue
     
     def pawn_objectives(self,piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
         '''Movimiento Peón:
@@ -515,7 +546,6 @@ class Match(Scene):
                 movement = piece_standpoint+SUR
                 if movement <= 63: # board limit
     
-                    # Revisar amenaza directa, lo que puede restringir/forzar/anular movimientos.
                     if self.defender_singleOriginDirectThreat:
                         '''Entonces mis únicos movimientos posibles son bloquear o matar la amenaza.
                         > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
@@ -599,7 +629,6 @@ class Match(Scene):
                 movement = piece_standpoint+NORTE
                 if movement >= 0: # board limit
                     
-                    # Revisar amenaza directa, lo que puede restringir/forzar/anular movimientos.
                     if self.defender_singleOriginDirectThreat:
                         '''Entonces mis únicos movimientos posibles son salvarlo,
                         bloqueando o matando la amenaza.
@@ -1148,8 +1177,10 @@ class Match(Scene):
                     if movement not in self.defender_threatOnAttacker:
                         if movement not in self.defender_kingLegalMoves:
                             if movement not in self.attacker_positions: # ally block
+                                self.attacker_kingLegalMoves.append(movement)
                                 mov_target_positions.update({movement:self.boardRects[movement]})
                             elif movement in self.defender_positions:
+                                self.attacker_kingLegalMoves.append(movement)
                                 on_target_kill_positions.update({movement:self.boardRects[movement]})
 
         return mov_target_positions, on_target_kill_positions
