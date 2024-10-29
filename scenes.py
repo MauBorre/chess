@@ -197,7 +197,6 @@ class Match(Scene):
         # Board defaults ---------------------------------------------------
         # Black
         self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']] # no swap
-
         self.black_positions: dict[int, str] = pieces.black_positions
         self.black_threatOnWhite: dict[str, int] = {piece:[] for piece in pieces.origins['negras']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
         self.black_kingLegalMoves: list[int] = []
@@ -268,10 +267,7 @@ class Match(Scene):
         self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
         self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
         self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace 
-        
-        # ---------------------------------------------------------------------------------------------
 
-        # self.update_turn_objectives() # turn lookups init and update | <- necesario?
 
     def update_turn_objectives(self):
         '''Llama todas las funciones _objectives() con sus correctas perspectivas
@@ -386,12 +382,57 @@ class Match(Scene):
         # -------------------------------------------------------------------------------------------------
 
     def reset_board(self):
-        self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['negras']['Peón']]
-        self.in_base_Wpawns = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
-        self.black_positions = pieces.black_positions
-        self.white_positions = pieces.white_positions
-        self.turn_attacker = 'White'
+
+        '''Idealmente esta funcion reiniciaria el objeto match por completo.
+        A menos que necesitemos obtener un puntaje por ejemplo, simplemente llamando
+        al init deberiamos reiniciar TODo
+        
+        Creo que lo ideal es que Match exponga una API que utilizará el GameMaster
+        para realizar cosas como estas... quizás...'''
+        # self.__init__(master=self.master)
+
+        # judge variables
         self.winner = False
+        self.stalemate = False
+        self.match_state = ''
+        self.player_deciding_match = False
+
+        # Board defaults ---------------------------------------------------------------------------
+        # Black
+        self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['negras']['Peón']]
+        self.black_positions: dict[int, str] = pieces.black_positions
+        self.black_threatOnWhite: dict[str, int] = {piece:[] for piece in pieces.origins['negras']}
+        self.black_kingLegalMoves: list[int] = []
+        self.black_singleOriginDirectThreat: bool | None = None 
+        self.black_directThreatTrace: list[int] = []
+
+        # White
+        self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
+        self.white_positions: dict[int, str] = pieces.white_positions
+        self.white_threatOnBlack: dict[str, int] = {piece:[] for piece in pieces.origins['blancas']} 
+        self.white_kingLegalMoves: list[int] = []
+        self.white_singleOriginDirectThreat: bool | None = None 
+        self.white_directThreatTrace: list[int] = [] 
+    
+        # Turn lookups ------------------------------------------------------------------------------
+        # General
+        self.turn_attacker: str = 'White'
+        self.turn_defender: str = 'Black'
+        self.defender_kingSupport: set[str] = {}
+
+        # Defender
+        self.defender_positions: dict[int, str] = self.black_positions 
+        self.defender_threatOnAttacker: dict[str, list[int]] = self.black_threatOnWhite 
+        self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
+        self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat
+        self.defender_directThreatTrace: list[int] = self.black_directThreatTrace 
+        
+        # Attacker
+        self.attacker_positions: dict[int, str] = self.white_positions 
+        self.attacker_threatOnDefender: dict[str, list[int]] = self.white_threatOnBlack
+        self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
+        self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
+        self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace 
 
     def turn_swap(self):
         '''
@@ -802,7 +843,7 @@ class Match(Scene):
         self,
         piece_standpoint: int,
         perspective: str,
-        fake_pos: dict[str, list[int]]
+        fake_pos: dict[str, list[int]] | None = None
         ) -> dict[int,pygame.Rect] | None:
         '''Movimiento Torre:
         +NORTE
@@ -1013,7 +1054,7 @@ class Match(Scene):
         self,
         piece_standpoint: int,
         perspective: str,
-        fake_pos: dict[str, list[int]]
+        fake_pos: dict[str, list[int]] | None = None
         ) -> dict[int,pygame.Rect] | None:
         '''Movimiento Alfil:
         +NOR_OESTE
@@ -1147,7 +1188,7 @@ class Match(Scene):
         self,
         piece_standpoint: int,
         perspective: str,
-        fake_pos: dict[str, list[int]],
+        fake_pos: dict[str, list[int]] | None = None
         ) -> dict[int,pygame.Rect] | None:
             '''Movimiento Reina:
             +NORTE
@@ -1389,8 +1430,8 @@ class Match(Scene):
                                                       SQUARE_RECT.left + board.square_width/2,
                                                       SQUARE_RECT.top + board.square_height/2)
 
-            # hidden/visible elements upon paused state
-            if not self.master.paused:
+            # hidden/visible elements upon paused state (or finished_game state?)
+            if not self.master.paused:#  and not self.winner or not self.stalemate ?
                 if SQUARE_RECT.collidepoint((self.master.mx,self.master.my)):
 
                     # Hover -----------------------
@@ -1590,6 +1631,7 @@ class Match(Scene):
             else:
                 self.draw_confirm_restart_menu()
         if self.winner or self.stalemate:
+            # self.master.paused = True
             self.draw_post_game_menu()
 
     def draw_confirm_restart_menu(self,width=300,height=300):
@@ -1655,7 +1697,7 @@ class Match(Scene):
                         pygame.Rect(self.master.screen.get_width()-400,150,width,height))
         # tooltip
         self.draw_text(self.match_state, 'black', self.screen.get_width()-400, 150, center=False)
-        self.draw_play_again_btn()
+        self.draw_postgame_again_btn()
         self.draw_exit_to_mainMenu_btn()
         #opciones de cambiar equipo...
         #opciones de cambiar reglas...
@@ -1672,6 +1714,16 @@ class Match(Scene):
         self.draw_exit_to_mainMenu_btn()
         self.draw_exit_game_btn()
 
+    def draw_postgame_again_btn(self):
+        self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400,400,center=False)
+        play_again_rect = pygame.Rect(self.screen.get_width()-400,400,200,50)
+        if play_again_rect.collidepoint((self.master.mx, self.master.my)):
+            #hover
+            pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
+            if self.master.click:
+
+                self.reset_board()
+
     def draw_play_again_btn(self):
         self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400,400,center=False)
         play_again_rect = pygame.Rect(self.screen.get_width()-400,400,200,50)
@@ -1679,4 +1731,5 @@ class Match(Scene):
             #hover
             pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
             if self.master.click:
-                self.reset_board()
+                self.player_deciding_match = True
+                # self.reset_board()
