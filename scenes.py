@@ -414,43 +414,25 @@ class Match(Scene):
     def exposing_direction(self, standpoint: int, direction: int) -> bool:
         '''Cómo verificamos si nuestro movimiento expone al rey?
 
-        Procesar:
-            standpoint: int
-            +
-            direction: int (en el caso del caballo vendrá un movimiento mas que un direction)
-        Nos dará como resultado un movimiento-falso que dejará atras un 
-        casillero_vacío (ex-standpoint).
-                
-        Necesitamos un mecanismo para hacer-verificar todo el movimiento "sin dejarlo
-        hecho en el tablero ni en ninguna variable global?"
-
-        Verificar esto está relacionado con el -en este punto- self.defender_threatOnAttacker
-
-            si -EL CASILLERO QUE ESTOY VACIANDO- genera un pseudo_directThreat
-                devolvemos TRUE (Detendrá el mecanismo de movimiento de la pieza llamante.)
-
-            si -EL CASILLERO QUE ESTOY VACIANDO- NO genera un pseudo_directThreat
-                devolvemos FALSE (Continuará el mecanismo de movimiento de la pieza llamante.)
+        Debo tener la habilidad de "falsificar" un movimiento y un estado completo
+        del tablero sin "molestar" el estado actual.
         '''
-
-        # agarrar el tablero / copiar tablero?
-        # aplicar fake_move a fake_attacker_positions
-        # revisar si _king_standpoint se encuentra en fake_defender_threatOnAttacker
 
         _king_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece='Rey').pop()
         fake_move: int = standpoint+direction
         fake_attacker_positions: dict[int, str] = {}
         fake_defender_threatOnAttacker: dict[str, list[int]] = {}
-        # debo buscar en la lista attacker_positions el standpoint y
-        # reemplazarlo por fake_move, creando una fake_attacker_positions
+
+        # buscar en la lista original attacker_positions el standpoint y
+        # y crear una fake_attacker_positions reemplazando el standpoint por fake_move.
         for ap in self.attacker_positions.keys():
             if standpoint != ap:
                 fake_attacker_positions.update({ap: self.attacker_positions[ap]})
             else:
                 fake_attacker_positions.update({fake_move: self.attacker_positions[ap]})
 
-        # ahora debo crear un fake-defender_threatOnAttacker que "amenace"
-        # a la nueva fake_attacker_positions
+        # ahora debo crear un fake-defender_threatOnAttacker que "amenace" PUNTUALMENTE
+        # y DESCARTABLEMENTE a la nueva fake_attacker_positions.
         '''
         Para amenazar debo llamar a los objectives() de una forma particular?
         Creo que debo llamar a toda mi actual defensa como ofensa, pero cómo
@@ -460,7 +442,10 @@ class Match(Scene):
         formas se hará con la importancia correspondiente despues de haber
         movido lo que tenía que mover y no importa?
 
-        El punto es que no se modifique el verdadero defender_threatOnAttacker.
+        El punto es que NO se modifique el verdadero defender_threatOnAttacker.
+
+        PUEDO CREAR UNA NUEVA PERSPECTIVA FAKE
+        pero como le alimento el fake_attacker_positions?
         '''
 
         if _king_standpoint in fake_defender_threatOnAttacker:
