@@ -165,13 +165,12 @@ class MainMenu(Scene):
             #MainMenuSCENE.draw_options()
 
 class Match(Scene):
-    '''> Escena JUEGO
-    Es inicializada bajo una 'comanda' por el modo j1-VS-j2 o j1-VS-ia seleccionado en el
-    menú previo
-    +) contiene:
-        2 actores
-            cada actor tiene un color y cada color
-            corresponde a un color y un lado del tablero'''
+    '''Match es inicializado bajo distintos modos seleccionados previamente en MainMenu:
+        >> j1-VS-j2
+        >> j1-VS-ia
+        >> con tiempo (duraciones variables de reloj)
+        >> sin tiempo
+    '''
 
     def __init__(self, master):
         super().__init__(master)
