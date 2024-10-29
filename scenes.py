@@ -1559,17 +1559,28 @@ class Match(Scene):
         if self.attacker_singleOriginDirectThreat == None:
             if len(self.defender_kingLegalMoves) == 0 and len(self.defender_kingSupport) == 0:
                 '''BUG hay algo más que debo verificar acá.
-                
+
+                Para cantar stale-mate debo ver que el rey no se pueda mover PORQUE
+                lo rodea un conjunto de bloqueos/amenazas.
+                Y nadie puede matar a esa amenaza.
+
+                El empate sucede cuando el defensor NO TIENE MOVIMIENTOS LEGALES, pero
+                EL REY NO ESTÁ EN AMENAZA DIRECTA.
+
+                Además de los kingLegalMoves, todas sus otras piezas pueden tener o no
+                movimientos legales, los cuales se basan en si EXPONER AL REY, si
+                están BLOQUEADAS (caso peón: bloqueado de frente y por aliados, resto de
+                las piezas pueden estar bloqueadas por aliados)
                 '''
 
                 #STALE-MATE
                 '''Termina el juego en empate.'''
                 if self.turn_attacker == 'Black':
-                    self.stalemate = True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
+                    self.stalemate = True # repercute en render() - termina la partida
                     self.match_state = 'Rey White ahogado.  -  Empate.'
 
                 if self.turn_attacker == 'White':
-                    self.stalemate = True # debería repercutir automaticamente en render()  - 15/10 PARCIALMENTE IMPLEMENTADO / NO TESTEADO
+                    self.stalemate = True # repercute en render() - termina la partida
                     self.match_state = 'Rey Black ahogado.  -  Empate.'
 
             else: return # La partida continúa con normalidad.
@@ -1606,11 +1617,11 @@ class Match(Scene):
                 '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
                 ...
                 if self.turn_attacker == 'Black':
-                    self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                    self.winner = True # repercute en render() - termina la partida
                     self.match_state = 'Black gana.  -  White en jaque-mate.'
 
                 if self.turn_attacker == 'White':
-                    self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                    self.winner = True # repercute en render() - termina la partida
                     self.match_state = 'White gana  -  Black en jaque-mate.'
             else:
 
