@@ -201,7 +201,7 @@ class Match(Scene):
         self.black_threatOnWhite: dict[str, int] = {piece:[] for piece in pieces.origins['negras']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
         self.black_kingLegalMoves: list[int] = []
         self.black_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
-        self.black_directThreats: list[int] = [] # FALTA SWAP
+        self.black_directThreatTrace: list[int] = [] # FALTA SWAP
         
         # White
         self.white_positions: dict[int, str] = pieces.white_positions
@@ -209,7 +209,7 @@ class Match(Scene):
         self.white_threatOnBlack: dict[str, int] = {piece:[] for piece in pieces.origins['blancas']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
         self.white_kingLegalMoves: list[int] = []
         self.white_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
-        self.white_directThreats: list[int] = [] # FALTA SWAP
+        self.white_directThreatTrace: list[int] = [] # FALTA SWAP
 
         # Turn lookups --------------------------------------------------------------------------------
         self.turn_attacker: str = 'White'
@@ -259,8 +259,8 @@ class Match(Scene):
         self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
 
         self.defender_kingSupport: set[str] = {}
-        self.attacker_directThreatTrace: list[int] = self.black_directThreats # falta SWAP
-        self.defender_directThreatTrace: list[int] = self.white_directThreats # falta SWAP
+        self.attacker_directThreatTrace: list[int] = self.black_directThreatTrace # falta SWAP
+        self.defender_directThreatTrace: list[int] = self.white_directThreatTrace # falta SWAP
 
         ''' Si existe múltiple orígen de amenaza NUNCA habrá kingSupport.'''
         
@@ -394,14 +394,24 @@ class Match(Scene):
         '''CUIDADO con mezclar las cosas'''
 
         if self.turn_attacker == 'White':
+
             self.turn_attacker = 'Black'
             self.turn_defender = 'White'
+
             #1ro transfiero targets
+            #threatOnDefender
+            #threatOnAttacker
+            #positions
+            #singleOriginDirectThreat
+            #directThreats
             #...
+
             #luego intercambio targets lists
             #...
             return
+        
         if self.turn_attacker == 'Black':
+
             self.turn_attacker = 'White'
             self.turn_defender = 'Black'
             #1ro transfiero targets
@@ -881,7 +891,7 @@ class Match(Scene):
                                 # BLOCK saving position.
                                 _can_support = True
                                 mov_target_positions.update({movement: self.boardRects[movement]})
-                            elif movement == max(self.defender_directThreatTrace) or movement == min(self.black_directThreats):
+                            elif movement == max(self.defender_directThreatTrace) or movement == min(self.black_directThreatTrace):
 
                                 # KILL saving position.
                                 _can_support = True
