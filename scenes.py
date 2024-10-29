@@ -196,25 +196,27 @@ class Match(Scene):
 
         # Board defaults ---------------------------------------------------
         # Black
+        self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']] # no swap
+
         self.black_positions: dict[int, str] = pieces.black_positions
-        self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']]
         self.black_threatOnWhite: dict[str, int] = {piece:[] for piece in pieces.origins['negras']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
         self.black_kingLegalMoves: list[int] = []
-        self.black_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
-        self.black_directThreatTrace: list[int] = [] # FALTA SWAP
+        self.black_singleOriginDirectThreat: bool | None = None 
+        self.black_directThreatTrace: list[int] = [] 
         
         # White
+        self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']] # no swap
+
         self.white_positions: dict[int, str] = pieces.white_positions
-        self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
         self.white_threatOnBlack: dict[str, int] = {piece:[] for piece in pieces.origins['blancas']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
         self.white_kingLegalMoves: list[int] = []
-        self.white_singleOriginDirectThreat: bool | None = None # ATENCION SWAP
-        self.white_directThreatTrace: list[int] = [] # FALTA SWAP
+        self.white_singleOriginDirectThreat: bool | None = None 
+        self.white_directThreatTrace: list[int] = [] 
 
         # Turn lookups --------------------------------------------------------------------------------
         self.turn_attacker: str = 'White'
         self.turn_defender: str = 'Black'
-        ''' Si existe múltiple orígen de amenaza NUNCA habrá kingSupport.'''
+        '''Si existe múltiple orígen de amenaza NUNCA habrá kingSupport.'''
         self.defender_kingSupport: set[str] = {} # NO se considera en SWAP
 
         '''Registro de AMENAZAS, MOVIMIENTOS LEGALES DEL REY, POSICIONES DE RESCATE: 
@@ -257,15 +259,16 @@ class Match(Scene):
         self.defender_positions: dict[int, str] = self.black_positions 
         self.defender_threatOnAttacker: dict[str, list[int]] = self.black_threatOnWhite  # será siempre resultado de SWAP, contiene *posible jaque* actual.
         self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
+        self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat
         self.defender_directThreatTrace: list[int] = self.white_directThreatTrace 
-        self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat 
         
         # Attacker
         self.attacker_positions: dict[int, str] = self.white_positions 
         self.attacker_threatOnDefender: dict[str, list[int]] = self.white_threatOnBlack
         self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
-        self.attacker_directThreatTrace: list[int] = self.black_directThreatTrace 
         self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
+        self.attacker_directThreatTrace: list[int] = self.black_directThreatTrace 
+        
         # ---------------------------------------------------------------------------------------------
 
         # self.update_turn_objectives() # turn lookups init and update | <- necesario?
@@ -391,28 +394,55 @@ class Match(Scene):
         self.winner = False
 
     def turn_swap(self):
-        '''CUIDADO con mezclar las cosas'''
+        '''
+        En todo swap computamos 5 variables
+        >> positions
+        >> threatOn
+        >> kingLegalMoves
+        >> singleOriginDirectThreat
+        >> directThreatTrace
+        
+        Match aplicará cambios siempre sobre conjuntos "generalizados" attacker/defender,
+        entonces luego de realizados:
+
+        PRIMERO los volveremos a adjudicar a su variable de color-origen.
+
+        LUEGO los intercambiamos por el color-equipo que corresponde.
+        '''
+
+        '''
+        CUIDADO con mezclar las cosas
+        '''
 
         if self.turn_attacker == 'White':
 
             self.turn_attacker = 'Black'
             self.turn_defender = 'White'
 
-            #1ro transfiero targets
+            # Target Transfer -----------------
 
-            #positions
-            #threatOn...
-            #kingLegalMoves
-            #directThreatTrace
-            #singleOriginDirectThreat
+            # > positions
 
-            #luego intercambio targets lists
+            # > threatOn
 
-            #positions
-            #threatOn...
-            #kingLegalMoves
-            #directThreatTrace
-            #singleOriginDirectThreat
+            # > kingLegalMoves
+
+            # > singleOriginDirectThreat
+
+            # > directThreatTrace
+
+            # Target Swap ---------------------
+
+            # > positions
+
+            # > threatOn
+
+            # > kingLegalMoves
+
+            # > directThreatTrace
+
+            # > singleOriginDirectThreat
+
 
             return
         
@@ -421,21 +451,29 @@ class Match(Scene):
             self.turn_attacker = 'White'
             self.turn_defender = 'Black'
 
-            #1ro transfiero targets
+            # Target Transfer -----------------
 
-            #positions
-            #threatOn...
-            #kingLegalMoves
-            #directThreatTrace
-            #singleOriginDirectThreat
+            # > positions
 
-            #luego intercambio targets lists
+            # > threatOn
 
-            #positions
-            #threatOn...
-            #kingLegalMoves
-            #directThreatTrace
-            #singleOriginDirectThreat
+            # > kingLegalMoves
+
+            # > singleOriginDirectThreat
+
+            # > directThreatTrace
+
+            # Target Swap ---------------------
+
+            # > positions
+
+            # > threatOn
+
+            # > kingLegalMoves
+
+            # > directThreatTrace
+
+            # > singleOriginDirectThreat
 
             return
     
@@ -650,9 +688,9 @@ class Match(Scene):
                 if movement >= 0: # board limit
                     
                     if self.defender_singleOriginDirectThreat:
-                        '''Entonces mis únicos movimientos posibles son salvarlo,
-                        bloqueando o matando la amenaza.
-                        Matar la amenaza es min o max de defender_directThreatTrace'''
+                        '''Entonces mis únicos movimientos posibles son bloquear o matar la amenaza.
+                        > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
+                        > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace'''
                         if movement not in self.defender_directThreatTrace:
                             #probamos con el 2do mov
                             if piece_standpoint in self.in_base_Wpawns:
