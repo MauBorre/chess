@@ -1558,6 +1558,9 @@ class Match(Scene):
 
         if self.attacker_singleOriginDirectThreat == None:
             if len(self.defender_kingLegalMoves) == 0 and len(self.defender_kingSupport) == 0:
+                '''BUG hay algo más que debo verificar acá.
+                
+                '''
 
                 #STALE-MATE
                 '''Termina el juego en empate.'''
