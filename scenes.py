@@ -320,20 +320,12 @@ class Match(Scene):
 
         self.attacker_threatOnDefender.clear()
         # self.defender_threatOnAttacker será siempre resultado de SWAP, contiene *posible jaque* actual.
-
         self.attacker_kingLegalMoves.clear()
         self.defender_kingLegalMoves.clear()
         self.defender_kingSupport.clear()
         self.attacker_directThreatTrace.clear()
 
         # Attacker ----------------------------------------------------------------------------------------
-        '''BUG
-        Arreglando bugs de perspectivas, conjuntos threat, kingSupport, etc...
-
-        El pawn_objectives() será la primer referencia para solucionar definitivamente el resto de las
-        piezas antes de terminar todo el mecanismo de jaque/mate en decide_check().
-        '''
-
         if self.defender_singleOriginDirectThreat != False:
             pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Peón")
             for _pawn in pawn_standpoints:
@@ -521,9 +513,9 @@ class Match(Scene):
     
                     # Revisar amenaza directa, lo que puede restringir/forzar/anular movimientos.
                     if self.defender_singleOriginDirectThreat:
-                        '''Entonces mis únicos movimientos posibles son salvarlo,
-                        bloqueando o matando la amenaza.
-                        Matar la amenaza es min o max de defender_directThreatTrace'''
+                        '''Entonces mis únicos movimientos posibles son bloquear o matar la amenaza.
+                        > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
+                        > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace'''
                         if movement not in self.defender_directThreatTrace:
                             #probamos con el 2do mov
                             if piece_standpoint in self.in_base_Bpawns:
@@ -699,9 +691,9 @@ class Match(Scene):
 
         if perspective == 'attacker': 
             if self.defender_singleOriginDirectThreat:
-                '''Entonces mis únicos movimientos posibles son salvarlo,
-                bloqueando o matando la amenaza.
-                Matar la amenaza es min o max de defender_directThreatTrace'''
+                '''Entonces mis únicos movimientos posibles son bloquear o matar la amenaza.
+                > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
+                > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace'''
                 for direction in tower_directions:
                     for mult in range(1,8): # 1 to board_size
                         movement = piece_standpoint+direction*mult
@@ -812,10 +804,9 @@ class Match(Scene):
 
         if perspective == 'attacker':
             if self.defender_singleOriginDirectThreat:
-                '''Entonces mis únicos movimientos posibles son salvarlo,
-                bloqueando o matando la amenaza.
-                Matar la amenaza es min o max de defender_directThreatTrace'''
-
+                '''Entonces mis únicos movimientos posibles son bloquear o matar la amenaza.
+                > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
+                > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace'''
                 for movement in horse_movements:
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT 
                         if movement in self.defender_directThreatTrace:
@@ -894,9 +885,9 @@ class Match(Scene):
 
         if perspective == 'attacker':
             if self.defender_singleOriginDirectThreat:
-                '''Entonces mis únicos movimientos posibles son salvarlo,
-                bloqueando o matando la amenaza.
-                Matar la amenaza es min o max de defender_directThreatTrace'''
+                '''Entonces mis únicos movimientos posibles son bloquear o matar la amenaza.
+                > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
+                > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace'''
                 for direction in bishop_directions:
                     for mult in range(1,8):
                         movement = piece_standpoint+direction*mult
@@ -1012,6 +1003,9 @@ class Match(Scene):
                 return
             if perspective == 'attacker':
                 if self.defender_singleOriginDirectThreat:
+                    '''Entonces mis únicos movimientos posibles son bloquear o matar la amenaza.
+                    > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
+                    > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace'''
                     for direction in queen_directions:
                         for mult in range(1,8):
                             movement = piece_standpoint+direction*mult
