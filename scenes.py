@@ -750,32 +750,34 @@ class Match(Scene):
                             if movement not in row_of_(piece_standpoint):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
+                            
                             if not self.exposing_direction(piece_standpoint, direction=direction):
-                                if movement not in self.black_positions and movement not in self.white_positions:
+                                if movement not in self.attacker_positions:
                                     mov_target_positions.update({movement:self.boardRects[movement]})
 
                                     # Threat on defender king ------------------------
                                     _threat_emission.append(movement)
                                     if movement in self.defender_kingLegalMoves:
-                                        # Encontramos un spot de interés, eso significa que
-                                        # hay threat.
+                                        # Entonces existe threat.
+                                        # Luego de esto corresponde encontrar un STOP:
+                                        # > king standpoint O  > ya-revisamos-todos-los-legalMoves,
                                         _threatening = True
-                                    # Luego de esto corresponde encontrar un STOP:
-                                    # > king standpoint O  > ya-revisamos-todos-los-legalMoves,
+
+                                # Kill-movement
+                                elif movement in self.defender_positions:
+                                    
+                                    # Threat on defender king ------------------------
                                     if _threatening and self.defender_positions[movement] == 'Rey': # chocamos contra rey
                                         # STOP: adjuntar toda la traza threat.
                                         self.attacker_threatOnDefender['Torre'].append(_threat_emission)
                                         _threatening = False
-                                    elif _threatening and movement not in self.defender_kingLegalMoves: # fin del área de amenaza
+
+                                    on_target_kill_positions.update({movement:self.boardRects[movement]})
+                                    break
+                                elif _threatening and movement not in self.defender_kingLegalMoves: # fin del área de amenaza
                                         # STOP: adjuntar toda la traza threat.
                                         self.attacker_threatOnDefender['Torre'].append(_threat_emission)
                                         _threatening = False
-                                    # ------------------------------------------------
-
-                                # Kill-movement
-                                elif movement in self.defender_positions:
-                                    on_target_kill_positions.update({movement:self.boardRects[movement]})
-                                    break   
                                 break #previene propagación mas allá del primer bloqueo - rompe el mult
                             else: break # rompe hasta la siguiente dirección                      
             return mov_target_positions, on_target_kill_positions
