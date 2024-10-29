@@ -1288,85 +1288,53 @@ class Match(Scene):
         Evaluar "cómo quedaron las piezas en el tablero despues del último movimiento"
         para resolver estados jaque/jaque-mate.
 
-        >> attacker_threatOnDefender
-
-            Debo recorrer todas estas posiciones, si encuentro que defender king standpoint
-            está en este conjunto, es JAQUE.
-
-            Lo que resta por reconocer para saber si es J-MATE es identificar si el rey tiene
-            salvación o no.
-
-            Para ello, verificaremos si el rey tiene amenaza directa de origen cruzado (ninguna
-            pieza puede bloquear con un solo movimiento dos orígenes de amenaza),
-            si es así, verificaremos que no tenga legalMoves, si es así, es J-MATE
-
-
-        >> defender_kingLegalMoves
-            Mientras el rey tenga legalMoves será como máximo JAQUE, nunca J-MATE.
-            Si NO tiene legalMoves y su standpoint NO esta en attacker_threatOnDefender (JAQUE)
-            y ninguna pieza puede salvarlo, será STALE-MATE (empate).
-
-        '''
-
-        '''
         JAQUE > El rey es apuntado directamente, PUEDE escapar moviendose o siendo
-            salvado por pieza aliada (matando o bloqueando amenaza)
+            salvado por pieza aliada (matando O bloqueando amenaza)
 
         JAQUE-MATE > El rey es apuntado directamente, NO PUEDE escapar moviendose ni
             siendo salvado por pieza aliada. 
 
         STALE-MATE > El rey no es apuntado directamente, pero no puede moverse ni
             ser salvado por pieza aliada. Estado de empate.
+
+        IMPORTANTISIME
+            Al momento de checkear este objetivo que tengo revisar el king DEFENSOR en jaque
         '''
 
-        '''IMPORTANTISIME
-        Al momento de checkear este objetivo que tengo revisar el king DEFENSOR en jaque'''
-
-        defender_king_check: bool = False
-        defender_king_support: bool = True
-        defender_king_can_move: bool = True
-
-        if self.get_piece_standpoint(color=self.turn_defender,piece='Rey') in self.attacker_threatOnDefender:
-            defender_king_check = True
-        else:
-            defender_king_check = False
-
-        if len(self.defender_kingLegalMoves) == 0:
-            defender_king_can_move = False
-        else:
-            defender_king_can_move = True
-
-        if len(self.defender_savingKingPositions) == 0 :
-            defender_king_support = False
-        else:
-            defender_king_support = True
-        
-        if not defender_king_check and not defender_king_can_move and not defender_king_support:
-            #STALE-MATE
-            '''Termina el juego en empate. -> Spawn OptionsMenu -> try-again          /
+        if self.attacker_singleOriginDirectThreat == None:
+            if len(self.defender_kingLegalMoves) == 0 and len(self.defender_kingSupport) == 0:
+                #STALE-MATE
+                '''
+                Termina el juego en empate. -> Spawn OptionsMenu -> try-again        /
                                                                   return-to-MainMenu / 
                                                                   change-sides       /
                                                                   change-rules       /
                                                                   change-difficulty  /
-            '''
-            ...
-        
-        if defender_king_check:
-            if defender_king_can_move or defender_king_support:
-                #JAQUE
+                '''
+                ...
+            else: return # La partida continúa con normalidad.
+
+        if self.attacker_singleOriginDirectThreat:
+            if len(self.defender_kingLegalMoves) > 0 or len(self.defender_kingSupport) > 0:
+                # JAQUE
                 '''Esto requiere solo una notificación al jugador correspondiente.
                 defender_color -> notificate CHECK (highlight possible solutions)'''
                 ...
-
-            elif not defender_king_can_move and not defender_king_support:
+            elif len(self.defender_kingLegalMoves) == 0 and len(self.defender_kingSupport) == 0:
                 #JAQUE-MATE
                 '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
                 ...
-        
-        if not defender_king_check:
-            # El juego debe continuar normalmente
-            return
 
+        if self.attacker_singleOriginDirectThreat == False: # múltiple origen de amenaza.
+            if len(self.defender_kingLegalMoves) == 0:
+                #JAQUE-MATE
+                '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
+                ...
+            else:
+                # JAQUE
+                '''Esto requiere solo una notificación al jugador correspondiente.
+                defender_color -> notificate CHECK (highlight possible solutions)'''
+                ...
 
         # if self.turn_defender == 'Black': 
         #     self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
