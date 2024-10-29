@@ -214,6 +214,8 @@ class Match(Scene):
         # Turn lookups --------------------------------------------------------------------------------
         self.turn_attacker: str = 'White'
         self.turn_defender: str = 'Black'
+        ''' Si existe múltiple orígen de amenaza NUNCA habrá kingSupport.'''
+        self.defender_kingSupport: set[str] = {} # NO se considera en SWAP
 
         '''Registro de AMENAZAS, MOVIMIENTOS LEGALES DEL REY, POSICIONES DE RESCATE: 
 
@@ -251,24 +253,22 @@ class Match(Scene):
         se actualizarán en update_turn_objectives(), llamada luego de realizarse un movimiento
         en el tablero. 
         '''
-        self.defender_positions: dict[int, str] = self.black_positions #22/10 NO ESTA HECHO EL SWAP
+        # Defender
+        self.defender_positions: dict[int, str] = self.black_positions 
         self.defender_threatOnAttacker: dict[str, list[int]] = self.black_threatOnWhite  # será siempre resultado de SWAP, contiene *posible jaque* actual.
         self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
-        self.attacker_positions: dict[int, str] = self.white_positions #22/10 NO ESTA HECHO EL SWAP
+        self.defender_directThreatTrace: list[int] = self.white_directThreatTrace 
+        self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat 
+        
+        # Attacker
+        self.attacker_positions: dict[int, str] = self.white_positions 
         self.attacker_threatOnDefender: dict[str, list[int]] = self.white_threatOnBlack
         self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
-
-        self.defender_kingSupport: set[str] = {}
-        self.attacker_directThreatTrace: list[int] = self.black_directThreatTrace # falta SWAP
-        self.defender_directThreatTrace: list[int] = self.white_directThreatTrace # falta SWAP
-
-        ''' Si existe múltiple orígen de amenaza NUNCA habrá kingSupport.'''
-        
-        self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat # ATENCION SWAP
-        self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat # ATENCION SWAP
+        self.attacker_directThreatTrace: list[int] = self.black_directThreatTrace 
+        self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
         # ---------------------------------------------------------------------------------------------
 
-        self.update_turn_objectives() # turn lookups init and update
+        # self.update_turn_objectives() # turn lookups init and update | <- necesario?
 
     def update_turn_objectives(self):
         '''Llama todas las funciones _objectives() con sus correctas perspectivas
@@ -399,25 +399,44 @@ class Match(Scene):
             self.turn_defender = 'White'
 
             #1ro transfiero targets
-            #threatOnDefender
-            #threatOnAttacker
+
             #positions
+            #threatOn...
+            #kingLegalMoves
+            #directThreatTrace
             #singleOriginDirectThreat
-            #directThreats
-            #...
 
             #luego intercambio targets lists
-            #...
+
+            #positions
+            #threatOn...
+            #kingLegalMoves
+            #directThreatTrace
+            #singleOriginDirectThreat
+
             return
         
         if self.turn_attacker == 'Black':
 
             self.turn_attacker = 'White'
             self.turn_defender = 'Black'
+
             #1ro transfiero targets
-            #...
+
+            #positions
+            #threatOn...
+            #kingLegalMoves
+            #directThreatTrace
+            #singleOriginDirectThreat
+
             #luego intercambio targets lists
-            #...
+
+            #positions
+            #threatOn...
+            #kingLegalMoves
+            #directThreatTrace
+            #singleOriginDirectThreat
+
             return
     
     def exposing_direction(self, standpoint: int, direction: int) -> bool:
