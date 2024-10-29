@@ -260,14 +260,14 @@ class Match(Scene):
         self.defender_threatOnAttacker: dict[str, list[int]] = self.black_threatOnWhite  # será siempre resultado de SWAP, contiene *posible jaque* actual.
         self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
         self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat
-        self.defender_directThreatTrace: list[int] = self.white_directThreatTrace 
+        self.defender_directThreatTrace: list[int] = self.black_directThreatTrace 
         
         # Attacker
         self.attacker_positions: dict[int, str] = self.white_positions 
         self.attacker_threatOnDefender: dict[str, list[int]] = self.white_threatOnBlack
         self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
         self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
-        self.attacker_directThreatTrace: list[int] = self.black_directThreatTrace 
+        self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace 
         
         # ---------------------------------------------------------------------------------------------
 
@@ -405,9 +405,9 @@ class Match(Scene):
         Match aplicará cambios siempre sobre conjuntos "generalizados" attacker/defender,
         entonces luego de realizados:
 
-        PRIMERO los volveremos a adjudicar a su variable de color-origen.
+        PRIMERO los volveremos a adjudicar a su variable de color-origen. "COMO ERAN"
 
-        LUEGO los intercambiamos por el color-equipo que corresponde.
+        LUEGO los intercambiamos por el color-equipo que corresponde. "COMO RESULTAN AHORA"
         '''
 
         '''
@@ -419,30 +419,47 @@ class Match(Scene):
             self.turn_attacker = 'Black'
             self.turn_defender = 'White'
 
-            # Target Transfer -----------------
-
+            # Target Transfer -------------------------------------------------------------
             # > positions
+            self.white_positions = self.attacker_positions
+            self.black_positions = self.defender_positions
 
             # > threatOn
+            self.white_threatOnBlack = self.attacker_threatOnDefender
+            self.black_threatOnWhite = self.defender_threatOnAttacker
 
             # > kingLegalMoves
+            self.white_kingLegalMoves = self.attacker_kingLegalMoves
+            self.black_kingLegalMoves = self.defender_kingLegalMoves
 
             # > singleOriginDirectThreat
+            self.white_singleOriginDirectThreat = self.attacker_singleOriginDirectThreat
+            self.black_singleOriginDirectThreat = self.defender_singleOriginDirectThreat
 
             # > directThreatTrace
+            self.white_directThreatTrace = self.attacker_directThreatTrace
+            self.black_directThreatTrace = self.defender_directThreatTrace
 
-            # Target Swap ---------------------
-
+            # Target Swap -----------------------------------------------------------------
             # > positions
+            self.attacker_positions = self.black_positions
+            self.defender_positions = self.white_positions
 
             # > threatOn
+            self.attacker_threatOnDefender = self.black_threatOnWhite
+            self.defender_threatOnAttacker = self.white_threatOnBlack
 
             # > kingLegalMoves
-
-            # > directThreatTrace
+            self.attacker_kingLegalMoves = self.black_kingLegalMoves
+            self.defender_kingLegalMoves = self.white_kingLegalMoves
 
             # > singleOriginDirectThreat
+            self.attacker_singleOriginDirectThreat = self.black_singleOriginDirectThreat
+            self.defender_singleOriginDirectThreat = self.white_singleOriginDirectThreat
 
+            # > directThreatTrace
+            self.attacker_directThreatTrace = self.black_directThreatTrace
+            self.defender_directThreatTrace = self.white_directThreatTrace
 
             return
         
@@ -452,7 +469,6 @@ class Match(Scene):
             self.turn_defender = 'Black'
 
             # Target Transfer -----------------
-
             # > positions
 
             # > threatOn
@@ -464,16 +480,15 @@ class Match(Scene):
             # > directThreatTrace
 
             # Target Swap ---------------------
-
             # > positions
 
             # > threatOn
 
             # > kingLegalMoves
 
-            # > directThreatTrace
-
             # > singleOriginDirectThreat
+
+            # > directThreatTrace
 
             return
     
