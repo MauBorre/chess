@@ -387,7 +387,7 @@ class Match(Scene):
         A menos que necesitemos obtener un puntaje por ejemplo, simplemente llamando
         al init deberiamos reiniciar TODo
         
-        Creo que lo ideal es que Match exponga una API que utilizará el GameMaster
+        Creo que *lo ideal* es que Match exponga una API que utilizará el GameMaster
         para realizar cosas como estas... quizás...'''
         # self.__init__(master=self.master)
 
@@ -398,6 +398,8 @@ class Match(Scene):
         self.player_deciding_match = False
 
         # Board defaults ---------------------------------------------------------------------------
+        self.boardRects: list[pygame.Rect] = board.make_rects(self.board_begin)
+
         # Black
         self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['negras']['Peón']]
         self.black_positions: dict[int, str] = pieces.black_positions
@@ -1732,4 +1734,4 @@ class Match(Scene):
             pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
             if self.master.click:
                 self.player_deciding_match = True
-                # self.reset_board()
+                self.reset_board()
