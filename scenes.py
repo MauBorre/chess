@@ -355,7 +355,7 @@ class Match(Scene):
 
         # Defender -----------------------------------------------------------------------------------------
         king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Rey").pop()
-        self.king_objectives(king_standpoint,perspective='defender') # genero defender_kingLegalMoves.
+        self.king_objectives(king_standpoint,perspective='defender') # genero/reviso defender_kingLegalMoves.
 
         for _threats_list in self.attacker_threatOnDefender.values():
             if king_standpoint in _threats_list:
@@ -594,7 +594,6 @@ class Match(Scene):
                     fake_positions.update({ap: self.defender_positions[ap]})
                 else:
                     fake_positions.update({fake_move: self.defender_positions[ap]})
-
 
         # Revisar objetivos inyectando fake_positions.
         # try fake pawns
