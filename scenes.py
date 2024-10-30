@@ -558,7 +558,7 @@ class Match(Scene):
 
             return
     
-    def exposing_direction(self, standpoint: int, direction: int, perspective: str) -> bool:
+    def exposing_direction(self, standpoint: int, direction: int, request_from: str) -> bool:
         '''Para verificar si un movimiento expone al rey aliado necesito "falsificar" 
         un movimiento contra el conjunto de piezas que corresponda.
         >> falsificar defenderMov contra attacker
@@ -567,7 +567,7 @@ class Match(Scene):
         Llamaremos a las piezas correspondientes en la :perspectiva: correspondiente:
         "fake-attackerMov-toDef"
         "fake-defenderMov-toAtt"
-        E inyectandoles posiciones falsas del "consultante".
+        E inyectandoles posiciones falsas de "quien consulta".
 
         Esta perspectiva devolverá:
             TRUE si encontró al rey en amenaza directa.
@@ -581,14 +581,14 @@ class Match(Scene):
         fake_move: int = standpoint+direction
         fake_positions: dict[int, str] = {}
 
-        if perspective == 'attacker':
+        if request_from == 'attacker':
             for ap in self.attacker_positions.keys():
                 if standpoint != ap:
                     fake_positions.update({ap: self.attacker_positions[ap]})
                 else:
                     fake_positions.update({fake_move: self.attacker_positions[ap]})
 
-        if perspective == 'defender':
+        if request_from == 'defender':
             for ap in self.defender_positions.keys():
                 if standpoint != ap:
                     fake_positions.update({ap: self.defender_positions[ap]})
