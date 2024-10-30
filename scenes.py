@@ -559,7 +559,7 @@ class Match(Scene):
             return
     
     def exposing_direction(self, standpoint: int, direction: int, request_from: str) -> bool:
-        '''Para verificar si un movimiento expone al rey aliado necesito "falsificar" 
+        '''Para verificar si un movimiento expone al rey aliado "falsificaremos" 
         un movimiento contra el conjunto de piezas que corresponda.
         >> falsificar defenderMov contra attacker
         >> falsificar attackerMov contra defender
@@ -569,7 +569,7 @@ class Match(Scene):
         "fake-defenderMov-toAtt"
         E inyectandoles posiciones falsas de "quien consulta".
 
-        Esta perspectiva devolverá:
+        Esta perspectiva de pieza devolverá:
             TRUE si encontró al rey en amenaza directa.
             FALSE si NO lo hizo.
         
