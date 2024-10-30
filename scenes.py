@@ -906,6 +906,13 @@ class Match(Scene):
                             BUG DEBO revisar BLOQUEOS
                             y...
                             exposing-movements? Wtf?
+
+                            El tema es que si voy a considerar a la pieza como "falso atacante"
+                            debería entonces hacer -esas mismas comprobaciones-, no?
+
+                            Puede una pieza no-poder poner en jaque a un rey porque eso
+                            expone al suyo? Tiene sentido esto o no? Porque nos dice si
+                            acá hay un exposing-movement o no.
                             '''
 
                             if movement in self.defender_positions:
