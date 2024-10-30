@@ -911,7 +911,14 @@ class Match(Scene):
                             if movement not in row_of_(piece_standpoint):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
+
+                            # Revisar bloqueos
+
+                            # Des-estimar kill-movements que NO sean al rey
+
+                            # Si encontramos al rey, devolver TRUE
                             ...
+            return False
 
         if perspective == 'fake-attackerMov-toDef':
             for direction in tower_directions:
@@ -922,25 +929,15 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
 
-                            '''
-                            BUG DEBO revisar BLOQUEOS
-                            '''
-
-                            ''' 
-                            BUG las perspectivas attacker/defender se confunden.
-
-                            Cuando llamo a exposing_movement perspectiva=defensa
-                            aqui un block seria defender_positions.
-
-                            Cuando llamo a exposing_movement perspectiva=ataque
-                            aquí un block sería attacker_positions.
-                            '''
-
+                            # Revisar bloqueos
                             if movement in self.attacker_positions:
-                                ...
+                                break 
 
+                            # Des-estimar kill-movements que NO sean al rey
                             if movement in self.defender_positions:
-                                break # recorrer otra dirección
+                                break
+
+                            # Si encontramos al rey, devolver TRUE
                             elif movement in fake_positions:
                                 if fake_positions[movement] == 'Rey':
                                     return True
