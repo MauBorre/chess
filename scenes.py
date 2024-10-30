@@ -383,7 +383,6 @@ class Match(Scene):
             
             queen_standpoint = self.get_piece_standpoint(color=self.turn_defender, piece="Reina").pop()
             self.queen_objectives(queen_standpoint, perspective='defender')
-        #else? <- responsabilidad de decide_check?
         # -------------------------------------------------------------------------------------------------
 
     def reset_board(self):
@@ -919,9 +918,12 @@ class Match(Scene):
                             '''Necesito una nueva forma de perspectiva EN exposing_movement? porque lo estaba
                             usando solo en perspective="attacker" para SU rey pero ahora necesito checkear otro
                             conjunto de piezas.'''
+
                             # bloqueos
-                            
+                            # ...
+
                             # kill-movements
+                            # ...
                             ...
             return
 
