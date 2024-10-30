@@ -1,13 +1,3 @@
-'''Notas de desarrollo - primero version 2d
-
-Haremos una version 2d plana de arriba
-para testear el comportamiento de piezas, controles, tablero
-y demas.
-
-Una vez tengamos esto pensaremos el modo en perspectiva porque
-será algo mas tedioso.
-'''
-
 import pygame
 from scenes import MainMenu, Match
 
