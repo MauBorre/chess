@@ -579,6 +579,7 @@ class Match(Scene):
             Esto deja un "hueco" por donde ahora el rey podría ser amenazado.
 
         **IMPORTANTE** Los peones y caballos NUNCA influyen en exposing-movements
+        **IMPORTANTE** En perspectivas "fake..." NO se toman en cuenta *nuevos* exposing-movements.
         '''
         fake_move: int = standpoint+direction
         fake_positions: dict[int, str] = {}
@@ -902,7 +903,17 @@ class Match(Scene):
         _can_support: bool = False
         tower_directions = [NORTE,SUR,ESTE,OESTE]
 
-        if perspective == 'fake':
+        if perspective == 'fake-defenderMov-toAtt':
+            for direction in tower_directions:
+                    for mult in range(1,8): # 1 to board_size
+                        movement = piece_standpoint+direction*mult
+                        if direction == ESTE or direction == OESTE:
+                            if movement not in row_of_(piece_standpoint):
+                                break
+                        if 0 <= movement <= 63: # VALID SQUARE
+                            ...
+
+        if perspective == 'fake-attackerMov-toDef':
             for direction in tower_directions:
                     for mult in range(1,8): # 1 to board_size
                         movement = piece_standpoint+direction*mult
@@ -913,10 +924,6 @@ class Match(Scene):
 
                             '''
                             BUG DEBO revisar BLOQUEOS
-
-                            NO debo revisar exposing-movements porque lo que nos importa es
-                            el movimiento aun-no-hecho, por eso es una amenaza y no una
-                            confirmación de movimiento.
                             '''
 
                             ''' 
