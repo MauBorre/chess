@@ -912,7 +912,7 @@ class Match(Scene):
                             break
                     if 0 <= movement <= 63: # VALID SQUARE
 
-                        # Revisar bloqueos
+                        # Revisar bloqueos aliados
                         if movement in self.defender_positions:
                             break 
 
@@ -935,7 +935,7 @@ class Match(Scene):
                             break
                     if 0 <= movement <= 63: # VALID SQUARE
 
-                        # Revisar bloqueos
+                        # Revisar bloqueos aliados
                         if movement in self.attacker_positions:
                             break 
 
