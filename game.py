@@ -6,18 +6,12 @@ class GameMaster:
     Es GameMaster un scene manger ,un control manager
     y un "default maker"?
 
-    Es una clase de las cuales todas las "escenas" consumen ciertas *cosas*
+    Es una clase de las cuales todas las "escenas" consumen
+    controles y SCREEN.
+
     Es una clase que instancia y maneja escenas.
-    Transfiere controles a las escenas
 
-
-    Es maestro o es esclavo entonces?
-    El concepto de "escena" no es tan fuerte aún,
-    pero siento que van a ser necesarias para hacer transiciones.
-    ^^O quizás esto sólo dependa de los SCREEN?
-
-    SceneManager loops = control independiente de controles sobre escena seleccionada
-                       = control decididor de qué escena y cúando mostrarla
+    Si es maestro debería notificar cosas, no "ser consumido"
     '''
     starting_volume : float #volume in db
     def __init__(self):
@@ -28,10 +22,8 @@ class GameMaster:
         pygame.display.set_caption('Chess')
         self.clock = pygame.time.Clock()
 
-        self.assets = ...#{'piezas': load_images('assets/piezas')} # colección de paths?
-
         # scene manager
-        '''Por ahora las escenas consumen screen, controles y variable de pausa
+        '''Por ahora las escenas consumen screen, controles y "variable de pausa"
         de GameMaster.
         GameMaster controla vistas de las escenas.
         '''
