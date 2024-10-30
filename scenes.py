@@ -930,30 +930,22 @@ class Match(Scene):
                     if 0 <= movement <= 63: # VALID SQUARE
 
                         if self.attacker_singleOriginDirectThreat == True:
+                            if movement in self.defender_positions:
+                                break
                             if movement in self.attacker_directThreatTrace:
                                 # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
                                 self.defender_legalMoves.add('Torre') 
                                 return
                             else: continue
-                        elif self.attacker_singleOriginDirectThreat == None:
 
-                            # revisiones normales de movimiento
-                            '''Con encontrar al menos uno sería suficiente, pero si luego queremos
-                            responder visualmente en el tablero necesitaremos todos, además de pasarlo
-                            a su version dict con un pygame.Rect.
-                            '''
-
-                            # bloqueos <- creo que esto es primordial
-                            # ...
-
-                            # no-expositivos al jaque
-                            '''Necesito una nueva forma de perspectiva EN exposing_movement? porque lo estaba
-                            usando solo en perspective="attacker" para SU rey pero ahora necesito checkear otro
-                            conjunto de piezas.'''
-
-                            # kill-movements
-                            # ...
-                            ...
+                        elif self.attacker_singleOriginDirectThreat == None: # revisiones normales de movimiento
+                            # bloqueos
+                            if movement not in self.defender_positions:
+                                # no-expositivos al jaque
+                                if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
+                                    # sea movement o kill-movement nos vale por igual, tiene posibilidad de movimiento.
+                                    self.defender_legalMoves.add('Torre')
+                            else: break
             return
 
         if perspective == 'attacker': 
