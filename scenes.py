@@ -591,9 +591,9 @@ class Match(Scene):
         if perspective == 'defender':
             for ap in self.defender_positions.keys():
                 if standpoint != ap:
-                    fake_positions.update({ap: self.attacker_positions[ap]})
+                    fake_positions.update({ap: self.defender_positions[ap]})
                 else:
-                    fake_positions.update({fake_move: self.attacker_positions[ap]})
+                    fake_positions.update({fake_move: self.defender_positions[ap]})
 
 
         # Revisar objetivos inyectando fake_positions.
@@ -904,16 +904,25 @@ class Match(Scene):
 
                             '''
                             BUG DEBO revisar BLOQUEOS
-                            y...
-                            exposing-movements? Wtf?
 
-                            El tema es que si voy a considerar a la pieza como "falso atacante"
-                            debería entonces hacer -esas mismas comprobaciones-, no?
-
-                            Puede una pieza no-poder poner en jaque a un rey porque eso
-                            expone al suyo? Tiene sentido esto o no? Porque nos dice si
-                            acá hay un exposing-movement o no.
+                            NO debo revisar exposing-movements porque lo que nos importa es
+                            el movimiento aun-no-hecho, por eso es una amenaza y no una
+                            confirmación de movimiento.
                             '''
+
+                            '''
+                            
+                            BUG las perspectivas attacker/defender se confunden.
+
+                            Cuando llamo a exposing_movement perspectiva=defensa
+                            aqui un block seria defender_positions.
+
+                            Cuando llamo a exposing_movement perspectiva=ataque
+                            aquí un block sería attacker_positions.
+                            
+                            '''
+                            if movement in self.attacker_positions:
+                                ...
 
                             if movement in self.defender_positions:
                                 break # recorrer otra dirección
