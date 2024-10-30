@@ -165,11 +165,10 @@ class MainMenu(Scene):
             #MainMenuSCENE.draw_options()
 
 class Match(Scene):
-    '''Match es inicializado bajo distintos modos seleccionados previamente en MainMenu:
+    '''Match es inicializado bajo instrucciones seleccionadas previamente en MainMenu:
         >> j1-VS-j2
         >> j1-VS-ia
-        >> con tiempo (duraciones variables de reloj)
-        >> sin tiempo
+        >> con/sin tiempo (duraciones variables de reloj)
     '''
 
     def __init__(self, master):
@@ -228,11 +227,11 @@ class Match(Scene):
 
             ANTES DE MOVER:
                 El atacante debe revisar, dentro de sus movimientos posible, si su movimiento -expone al rey-
-                por threat del defensor.
+                por defender_threatOnAttacker.
 
             DESPUES DE MOVER:
                 El defensor debe revisar -si su movimiento expone- por threat del atacante, evaluando así
-                "con qué posibilidades de movimiento quedó".
+                "con qué posibilidades de movimiento quedó" por attacker_threatOnDefender.
             
             El threat puede MATARSE o BLOQUEARSE
                 A menos que haya más de un orígen de amenaza DIRECTA -> solo el rey moviendose puede escapar
@@ -243,8 +242,6 @@ class Match(Scene):
         >> Color-King-legalMovements
             Posición actual + posibles movimientos (bloqueos aliados / casilleros threat).
 
-        >> Saving-Positions (kingSupport):
-
         >> defender_legalMoves (kingSupport):
             Actualizadas luego de que movió el atacante.
             Exhibe "si alguien puede hacer algo", mas no "dónde".
@@ -254,7 +251,7 @@ class Match(Scene):
                 - Movimientos inv.  por exposición al rey.
             
             Al comprobarlas, debo inspeccionar primero si hay jaque (singular o multiple)
-            ya que esto limita seriamente las posibilidades de legalMoves.
+            ya que esto limita seriamente las posibilidades de legalMoves (kingSupport).
         '''
         # Defender
         self.defender_positions: dict[int, str] = self.black_positions 
@@ -562,23 +559,24 @@ class Match(Scene):
             return
     
     def exposing_direction(self, standpoint: int, direction: int, perspective: str) -> bool:
-        '''Para verificar si un movimiento expone a "nuestro" rey debo tener
-        la habilidad de "falsificar" un movimiento y un estado completo
-        del tablero sin "molestar" el estado actual.
+        '''Para verificar si un movimiento expone al rey aliado necesito "falsificar" 
+        un movimiento contra el conjunto de piezas que corresponda.
+        >> falsificar defenderMov contra attacker
+        >> falsificar attackerMov contra defender
 
-        Llamaremos a las piezas correspondientes en su perspectiva="fake" e inyectandoles
-        posiciones falsas del atacante.
+        Llamaremos a las piezas correspondientes en la :perspectiva: correspondiente:
+        "fake-attackerMov-toDef"
+        "fake-defenderMov-toAtt"
+        E inyectandoles posiciones falsas del "consultante".
 
-        >> piece -> perspectiva="fake"
-            Devolverá TRUE si encontró al rey en su "falso objetivo".
-            Devolverá FALSE si NO lo encontró.
+        Esta perspectiva devolverá:
+            TRUE si encontró al rey en amenaza directa.
+            FALSE si NO lo hizo.
         
-        Debemos saber si estamos falsificando al atacante o al defensor, por lo que necesitamos
-        nuestra propia perspectiva attacker/defender, dentro de la cual:
-
-            Buscaremos en el conjunto correspondiente el standpoint y
-            y crearemos un fake_positions reemplazando el standpoint por fake_move.
-            esto deja un "hueco" por donde ahora el rey podría ser amenazado.
+        Crearemos un conjunto de posiciones falsas mediante:
+            Buscar en el conjunto "consultante" el standpoint y lo reemplazaremos por
+            fake_move (standpoint + direction)
+            Esto deja un "hueco" por donde ahora el rey podría ser amenazado.
         '''
         fake_move: int = standpoint+direction
         fake_positions: dict[int, str] = {}
