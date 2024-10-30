@@ -1154,7 +1154,7 @@ class Match(Scene):
         self,
         piece_standpoint: int,
         perspective: str,
-        fake_pos: dict[str, list[int]] | None = None
+        fake_positions: dict[int, str] | None = None
         ) -> dict[int,pygame.Rect] | None:
         '''Movimiento Alfil:
         +NOR_OESTE
@@ -1187,8 +1187,8 @@ class Match(Scene):
                     if 0 <= movement <= 63: # VALID SQUARE
                         if movement in self.defender_positions:
                             break # recorrer otra posición
-                        elif movement in fake_pos:
-                            if fake_pos[movement] == 'Rey':
+                        elif movement in fake_positions:
+                            if fake_positions[movement] == 'Rey':
                                 return True
             return False
 
@@ -1288,7 +1288,7 @@ class Match(Scene):
         self,
         piece_standpoint: int,
         perspective: str,
-        fake_pos: dict[str, list[int]] | None = None
+        fake_positions: dict[int, str] | None = None
         ) -> dict[int,pygame.Rect] | None:
             '''Movimiento Reina:
             +NORTE
@@ -1328,8 +1328,8 @@ class Match(Scene):
                         if 0 <= movement <= 63: # VALID SQUARE
                             if movement in self.defender_positions:
                                 break # recorrer otra dirección.
-                            elif movement in fake_pos:
-                                if fake_pos[movement] == 'Rey':
+                            elif movement in fake_positions:
+                                if fake_positions[movement] == 'Rey':
                                     return True
                 return False
 
