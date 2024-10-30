@@ -559,7 +559,7 @@ class Match(Scene):
 
             return
     
-    def exposing_direction(self, standpoint: int, direction: int) -> bool:
+    def exposing_direction(self, standpoint: int, direction: int, perspective: str) -> bool:
         '''Para verificar si un movimiento expone a "nuestro" rey debo tener
         la habilidad de "falsificar" un movimiento y un estado completo
         del tablero sin "molestar" el estado actual.
@@ -567,30 +567,36 @@ class Match(Scene):
         Llamaremos a las piezas correspondientes en su perspectiva="fake" e inyectandoles
         posiciones falsas del atacante.
 
-        >> perspectiva="fake"
+        >> piece -> perspectiva="fake"
             Devolverá TRUE si encontró al rey en su "falso objetivo".
             Devolverá FALSE si NO lo encontró.
+        
+        Debemos saber si estamos falsificando al atacante o al defensor, por lo que necesitamos
+        nuestra propia perspectiva attacker/defender, dentro de la cual:
 
-        Hay un problema acá o no? Antiguamente estabamos usando esto en piezas
-        con perspectiva attacker, pero es realmente lo mismo para perspectiva defender?
-
-        Creo que algo sí cambia y es que en vez de buscar falsear al atacante debemos
-        falsear al defensor.
-        Entones esta función SI tendria perspectiva de attacker y defender también.
+            Buscaremos en el conjunto correspondiente el standpoint y
+            y crearemos un fake_positions reemplazando el standpoint por fake_move.
+            esto deja un "hueco" por donde ahora el rey podría ser amenazado.
         '''
         fake_move: int = standpoint+direction
-        fake_attacker_positions: dict[int, str] = {}
+        fake_positions: dict[int, str] = {}
 
-        # Buscar en la lista original attacker_positions el standpoint y
-        # y crear una fake_attacker_positions reemplazando el standpoint por fake_move.
-        # esto deja un "hueco" por donde ahora el rey podría ser amenazado.
-        for ap in self.attacker_positions.keys():
-            if standpoint != ap:
-                fake_attacker_positions.update({ap: self.attacker_positions[ap]})
-            else:
-                fake_attacker_positions.update({fake_move: self.attacker_positions[ap]})
+        if perspective == 'attacker':
+            for ap in self.attacker_positions.keys():
+                if standpoint != ap:
+                    fake_positions.update({ap: self.attacker_positions[ap]})
+                else:
+                    fake_positions.update({fake_move: self.attacker_positions[ap]})
 
-        # Crear objetivos fake inyectando fake_attacker_positions.
+        if perspective == 'defender':
+            for ap in self.defender_positions.keys():
+                if standpoint != ap:
+                    fake_positions.update({ap: self.attacker_positions[ap]})
+                else:
+                    fake_positions.update({fake_move: self.attacker_positions[ap]})
+
+
+        # Revisar objetivos inyectando fake_positions.
         # try fake pawns
         '''Los peones nunca influyen en exposing-movements'''
         # try fake horses
@@ -599,18 +605,18 @@ class Match(Scene):
         # try fake rooks
         rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender,piece="Torre")
         for _rook in rook_standpoints:
-            if self.rook_objectives(_rook, perspective='fake', fake_pos=fake_attacker_positions):
+            if self.rook_objectives(_rook, perspective='fake', fake_positions=fake_positions):
                 return True
 
         # try fake bishops
         bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender,piece="Alfil")
         for _bishop in bishop_standpoints:
-            if self.bishop_objectives(_bishop, perspective='fake', fake_pos=fake_attacker_positions):
+            if self.bishop_objectives(_bishop, perspective='fake', fake_pos=fake_positions):
                 return True
 
         # try fake queen
         queen_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Reina").pop()
-        if self.queen_objectives(queen_standpoint, perspective='fake', fake_pos=fake_attacker_positions):
+        if self.queen_objectives(queen_standpoint, perspective='fake', fake_pos=fake_positions):
             return True
         return False
 
@@ -866,7 +872,7 @@ class Match(Scene):
         self,
         piece_standpoint: int,
         perspective: str,
-        fake_pos: dict[str, list[int]] | None = None
+        fake_positions: dict[str, list[int]] | None = None
         ) -> dict[int,pygame.Rect] | None:
         '''Movimiento Torre:
         +NORTE
@@ -895,10 +901,17 @@ class Match(Scene):
                             if movement not in row_of_(piece_standpoint):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
+
+                            '''
+                            BUG DEBO revisar BLOQUEOS
+                            y...
+                            exposing-movements? Wtf?
+                            '''
+
                             if movement in self.defender_positions:
                                 break # recorrer otra dirección
-                            elif movement in fake_pos:
-                                if fake_pos[movement] == 'Rey':
+                            elif movement in fake_positions:
+                                if fake_positions[movement] == 'Rey':
                                     return True
             return False
         
