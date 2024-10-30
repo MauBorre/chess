@@ -577,6 +577,8 @@ class Match(Scene):
             Buscar en el conjunto "consultante" el standpoint y lo reemplazaremos por
             fake_move (standpoint + direction)
             Esto deja un "hueco" por donde ahora el rey podría ser amenazado.
+
+        **IMPORTANTE** Los peones y caballos NUNCA influyen en exposing-movements
         '''
         fake_move: int = standpoint+direction
         fake_positions: dict[int, str] = {}
@@ -587,6 +589,22 @@ class Match(Scene):
                     fake_positions.update({ap: self.attacker_positions[ap]})
                 else:
                     fake_positions.update({fake_move: self.attacker_positions[ap]})
+            
+            # Revisar objetivos inyectando fake_positions.
+            rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender,piece="Torre")
+            for _rook in rook_standpoints:
+                if self.rook_objectives(_rook, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
+                    return True
+
+            bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender,piece="Alfil")
+            for _bishop in bishop_standpoints:
+                if self.bishop_objectives(_bishop, perspective='fake-attackerMov-toDef', fake_pos=fake_positions):
+                    return True
+
+            queen_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Reina").pop()
+            if self.queen_objectives(queen_standpoint, perspective='fake-attackerMov-toDef', fake_pos=fake_positions):
+                return True
+            return False
 
         if request_from == 'defender':
             for ap in self.defender_positions.keys():
@@ -595,29 +613,21 @@ class Match(Scene):
                 else:
                     fake_positions.update({fake_move: self.defender_positions[ap]})
 
-        # Revisar objetivos inyectando fake_positions.
-        # try fake pawns
-        '''Los peones nunca influyen en exposing-movements'''
-        # try fake horses
-        '''Los caballos nunca influyen en exposing-movements'''
+            # Revisar objetivos inyectando fake_positions.
+            rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Torre")
+            for _rook in rook_standpoints:
+                if self.rook_objectives(_rook, perspective='fake-deffenderMov-toAtt', fake_positions=fake_positions):
+                    return True
 
-        # try fake rooks
-        rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender,piece="Torre")
-        for _rook in rook_standpoints:
-            if self.rook_objectives(_rook, perspective='fake', fake_positions=fake_positions):
+            bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Alfil")
+            for _bishop in bishop_standpoints:
+                if self.bishop_objectives(_bishop, perspective='fake-deffenderMov-toAtt', fake_pos=fake_positions):
+                    return True
+
+            queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece="Reina").pop()
+            if self.queen_objectives(queen_standpoint, perspective='fake-deffenderMov-toAtt', fake_pos=fake_positions):
                 return True
-
-        # try fake bishops
-        bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender,piece="Alfil")
-        for _bishop in bishop_standpoints:
-            if self.bishop_objectives(_bishop, perspective='fake', fake_pos=fake_positions):
-                return True
-
-        # try fake queen
-        queen_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Reina").pop()
-        if self.queen_objectives(queen_standpoint, perspective='fake', fake_pos=fake_positions):
-            return True
-        return False
+            return False
 
     def pawn_objectives(self,piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
         '''Movimiento Peón:
