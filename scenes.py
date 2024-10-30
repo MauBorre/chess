@@ -746,8 +746,9 @@ class Match(Scene):
                             # BLOCK saving position
                             mov_target_positions.update({movement: self.boardRects[movement]})
                     else:
-                        if not self.exposing_direction(piece_standpoint, direction=SUR): 
-                            if movement not in self.black_positions and movement not in self.white_positions: # piece block
+                        if movement not in self.black_positions and movement not in self.white_positions: # piece block
+                            if not self.exposing_direction(piece_standpoint, direction=SUR): 
+                                # if movement not in self.black_positions and movement not in self.white_positions: # piece block
                                 if piece_standpoint in self.in_base_Bpawns:
                                     mov_target_positions.update({movement:self.boardRects[movement]})
 
@@ -755,43 +756,29 @@ class Match(Scene):
                                     if movement+SUR <= 63: # board limit check
                                         if movement+SUR not in self.black_positions and movement+SUR not in self.white_positions: # piece block
                                             mov_target_positions.update({movement+SUR:self.boardRects[movement+SUR]})
-                                else:
-                                    mov_target_positions.update({movement:self.boardRects[movement]})
-                        else: pass
+                            else: pass
+                        else: mov_target_positions.update({movement:self.boardRects[movement]})
 
                         # kill positions
                         # Verificamos que el movimiento no rompa los límites del tablero
                         if piece_standpoint+OESTE not in row_of_(piece_standpoint):
-
-                            if not self.exposing_direction(piece_standpoint, direction=SUR_ESTE):
-                                kill_positions.append(piece_standpoint+SUR_ESTE)
-                            else: pass
-
+                            kill_positions.append(piece_standpoint+SUR_ESTE)
+                            
                         if piece_standpoint+ESTE not in row_of_(piece_standpoint):
-
-                            if not self.exposing_direction(piece_standpoint, direction=SUR_OESTE):
-                                kill_positions.append(piece_standpoint+SUR_OESTE)
-                            else: pass
+                            kill_positions.append(piece_standpoint+SUR_OESTE)
 
                         elif len(kill_positions) == 0:
-
-                            if not self.exposing_direction(piece_standpoint, direction=SUR_OESTE):
-                                kill_positions.append(piece_standpoint+SUR_OESTE)
-                            else: pass
-
-                            if not self.exposing_direction(piece_standpoint, direction=SUR_ESTE):
-                                kill_positions.append(piece_standpoint+SUR_ESTE)
-                            else: pass
-
+                            kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
+            
                         for kp in kill_positions:
-
-                            if kp in self.white_positions: #<- turn defender
-                                on_target_kill_positions.update({kp:self.boardRects[kp]})
+                            if kp not in self.black_positions and kp in self.white_positions:
+                                if not self.exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
+                                    on_target_kill_positions.update({kp:self.boardRects[kp]})
                             
-                            # Threat on defender king ------------------------
-                            if kp in self.defender_kingLegalMoves:
-                                self.attacker_threatOnDefender['Peón'].append(kp)
-                            # ------------------------------------------------
+                                    # Threat on defender king ------------------------
+                                    if kp in self.defender_kingLegalMoves:
+                                        self.attacker_threatOnDefender['Peón'].append(kp)
+                                    # ------------------------------------------------
 
             if self.turn_attacker == 'White': # Ataca hacia el NORTE
                 # 1st Movement
@@ -972,13 +959,13 @@ class Match(Scene):
                             a su version dict con un pygame.Rect.
                             '''
 
+                            # bloqueos <- creo que esto es primordial
+                            # ...
+
                             # no-expositivos al jaque
                             '''Necesito una nueva forma de perspectiva EN exposing_movement? porque lo estaba
                             usando solo en perspective="attacker" para SU rey pero ahora necesito checkear otro
                             conjunto de piezas.'''
-
-                            # bloqueos <- creo que esto es primordial
-                            # ...
 
                             # kill-movements
                             # ...
@@ -1004,15 +991,11 @@ class Match(Scene):
                                     _can_support = True
                                     mov_target_positions.update({movement: self.boardRects[movement]})
 
-                                    #attacker legal move?
-
                                 elif movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
 
                                     # KILL saving position.
                                     _can_support = True
                                     on_target_kill_positions.update({movement: self.boardRects[movement]})
-
-                                    #attacker legal move?
 
                             else: continue        
                 if not _can_support:
@@ -1025,13 +1008,10 @@ class Match(Scene):
                             if movement not in row_of_(piece_standpoint):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
-                            
-                            '''
-                            BUG primero debo revisar el bloqueo antes de la exposición, de lo contrario
-                            estamos comprobando contra un lugar que quizás no podemos visitar en un principio.
-                            '''
-                            if not self.exposing_direction(piece_standpoint, direction=direction):
-                                if movement not in self.black_positions and movement not in self.white_positions:
+
+                            # Ally block/not kill-movement
+                            if movement not in self.attacker_positions and movement not in self.defender_positions:
+                                if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                     mov_target_positions.update({movement:self.boardRects[movement]})
 
                                     # Threat on defender king ------------------------
@@ -1042,24 +1022,24 @@ class Match(Scene):
                                         # > king standpoint O  > ya-revisamos-todos-los-legalMoves
                                         _threatening = True
 
-                                # Kill-movement
-                                elif movement in self.defender_positions:
-                                    
-                                    # Threat STOP > king standpoint
-                                    if _threatening and self.defender_positions[movement] == 'Rey':
-                                        self.attacker_threatOnDefender['Torre'].append(_threat_emission)
-                                        _threatening = False
-
-                                    on_target_kill_positions.update({movement:self.boardRects[movement]})
-                                    break
+                                else: break # rompe hasta la siguiente dirección.       
+                            # Kill-movement
+                            elif movement in self.defender_positions:
                                 
-                                # Threat STOP > ya-revisamos-todos-los-legalMoves
-                                elif _threatening and movement not in self.defender_kingLegalMoves:
+                                # Threat STOP > king standpoint
+                                if _threatening and self.defender_positions[movement] == 'Rey':
                                     self.attacker_threatOnDefender['Torre'].append(_threat_emission)
                                     _threatening = False
 
-                                break # previene propagación mas allá del primer bloqueo - rompe el mult
-                            else: break # rompe hasta la siguiente dirección.       
+                                on_target_kill_positions.update({movement:self.boardRects[movement]})
+                                break
+                            
+                            # Threat STOP > ya-revisamos-todos-los-legalMoves
+                            elif _threatening and movement not in self.defender_kingLegalMoves:
+                                self.attacker_threatOnDefender['Torre'].append(_threat_emission)
+                                _threatening = False
+
+                            break # previene propagación mas allá del primer bloqueo - rompe el mult             
             return mov_target_positions, on_target_kill_positions
 
     def horse_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
