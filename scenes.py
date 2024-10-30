@@ -275,12 +275,15 @@ class Match(Scene):
         del turno en juego.
 
         Internamente se revisará:
+
             >> attacker_threatOnDefender
             >> attacker_kingLegalMoves
-            >> defender_kingLegalMoves
+            >> attacker_singleOriginDirectThreat
+
             >> defender_threatOnAttacker
-            >> defender_kingSupport
-            >> singleOriginDirectThreat
+            >> defender_kingLegalMoves
+            >> defender_singleOriginDirectThreat
+            >> defender_legalMoves
         
         Antes de ser utilizadas, estas variables (excepto defender_threatOnAttacker que puede contener
         información del *jaque actual* y es resultado de transferencia/SWAP ) deben limpiarse para evitar
@@ -326,6 +329,7 @@ class Match(Scene):
         self.defender_kingLegalMoves.clear()
         self.defender_legalMoves.clear()
         self.attacker_directThreatTrace.clear()
+
 
         # Attacker ----------------------------------------------------------------------------------------
         if self.defender_singleOriginDirectThreat != False:
@@ -566,6 +570,13 @@ class Match(Scene):
         >> perspectiva="fake"
             Devolverá TRUE si encontró al rey en su "falso objetivo".
             Devolverá FALSE si NO lo encontró.
+
+        Hay un problema acá o no? Antiguamente estabamos usando esto en piezas
+        con perspectiva attacker, pero es realmente lo mismo para perspectiva defender?
+
+        Creo que algo sí cambia y es que en vez de buscar falsear al atacante debemos
+        falsear al defensor.
+        Entones esta función SI tendria perspectiva de attacker y defender también.
         '''
         fake_move: int = standpoint+direction
         fake_attacker_positions: dict[int, str] = {}
@@ -919,7 +930,7 @@ class Match(Scene):
                             usando solo en perspective="attacker" para SU rey pero ahora necesito checkear otro
                             conjunto de piezas.'''
 
-                            # bloqueos
+                            # bloqueos <- creo que esto es primordial
                             # ...
 
                             # kill-movements
