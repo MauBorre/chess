@@ -202,6 +202,7 @@ class Match(Scene):
         self.black_kingLegalMoves: list[int] = []
         self.black_singleOriginDirectThreat: bool | None = None 
         self.black_directThreatTrace: list[int] = [] 
+        # self.black_legalMoves: list[int] = []
         
         # White
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']] # no swap
@@ -211,12 +212,17 @@ class Match(Scene):
         self.white_kingLegalMoves: list[int] = []
         self.white_singleOriginDirectThreat: bool | None = None 
         self.white_directThreatTrace: list[int] = [] 
+        # self.white_legalMoves: list[int] = []
 
         # Turn lookups --------------------------------------------------------------------------------
         self.turn_attacker: str = 'White'
         self.turn_defender: str = 'Black'
-        '''Si existe múltiple orígen de amenaza NUNCA habrá kingSupport.'''
+
+        '''Se debe transformar a defender_legalMoves'''
+        # '''Si existe múltiple orígen de amenaza NUNCA habrá kingSupport.'''
         self.defender_kingSupport: set[str] = {} # NO se considera en SWAP
+
+        # self.defender_legalMoves: set[str] = [] # NO se considera en SWAP
 
         '''Registro de AMENAZAS, MOVIMIENTOS LEGALES DEL REY, POSICIONES DE RESCATE: 
 
@@ -259,15 +265,14 @@ class Match(Scene):
         self.defender_threatOnAttacker: dict[str, list[int]] = self.black_threatOnWhite  # será siempre resultado de SWAP, contiene *posible jaque* actual.
         self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
         self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat
-        self.defender_directThreatTrace: list[int] = self.black_directThreatTrace 
+        self.defender_directThreatTrace: list[int] = self.black_directThreatTrace
         
         # Attacker
         self.attacker_positions: dict[int, str] = self.white_positions 
         self.attacker_threatOnDefender: dict[str, list[int]] = self.white_threatOnBlack
         self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
         self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
-        self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace 
-
+        self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace
 
     def update_turn_objectives(self):
         '''Llama todas las funciones _objectives() con sus correctas perspectivas
@@ -320,7 +325,7 @@ class Match(Scene):
         # self.defender_threatOnAttacker será siempre resultado de SWAP, contiene *posible jaque* actual.
         self.attacker_kingLegalMoves.clear()
         self.defender_kingLegalMoves.clear()
-        self.defender_kingSupport.clear()
+        # self.defender_kingSupport.clear()
         self.attacker_directThreatTrace.clear()
 
         # Attacker ----------------------------------------------------------------------------------------
@@ -420,7 +425,7 @@ class Match(Scene):
         # General
         self.turn_attacker: str = 'White'
         self.turn_defender: str = 'Black'
-        self.defender_kingSupport: set[str] = {}
+        # self.defender_kingSupport: set[str] = {}
 
         # Defender
         self.defender_positions: dict[int, str] = self.black_positions 
@@ -626,6 +631,7 @@ class Match(Scene):
                 if movement <= 63: # board limit
                     if movement in self.attacker_directThreatTrace:
                         self.defender_kingSupport.add('Peón')
+                        self.defender_legalMoves
 
                 # 2nd Movement -BLOCK saving position-
                 if piece_standpoint in self.in_base_Bpawns:
@@ -1557,20 +1563,22 @@ class Match(Scene):
         '''
 
         if self.attacker_singleOriginDirectThreat == None:
+            #if len(self.defender_legalMoves) == 0:
+                #...
             if len(self.defender_kingLegalMoves) == 0 and len(self.defender_kingSupport) == 0:
                 '''BUG hay algo más que debo verificar acá.
 
-                Para cantar stale-mate debo ver que el rey no se pueda mover PORQUE
-                lo rodea un conjunto de bloqueos/amenazas.
-                Y nadie puede matar a esa amenaza.
-
-                El empate sucede cuando el defensor NO TIENE MOVIMIENTOS LEGALES, pero
-                EL REY NO ESTÁ EN AMENAZA DIRECTA.
+                El empate sucede cuando EL REY NO ESTÁ EN AMENAZA DIRECTA pero el defensor NO
+                TIENE MOVIMIENTOS LEGALES (*o cualquier movimiento posible dejaría al rey
+                expuesto a un JAQUE*).
 
                 Además de los kingLegalMoves, todas sus otras piezas pueden tener o no
-                movimientos legales, los cuales se basan en si EXPONER AL REY, si
+                movimientos legales, los cuales se basan en si MOVER-EXPONE AL REY, si
                 están BLOQUEADAS (caso peón: bloqueado de frente y por aliados, resto de
-                las piezas pueden estar bloqueadas por aliados)
+                las piezas pueden estar bloqueadas por aliados).
+
+                Es importar notar que en este estado, CUALQUIER movimiento del actual defensor,
+                dejaría al rey en JAQUE.
                 '''
 
                 #STALE-MATE
@@ -1626,8 +1634,7 @@ class Match(Scene):
             else:
 
                 # JAQUE
-                '''Esto requiere solo una notificación al jugador correspondiente.
-                defender_color -> notificate CHECK (highlight possible solutions)'''
+                '''Notificar al jugador correspondiente.'''
                 if self.turn_attacker == 'Black':
                     self.match_state = 'White en jaque.'
                     
