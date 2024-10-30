@@ -202,7 +202,6 @@ class Match(Scene):
         self.black_kingLegalMoves: list[int] = []
         self.black_singleOriginDirectThreat: bool | None = None 
         self.black_directThreatTrace: list[int] = [] 
-        # self.black_legalMoves: list[int] = []
         
         # White
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']] # no swap
@@ -212,17 +211,14 @@ class Match(Scene):
         self.white_kingLegalMoves: list[int] = []
         self.white_singleOriginDirectThreat: bool | None = None 
         self.white_directThreatTrace: list[int] = [] 
-        # self.white_legalMoves: list[int] = []
 
         # Turn lookups --------------------------------------------------------------------------------
         self.turn_attacker: str = 'White'
         self.turn_defender: str = 'Black'
 
-        '''Se debe transformar a defender_legalMoves'''
-        # '''Si existe múltiple orígen de amenaza NUNCA habrá kingSupport.'''
-        self.defender_kingSupport: set[str] = {} # NO se considera en SWAP
-
-        # self.defender_legalMoves: set[str] = [] # NO se considera en SWAP
+        '''Si existe múltiple orígen de amenaza NUNCA habrá legalMoves por parte.
+        de las piezas defensoras.'''
+        self.defender_legalMoves: set[str] = {} # NO se considera en SWAP
 
         '''Registro de AMENAZAS, MOVIMIENTOS LEGALES DEL REY, POSICIONES DE RESCATE: 
 
@@ -325,7 +321,7 @@ class Match(Scene):
         # self.defender_threatOnAttacker será siempre resultado de SWAP, contiene *posible jaque* actual.
         self.attacker_kingLegalMoves.clear()
         self.defender_kingLegalMoves.clear()
-        # self.defender_kingSupport.clear()
+        self.defender_legalMoves.clear()
         self.attacker_directThreatTrace.clear()
 
         # Attacker ----------------------------------------------------------------------------------------
@@ -425,7 +421,7 @@ class Match(Scene):
         # General
         self.turn_attacker: str = 'White'
         self.turn_defender: str = 'Black'
-        # self.defender_kingSupport: set[str] = {}
+        self.defender_legalMoves: set[str] = {}
 
         # Defender
         self.defender_positions: dict[int, str] = self.black_positions 
@@ -630,13 +626,12 @@ class Match(Scene):
                 movement = piece_standpoint+SUR
                 if movement <= 63: # board limit
                     if movement in self.attacker_directThreatTrace:
-                        self.defender_kingSupport.add('Peón')
-                        self.defender_legalMoves
+                        self.defender_legalMoves.add('Peón')
 
                 # 2nd Movement -BLOCK saving position-
                 if piece_standpoint in self.in_base_Bpawns:
                     if movement+SUR in self.attacker_directThreatTrace:
-                        self.defender_kingSupport.add('Peón')
+                        self.defender_legalMoves.add('Peón')
 
                 # KILL saving positions
                 # Verificamos que el movimiento no rompa los límites del tablero
@@ -649,7 +644,7 @@ class Match(Scene):
 
                 for kp in kill_positions:
                     if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
-                        self.defender_kingSupport.add('Peón')
+                        self.defender_legalMoves.add('Peón')
 
             if self.turn_defender == 'White': # defiende hacia el NORTE
 
@@ -657,12 +652,12 @@ class Match(Scene):
                 movement = piece_standpoint+NORTE
                 if movement <= 63: # board limit
                     if movement in self.attacker_directThreatTrace:
-                        self.defender_kingSupport.add('Peón')
+                        self.defender_legalMoves.add('Peón')
 
                 # 2nd Movement -BLOCK saving position-
                 if piece_standpoint in self.in_base_Bpawns:
                         if movement+NORTE in self.attacker_directThreatTrace:
-                            self.defender_kingSupport.add('Peón')
+                            self.defender_legalMoves.add('Peón')
 
                 # KILL saving positions
                 # Verificamos que el movimiento no rompa los límites del tablero
@@ -675,7 +670,7 @@ class Match(Scene):
 
                 for kp in kill_positions:
                     if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
-                        self.defender_kingSupport.add('Peón')
+                        self.defender_legalMoves.add('Peón')
             return
 
         if perspective == 'attacker':
@@ -898,7 +893,7 @@ class Match(Scene):
 
                         if movement in self.attacker_directThreatTrace:
                             # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
-                            self.defender_kingSupport.add('Torre') 
+                            self.defender_legalMoves.add('Torre') 
                             return
                         else: continue
             return
@@ -1010,7 +1005,7 @@ class Match(Scene):
                 if 0 <= movement <= 63: # NORTE/SUR LIMIT
 
                     if movement in self.attacker_directThreatTrace:
-                        self.defender_kingSupport.add('Caballo')
+                        self.defender_legalMoves.add('Caballo')
                         return
                     else: continue 
             return
@@ -1113,7 +1108,7 @@ class Match(Scene):
                     if 0 <= movement <= 63: # VALID SQUARE
                         
                         if movement in self.attacker_directThreatTrace:
-                            self.defender_kingSupport.add('Alfil')
+                            self.defender_legalMoves.add('Alfil')
                             return
                         else: continue
             return
@@ -1257,7 +1252,7 @@ class Match(Scene):
                         if 0 <= movement <= 63: # VALID SQUARE
 
                             if movement in self.attacker_directThreatTrace:
-                                self.defender_kingSupport.add('Reina')
+                                self.defender_legalMoves.add('Reina')
                                 return
                             else: continue
                 return
@@ -1565,7 +1560,7 @@ class Match(Scene):
         if self.attacker_singleOriginDirectThreat == None:
             #if len(self.defender_legalMoves) == 0:
                 #...
-            if len(self.defender_kingLegalMoves) == 0 and len(self.defender_kingSupport) == 0:
+            if len(self.defender_kingLegalMoves) == 0 and len(self.defender_legalMoves) == 0:
                 '''BUG hay algo más que debo verificar acá.
 
                 El empate sucede cuando EL REY NO ESTÁ EN AMENAZA DIRECTA pero el defensor NO
@@ -1594,7 +1589,7 @@ class Match(Scene):
             else: return # La partida continúa con normalidad.
 
         if self.attacker_singleOriginDirectThreat:
-            if len(self.defender_kingLegalMoves) > 0 or len(self.defender_kingSupport) > 0:
+            if len(self.defender_kingLegalMoves) > 0 or len(self.defender_legalMoves) > 0:
                 # JAQUE
                 '''Esto requiere solo una notificación al jugador correspondiente.
                 defender_color -> notificate CHECK (highlight possible solutions)'''
@@ -1605,7 +1600,7 @@ class Match(Scene):
                 if self.turn_attacker == 'White':
                     self.match_state = 'Black en jaque.'
 
-            elif len(self.defender_kingLegalMoves) == 0 and len(self.defender_kingSupport) == 0:
+            elif len(self.defender_kingLegalMoves) == 0 and len(self.defender_legalMoves) == 0:
 
                 #JAQUE-MATE
                 '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
