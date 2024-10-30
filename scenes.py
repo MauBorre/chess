@@ -1002,6 +1002,10 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
                             
+                            '''
+                            BUG primero debo revisar el bloqueo antes de la exposición, de lo contrario
+                            estamos comprobando contra un lugar que quizás no podemos visitar en un principio.
+                            '''
                             if not self.exposing_direction(piece_standpoint, direction=direction):
                                 if movement not in self.black_positions and movement not in self.white_positions:
                                     mov_target_positions.update({movement:self.boardRects[movement]})
