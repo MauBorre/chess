@@ -1,24 +1,32 @@
 import pygame
 from scenes import MainMenu, Match
 
+class SceneManager: ...
+
+class ControlManager: ...
+
 class GameMaster:
     '''
+
+    GameMaster debería ser un -main loop master-
+
+
     Es GameMaster un scene manger ,un control manager
     y un "default maker"?
 
-    Es una clase de las cuales todas las "escenas" consumen
-    controles y SCREEN.
+    Es una clase de las cuales actualmente todas las "escenas" consumen
+    controles y SCREEN (y variables -de juego-).
 
     Es una clase que instancia y maneja escenas.
 
     Si es maestro debería notificar cosas, no "ser consumido"
     '''
-    starting_volume : float #volume in db
     def __init__(self):
         pygame.init()
+
         # default values (config)
         self.resolution = (800,800)
-        self.screen = pygame.display.set_mode(self.resolution) #una screen por escena o una screen para todo el juego?
+        self.screen = pygame.display.set_mode(self.resolution) # una screen por escena o una screen para todo el juego?
         pygame.display.set_caption('Chess')
         self.clock = pygame.time.Clock()
 
