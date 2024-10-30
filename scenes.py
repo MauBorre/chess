@@ -283,6 +283,7 @@ class Match(Scene):
             >> defender_threatOnAttacker
             >> defender_kingLegalMoves
             >> defender_singleOriginDirectThreat
+            
             >> defender_legalMoves
         
         Antes de ser utilizadas, estas variables (excepto defender_threatOnAttacker que puede contener
@@ -315,6 +316,7 @@ class Match(Scene):
                -> kill-movements aún no hechos pero que "amenazan" al rey defender
         
         Desde perspectiva = 'defender' es importante:
+
             >> Verificar y validar LEGAL-MOVES, teniendo en cuenta exposiciones al rey y bloqueos
             con otras piezas.
 
@@ -909,8 +911,7 @@ class Match(Scene):
                             confirmación de movimiento.
                             '''
 
-                            '''
-                            
+                            ''' 
                             BUG las perspectivas attacker/defender se confunden.
 
                             Cuando llamo a exposing_movement perspectiva=defensa
@@ -918,8 +919,8 @@ class Match(Scene):
 
                             Cuando llamo a exposing_movement perspectiva=ataque
                             aquí un block sería attacker_positions.
-                            
                             '''
+                            
                             if movement in self.attacker_positions:
                                 ...
 
@@ -946,9 +947,9 @@ class Match(Scene):
                                 return
                             else: continue
                         elif self.attacker_singleOriginDirectThreat == None:
+
                             # revisiones normales de movimiento
-                            '''
-                            Con encontrar al menos uno sería suficiente, pero si luego queremos
+                            '''Con encontrar al menos uno sería suficiente, pero si luego queremos
                             responder visualmente en el tablero necesitaremos todos, además de pasarlo
                             a su version dict con un pygame.Rect.
                             '''
@@ -984,11 +985,17 @@ class Match(Scene):
                                     # BLOCK saving position.
                                     _can_support = True
                                     mov_target_positions.update({movement: self.boardRects[movement]})
+
+                                    #attacker legal move?
+
                                 elif movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
 
                                     # KILL saving position.
                                     _can_support = True
                                     on_target_kill_positions.update({movement: self.boardRects[movement]})
+
+                                    #attacker legal move?
+
                             else: continue        
                 if not _can_support:
                     return {}, {}
