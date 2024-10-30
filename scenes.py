@@ -905,48 +905,48 @@ class Match(Scene):
 
         if perspective == 'fake-defenderMov-toAtt':
             for direction in tower_directions:
-                    for mult in range(1,8): # 1 to board_size
-                        movement = piece_standpoint+direction*mult
-                        if direction == ESTE or direction == OESTE:
-                            if movement not in row_of_(piece_standpoint):
-                                break
-                        if 0 <= movement <= 63: # VALID SQUARE
+                for mult in range(1,8): # 1 to board_size
+                    movement = piece_standpoint+direction*mult
+                    if direction == ESTE or direction == OESTE:
+                        if movement not in row_of_(piece_standpoint):
+                            break
+                    if 0 <= movement <= 63: # VALID SQUARE
 
-                            # Revisar bloqueos
-                            if movement in self.defender_positions:
-                                break 
+                        # Revisar bloqueos
+                        if movement in self.defender_positions:
+                            break 
 
-                            # Des-estimar kill-movements que NO sean al rey
-                            if movement in self.attacker_positions:
-                                break
+                        # Des-estimar kill-movements que NO sean al rey
+                        if movement in self.attacker_positions:
+                            break
 
-                            # Si encontramos al rey, devolver TRUE
-                            elif movement in fake_positions:
-                                if fake_positions[movement] == 'Rey':
-                                    return True
+                        # Si encontramos al rey, devolver TRUE
+                        elif movement in fake_positions:
+                            if fake_positions[movement] == 'Rey':
+                                return True
             return False
 
         if perspective == 'fake-attackerMov-toDef':
             for direction in tower_directions:
-                    for mult in range(1,8): # 1 to board_size
-                        movement = piece_standpoint+direction*mult
-                        if direction == ESTE or direction == OESTE:
-                            if movement not in row_of_(piece_standpoint):
-                                break
-                        if 0 <= movement <= 63: # VALID SQUARE
+                for mult in range(1,8): # 1 to board_size
+                    movement = piece_standpoint+direction*mult
+                    if direction == ESTE or direction == OESTE:
+                        if movement not in row_of_(piece_standpoint):
+                            break
+                    if 0 <= movement <= 63: # VALID SQUARE
 
-                            # Revisar bloqueos
-                            if movement in self.attacker_positions:
-                                break 
+                        # Revisar bloqueos
+                        if movement in self.attacker_positions:
+                            break 
 
-                            # Des-estimar kill-movements que NO sean al rey
-                            if movement in self.defender_positions:
-                                break
+                        # Des-estimar kill-movements que NO sean al rey
+                        if movement in self.defender_positions:
+                            break
 
-                            # Si encontramos al rey, devolver TRUE
-                            elif movement in fake_positions:
-                                if fake_positions[movement] == 'Rey':
-                                    return True
+                        # Si encontramos al rey, devolver TRUE
+                        elif movement in fake_positions:
+                            if fake_positions[movement] == 'Rey':
+                                return True
             return False
         
         if perspective == 'defender':
