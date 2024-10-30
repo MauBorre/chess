@@ -312,8 +312,11 @@ class Match(Scene):
                -> kill-movements aún no hechos pero que "amenazan" al rey defender
         
         Desde perspectiva = 'defender' es importante:
+            >> Verificar y validar LEGAL-MOVES, teniendo en cuenta exposiciones al rey y bloqueos
+            con otras piezas.
+
             >> Atender el estado de attacker_singleOriginDirectThreat (jaque) y revisar la posibilidad de
-               que las piezas bloqueen / maten a la amenaza (kingSupport).
+               que las piezas bloqueen / maten a la pieza amenazante.
                
         '''
 
@@ -359,8 +362,9 @@ class Match(Scene):
                     self.attacker_directThreatTrace = _threats_list # direct_threats solo puede contener una lista.
             else: self.attacker_singleOriginDirectThreat = None
 
-        if self.attacker_singleOriginDirectThreat == True:
-            # Defender kingSupport (evalúan self.direct_threats)
+        if self.attacker_singleOriginDirectThreat != False:
+
+            # Defender kingSupport (Actualizan movimientos legales del defensor para ver si perdió o empató)
             pawn_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='Peón')
             for _pawn in pawn_standpoints:
                 self.pawn_objectives(_pawn, perspective='defender')
@@ -625,6 +629,12 @@ class Match(Scene):
                 # 1st Movement -BLOCK saving position-
                 movement = piece_standpoint+SUR
                 if movement <= 63: # board limit
+
+                    '''
+                    Este puede ser un movimiento legal y ya, no se si debo
+                    revisar que "bloquee" tan asi.
+                    O quizas si...
+                    '''
                     if movement in self.attacker_directThreatTrace:
                         self.defender_legalMoves.add('Peón')
 
@@ -890,12 +900,19 @@ class Match(Scene):
                         if movement not in row_of_(piece_standpoint):
                             break
                     if 0 <= movement <= 63: # VALID SQUARE
-
-                        if movement in self.attacker_directThreatTrace:
-                            # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
-                            self.defender_legalMoves.add('Torre') 
-                            return
-                        else: continue
+                        
+                        if self.attacker_singleOriginDirectThreat == True:
+                            if movement in self.attacker_directThreatTrace:
+                                # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
+                                self.defender_legalMoves.add('Torre') 
+                                return
+                            else: continue
+                        elif self.attacker_singleOriginDirectThreat == None:
+                            # revisiones normales de movimiento
+                            # no-expositivos al jaque
+                            # bloqueos
+                            # kill-movements
+                            ...
             return
 
         if perspective == 'attacker': 
@@ -1558,8 +1575,6 @@ class Match(Scene):
         '''
 
         if self.attacker_singleOriginDirectThreat == None:
-            #if len(self.defender_legalMoves) == 0:
-                #...
             if len(self.defender_kingLegalMoves) == 0 and len(self.defender_legalMoves) == 0:
                 '''BUG hay algo más que debo verificar acá.
 
