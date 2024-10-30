@@ -175,8 +175,10 @@ class GameMaster:
         while self.scene_manager_running:
             if self.scene_manager == MainMenu:
                 self.main_menu_loop()
+                #main_menu.render()
             if self.scene_manager == Match:     
                 self.match_loop()
+                #match.render()
             if self.scene_manager == 'exit':
                 self.scene_manager_running = False
         # ----------------------------------------------
