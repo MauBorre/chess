@@ -900,7 +900,7 @@ class Match(Scene):
                         if movement not in row_of_(piece_standpoint):
                             break
                     if 0 <= movement <= 63: # VALID SQUARE
-                        
+
                         if self.attacker_singleOriginDirectThreat == True:
                             if movement in self.attacker_directThreatTrace:
                                 # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
@@ -909,8 +909,18 @@ class Match(Scene):
                             else: continue
                         elif self.attacker_singleOriginDirectThreat == None:
                             # revisiones normales de movimiento
+                            '''
+                            Con encontrar al menos uno sería suficiente, pero si luego queremos
+                            responder visualmente en el tablero necesitaremos todos, además de pasarlo
+                            a su version dict con un pygame.Rect.
+                            '''
+
                             # no-expositivos al jaque
+                            '''Necesito una nueva forma de perspectiva EN exposing_movement? porque lo estaba
+                            usando solo en perspective="attacker" para SU rey pero ahora necesito checkear otro
+                            conjunto de piezas.'''
                             # bloqueos
+                            
                             # kill-movements
                             ...
             return
