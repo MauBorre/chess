@@ -222,39 +222,39 @@ class Match(Scene):
 
         '''Registro de AMENAZAS, MOVIMIENTOS LEGALES DEL REY, POSICIONES DE RESCATE: 
 
-        >> Threat-on-black/white - PRE-movements
+        >> ThreatOn attacker/defender
             kill-movement's *del enemigo* que caen en casillero rey TARGET o adyacencias legales.
-            Restringen movements y kill-movements de *TARGET*.
-            Puede ser DIRECTO o INDIRECTO.
-            Deben ser revisados ANTES DE intentar un movimiento.
-            Sirven para saber: Donde NO puede moverse el rey.
-                               Si el rey está en jaque/jaque-mate.
+            Puede ser DIRECTO (jaque) o INDIRECTO (restringe kingLegalMoves).
+
+            ANTES DE MOVER:
+                El atacante debe revisar, dentro de sus movimientos posible, si su movimiento -expone al rey-
+                por threat del defensor.
+
+            DESPUES DE MOVER:
+                El defensor debe revisar -si su movimiento expone- por threat del atacante, evaluando así
+                "con qué posibilidades de movimiento quedó".
             
-            El threat puede MATARSE o BLOQUEARSE (a menos que haya más de un orígen)
+            El threat puede MATARSE o BLOQUEARSE
+                A menos que haya más de un orígen de amenaza DIRECTA -> solo el rey moviendose puede escapar
+
             Threat de bishop, queen y tower pueden bloquearse
             Threat de pawn y horse no pueden bloquearse
 
         >> Color-King-legalMovements
-            Posición actual + posibles movimientos.
-            Que su standpoint esté en threat o no significa dos situaciones distintas.
+            Posición actual + posibles movimientos (bloqueos aliados / casilleros threat).
 
         >> Saving-Positions (kingSupport):
-            Posiciones de piezas que cuando sea el turno de acatar del -actual rey defensor-,
-            pueden salvar al rey de un jaque-mate BLOQUEANDO o MATANDO una amenaza.
-            Es crucial para definir jaque/jaque-mate/stale-mate(empate).
 
-            Usaremos un set que contenga los nombres de las piezas -salvando-
-            {'peón','alfil','...'}
+        >> defender_legalMoves (kingSupport):
+            Actualizadas luego de que movió el atacante.
+            Exhibe "si alguien puede hacer algo", mas no "dónde".
 
-            Solo necesitamos una version defender de este conjunto y no necesitaría
-            formar parte del SWAP.
-
-        Los conjuntos
-            attacker/defender_threatOnDefender
-            attacker/defender_kingLegalMoves
-            defender_savingPositions
-        se actualizarán en update_turn_objectives(), llamada luego de realizarse un movimiento
-        en el tablero. 
+            Para fabricarlas correctamente, debemos comprobar y desestimar
+                - Movimientos inv. por bloqueo.
+                - Movimientos inv.  por exposición al rey.
+            
+            Al comprobarlas, debo inspeccionar primero si hay jaque (singular o multiple)
+            ya que esto limita seriamente las posibilidades de legalMoves.
         '''
         # Defender
         self.defender_positions: dict[int, str] = self.black_positions 
@@ -920,7 +920,7 @@ class Match(Scene):
                             Cuando llamo a exposing_movement perspectiva=ataque
                             aquí un block sería attacker_positions.
                             '''
-                            
+
                             if movement in self.attacker_positions:
                                 ...
 
