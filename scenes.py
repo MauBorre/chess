@@ -831,9 +831,9 @@ class Match(Scene):
                                    
                                     if movement+SUR <= 63: # board limit check
                                         if movement+SUR not in self.attacker_positions and movement+SUR not in self.defender_positions: # piece block
-                                            mov_target_positions.update({movement:self.boardRects[movement]}) # 1st Movement
-                                            mov_target_positions.update({movement+SUR:self.boardRects[movement+SUR]}) # 2nd Movement 
-                                else: mov_target_positions.update({movement:self.boardRects[movement]}) # 1st Movement
+                                            mov_target_positions.update({movement: self.boardRects[movement]}) # 1st Movement
+                                            mov_target_positions.update({movement+SUR: self.boardRects[movement+SUR]}) # 2nd Movement 
+                                else: mov_target_positions.update({movement: self.boardRects[movement]}) # 1st Movement
                             else: pass
                         
                         # kill-movements
@@ -851,10 +851,10 @@ class Match(Scene):
                             if kp not in self.attacker_positions:
                                 if kp in self.defender_positions:
                                     if not self.exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
-                                        on_target_kill_positions.update({kp:self.boardRects[kp]})
+                                        on_target_kill_positions.update({kp: self.boardRects[kp]})
                                 
                                 # Threat on defender king ------------------------
-                                self.attacker_threatOnDefender.update({'Peón': kp})
+                                self.attacker_threatOnDefender.update({'Peón': [kp]})
 
                         return mov_target_positions, on_target_kill_positions
 
@@ -930,7 +930,7 @@ class Match(Scene):
                                         on_target_kill_positions.update({kp:self.boardRects[kp]})
 
                                 # Threat on defender king ------------------------
-                                self.attacker_threatOnDefender.update({'Peón': kp})
+                                self.attacker_threatOnDefender.update({'Peón': [kp]})
 
                         return mov_target_positions, on_target_kill_positions
                 
@@ -1185,7 +1185,7 @@ class Match(Scene):
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
 
                                 # Threat on defender king ------------------------
-                                self.attacker_threatOnDefender.update({'Caballo': movement})
+                                self.attacker_threatOnDefender.update({'Caballo': [movement]})
 
                             else: return {}, {}
                 return mov_target_positions, on_target_kill_positions
@@ -1806,7 +1806,9 @@ class Match(Scene):
                     self.stalemate = True # repercute en render() - termina la partida
                     self.match_state = 'Rey Black ahogado.  -  Empate.'
 
-            else: return # La partida continúa con normalidad.
+            else:
+                self.match_state = ''
+                return # La partida continúa con normalidad.
 
         if self.attacker_singleOriginDirectThreat:
             if len(self.defender_kingLegalMoves) > 0 or len(self.defender_legalMoves) > 0:
