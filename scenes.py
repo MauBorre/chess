@@ -1031,9 +1031,9 @@ class Match(Scene):
                             
                             if movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
-                                    # sea movement o kill-movement nos vale por igual, tiene posibilidad de movimiento.
+                                    # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
                                     self.defender_legalMoves.add('Torre')
-                            else: break
+                        # else: break
                 return
             return
 
@@ -1407,28 +1407,81 @@ class Match(Scene):
         perspective: str,
         fake_positions: dict[int, str] | None = None
         ) -> dict[int,pygame.Rect] | None:
-            '''Movimiento Reina:
-            +NORTE
-            +SUR
-            +ESTE
-            +OESTE
-            +NOR_OESTE
-            +NOR_ESTE
-            +SUR_OESTE
-            +SUR_ESTE
-            "recursivo" hasta limite tablero o pieza aliada/enemiga
-            '''
-        
-            # Visual feedback utils
-            mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: self.boardRects[piece_standpoint]} # standpoint is always first pos
-            on_target_kill_positions: dict[int, pygame.Rect] = {}
+        '''Movimiento Reina:
+        +NORTE
+        +SUR
+        +ESTE
+        +OESTE
+        +NOR_OESTE
+        +NOR_ESTE
+        +SUR_OESTE
+        +SUR_ESTE
+        "recursivo" hasta limite tablero o pieza aliada/enemiga
+        '''
+    
+        # Visual feedback utils
+        mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: self.boardRects[piece_standpoint]} # standpoint is always first pos
+        on_target_kill_positions: dict[int, pygame.Rect] = {}
 
-            # Objectives
-            _threat_emission: list[int] = []
-            _threatening: bool = False
-            queen_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
+        # Objectives
+        _threat_emission: list[int] = []
+        _threatening: bool = False
+        queen_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
-            if perspective == 'fake-attackerMov-toDef': 
+        if perspective == 'fake-attackerMov-toDef': 
+            for direction in queen_directions:
+                for mult in range(1,8):
+                    movement = piece_standpoint+direction*mult
+                    if direction == ESTE or direction == OESTE:
+                        if movement not in row_of_(piece_standpoint):     
+                            break
+                    if direction == NOR_ESTE or direction == NOR_OESTE:
+                        if movement not in row_of_(piece_standpoint+NORTE*mult):
+                            break
+                    if direction == SUR_ESTE or direction == SUR_OESTE:
+                        if movement not in row_of_(piece_standpoint+SUR*mult):
+                            break
+                    if 0 <= movement <= 63: # VALID SQUARE
+
+                        # bloqueos aliados
+                        if movement in self.defender_positions:
+                            break
+                        # descartar kill-movements que NO sean el rey
+                        if movement in self.attacker_positions:
+                            break
+                        elif movement in fake_positions:
+                            if fake_positions[movement] == 'Rey':
+                                return True
+            return False
+
+        if perspective == 'fake-defenderMov-toAtt':
+            for direction in queen_directions:
+                for mult in range(1,8):
+                    movement = piece_standpoint+direction*mult
+                    if direction == ESTE or direction == OESTE:
+                        if movement not in row_of_(piece_standpoint):     
+                            break
+                    if direction == NOR_ESTE or direction == NOR_OESTE:
+                        if movement not in row_of_(piece_standpoint+NORTE*mult):
+                            break
+                    if direction == SUR_ESTE or direction == SUR_OESTE:
+                        if movement not in row_of_(piece_standpoint+SUR*mult):
+                            break
+                    if 0 <= movement <= 63: # VALID SQUARE
+
+                        # bloqueos aliados
+                        if movement in self.attacker_positions:
+                            break
+                        # descartar kill-movements que NO sean el rey
+                        if movement in self.defender_positions:
+                            break
+                        elif movement in fake_positions:
+                            if fake_positions[movement] == 'Rey':
+                                return True
+            return False
+
+        if perspective == 'defender':
+            if self.attacker_singleOriginDirectThreat == True:
                 for direction in queen_directions:
                     for mult in range(1,8):
                         movement = piece_standpoint+direction*mult
@@ -1443,145 +1496,123 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
 
-                            # bloqueos aliados
                             if movement in self.defender_positions:
                                 break
-                            # descartar kill-movements que NO sean el rey
-                            if movement in self.attacker_positions:
-                                break
-                            elif movement in fake_positions:
-                                if fake_positions[movement] == 'Rey':
-                                    return True
-                return False
-
-            if perspective == 'fake-defenderMov-toAtt':
-                for direction in queen_directions:
-                    for mult in range(1,8):
-                        movement = piece_standpoint+direction*mult
-                        if direction == ESTE or direction == OESTE:
-                            if movement not in row_of_(piece_standpoint):     
-                                break
-                        if direction == NOR_ESTE or direction == NOR_OESTE:
-                            if movement not in row_of_(piece_standpoint+NORTE*mult):
-                                break
-                        if direction == SUR_ESTE or direction == SUR_OESTE:
-                            if movement not in row_of_(piece_standpoint+SUR*mult):
-                                break
-                        if 0 <= movement <= 63: # VALID SQUARE
-
-                            # bloqueos aliados
-                            if movement in self.attacker_positions:
-                                break
-                            # descartar kill-movements que NO sean el rey
-                            if movement in self.defender_positions:
-                                break
-                            elif movement in fake_positions:
-                                if fake_positions[movement] == 'Rey':
-                                    return True
-                return False
-
-            if perspective == 'defender':
-                for direction in queen_directions:
-                    for mult in range(1,8):
-                        movement = piece_standpoint+direction*mult
-                        if direction == ESTE or direction == OESTE:
-                            if movement not in row_of_(piece_standpoint):     
-                                break
-                        if direction == NOR_ESTE or direction == NOR_OESTE:
-                            if movement not in row_of_(piece_standpoint+NORTE*mult):
-                                break
-                        if direction == SUR_ESTE or direction == SUR_OESTE:
-                            if movement not in row_of_(piece_standpoint+SUR*mult):
-                                break
-                        if 0 <= movement <= 63: # VALID SQUARE
-
                             if movement in self.attacker_directThreatTrace:
+                                # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
                                 self.defender_legalMoves.add('Reina')
                                 return
                             else: continue
                 return
-            
-            if perspective == 'attacker':
-                if self.defender_singleOriginDirectThreat:
-                    '''Entonces mis únicos movimientos posibles son bloquear o matar la amenaza.
-                    > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
-                    > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace'''
-                    for direction in queen_directions:
-                        for mult in range(1,8):
-                            movement = piece_standpoint+direction*mult
-                            if direction == ESTE or direction == OESTE:
-                                if movement not in row_of_(piece_standpoint):     
-                                    break
-                            if direction == NOR_ESTE or direction == NOR_OESTE:
-                                if movement not in row_of_(piece_standpoint+NORTE*mult):
-                                    break
-                            if direction == SUR_ESTE or direction == SUR_OESTE:
-                                if movement not in row_of_(piece_standpoint+SUR*mult):
-                                    break
-                            if 0 <= movement <= 63: # VALID SQUARE
+            elif self.attacker_singleOriginDirectThreat == None:
+                for direction in queen_directions:
+                    for mult in range(1,8):
+                        movement = piece_standpoint+direction*mult
+                        if direction == ESTE or direction == OESTE:
+                            if movement not in row_of_(piece_standpoint):     
+                                break
+                        if direction == NOR_ESTE or direction == NOR_OESTE:
+                            if movement not in row_of_(piece_standpoint+NORTE*mult):
+                                break
+                        if direction == SUR_ESTE or direction == SUR_OESTE:
+                            if movement not in row_of_(piece_standpoint+SUR*mult):
+                                break
+                        if 0 <= movement <= 63: # VALID SQUARE
+
+                            if movement not in self.defender_positions:
+                                if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
+                                    # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
+                                    self.defender_legalMoves.add('Reina')
+                        # else: break
+                return
+            return                      
+        
+        if perspective == 'attacker':
+            if self.defender_singleOriginDirectThreat:
+                '''
+                Únicos movimientos posibles: bloquear o matar la amenaza.
+                > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
+                > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace
+                NO verificar exposing-movements.
+                '''
+                for direction in queen_directions:
+                    for mult in range(1,8):
+                        movement = piece_standpoint+direction*mult
+                        if direction == ESTE or direction == OESTE:
+                            if movement not in row_of_(piece_standpoint):     
+                                break
+                        if direction == NOR_ESTE or direction == NOR_OESTE:
+                            if movement not in row_of_(piece_standpoint+NORTE*mult):
+                                break
+                        if direction == SUR_ESTE or direction == SUR_OESTE:
+                            if movement not in row_of_(piece_standpoint+SUR*mult):
+                                break
+                        if 0 <= movement <= 63: # VALID SQUARE
+
+                            if movement not in self.attacker_positions:
                                 if movement in self.defender_directThreatTrace:
-                                    if movement not in self.defender_positions:
-
-                                        # BLOCK saving position.
-                                        _can_support = True
-                                        mov_target_positions.update({movement: self.boardRects[movement]})
-                                    elif movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
-
+                                    if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
                                         # KILL saving position.
-                                        _can_support = True
                                         on_target_kill_positions.update({movement: self.boardRects[movement]})
-                                    else: continue 
-                    if not _can_support:
-                        return {}, {}
-                else:
-                    for direction in queen_directions:
-                        for mult in range(1,8):
-                            movement = piece_standpoint+direction*mult
-                            if direction == ESTE or direction == OESTE:
-                                if movement not in row_of_(piece_standpoint):     
-                                    break
-                            if direction == NOR_ESTE or direction == NOR_OESTE:
-                                if movement not in row_of_(piece_standpoint+NORTE*mult):
-                                    break
-                            if direction == SUR_ESTE or direction == SUR_OESTE:
-                                if movement not in row_of_(piece_standpoint+SUR*mult):
-                                    break
-                            if 0 <= movement <= 63: # VALID SQUARE
-                                
-                                if not self.exposing_direction(piece_standpoint, direction=direction):
-                                    # Movement
-                                    if movement not in self.black_positions and movement not in self.white_positions:
-                                        mov_target_positions.update({movement:self.boardRects[movement]}) 
+                                    else:
+                                        # BLOCK saving position.
+                                        mov_target_positions.update({movement: self.boardRects[movement]})
+                                else: continue
+                            else: break
+                return mov_target_positions, on_target_kill_positions
+                
+            elif self.defender_singleOriginDirectThreat == None:
+                for direction in queen_directions:
+                    for mult in range(1,8):
+                        movement = piece_standpoint+direction*mult
+                        if direction == ESTE or direction == OESTE:
+                            if movement not in row_of_(piece_standpoint):     
+                                break
+                        if direction == NOR_ESTE or direction == NOR_OESTE:
+                            if movement not in row_of_(piece_standpoint+NORTE*mult):
+                                break
+                        if direction == SUR_ESTE or direction == SUR_OESTE:
+                            if movement not in row_of_(piece_standpoint+SUR*mult):
+                                break
+                        if 0 <= movement <= 63: # VALID SQUARE
+                            
+                            if movement not in self.attacker_positions:
+                                if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
+                                    if movement not in self.defender_positions:
+                                        mov_target_positions.update({movement: self.boardRects[movement]}) 
 
-                                        # Threat on defender king ------------------------
-                                        _threat_emission.append(movement)
-                                        if movement in self.defender_kingLegalMoves:
-                                            # Entonces existe threat.
-                                            # Luego de esto corresponde encontrar un STOP:
-                                            # > king standpoint O  > ya-revisamos-todos-los-legalMoves
-                                            _threatening = True
+                                    # Threat on defender king ------------------------
+                                    _threat_emission.append(movement)
+                                    if movement in self.defender_kingLegalMoves:
+                                        # Entonces existe threat.
+                                        # Luego de esto corresponde encontrar un STOP:
+                                        # > king standpoint O  > ya-revisamos-todos-los-legalMoves
+                                        _threatening = True
+                                else: break
 
-                                    # Kill-movement
-                                    elif movement in self.defender_positions:
-                                        
-                                        # Threat STOP > king standpoint
-                                        if _threatening and self.defender_positions[movement] == 'Rey':
-                                            self.attacker_threatOnDefender['Reina'].append(_threat_emission)
-                                            _threatening = False
-                                        
-                                        on_target_kill_positions.update({movement:self.boardRects[movement]})
-                                        break
-                                    
-                                    # Threat STOP > ya-revisamos-todos-los-legalMoves
-                                    elif _threatening and movement not in self.defender_kingLegalMoves:
+                            # Kill-movement
+                            elif movement in self.defender_positions:
+                                if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
+                                    # Threat STOP > king standpoint
+                                    if _threatening and self.defender_positions[movement] == 'Rey':
                                         self.attacker_threatOnDefender['Reina'].append(_threat_emission)
                                         _threatening = False
+                                    
+                                    on_target_kill_positions.update({movement: self.boardRects[movement]})
+                                    break
+                                else: break
+                            
+                            # Threat STOP > ya-revisamos-todos-los-legalMoves
+                            elif _threatening and movement not in self.defender_kingLegalMoves:
+                                self.attacker_threatOnDefender['Reina'].append(_threat_emission)
+                                _threatening = False
 
-                                    break # previene propagación mas allá del primer bloqueo - rompe el mult
-                                else: break # rompe hasta la siguiente dirección.
+                            break # previene propagación mas allá del primer bloqueo - rompe el mult
+                        else: break # rompe hasta la siguiente dirección.
                 return mov_target_positions, on_target_kill_positions
+            return mov_target_positions, on_target_kill_positions
 
-    def king_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect]:
+    def king_objectives(self, piece_standpoint: int, perspective: str) -> dict[int, pygame.Rect]:
         '''Movimiento Rey:
         +NORTE
         +SUR
@@ -1625,10 +1656,10 @@ class Match(Scene):
                         if movement not in self.defender_kingLegalMoves:
                             if movement not in self.attacker_positions: # ally block
                                 self.attacker_kingLegalMoves.append(movement)
-                                mov_target_positions.update({movement:self.boardRects[movement]})
+                                mov_target_positions.update({movement: self.boardRects[movement]})
                             elif movement in self.defender_positions:
                                 self.attacker_kingLegalMoves.append(movement)
-                                on_target_kill_positions.update({movement:self.boardRects[movement]})
+                                on_target_kill_positions.update({movement: self.boardRects[movement]})
 
         return mov_target_positions, on_target_kill_positions
 
