@@ -630,7 +630,7 @@ class Match(Scene):
                 return True
             return False
 
-    def pawn_objectives(self,piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
+    def pawn_objectives(self, piece_standpoint: int, perspective: str) -> dict[int, pygame.Rect] | None:
         '''Movimiento Peón:
         NORTE (white)
         SUR (black)
@@ -642,8 +642,8 @@ class Match(Scene):
         '''
 
         # Visual feedback utils
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos 
-        on_target_kill_positions: dict[int,pygame.Rect] = {}
+        mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: self.boardRects[piece_standpoint]} # standpoint is always first pos 
+        on_target_kill_positions: dict[int, pygame.Rect] = {}
         
         # Objectives
         kill_positions: list[int] = []
@@ -941,7 +941,7 @@ class Match(Scene):
         piece_standpoint: int,
         perspective: str,
         fake_positions: dict[int, str] | None = None
-        ) -> dict[int,pygame.Rect] | None:
+        ) -> dict[int, pygame.Rect] | None:
         '''Movimiento Torre:
         +NORTE
         +SUR
@@ -952,8 +952,8 @@ class Match(Scene):
         '''
 
         # Visual feedback utils
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos
-        on_target_kill_positions: dict[int,pygame.Rect] = {}
+        mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: self.boardRects[piece_standpoint]} # standpoint is always first pos
+        on_target_kill_positions: dict[int, pygame.Rect] = {}
         
         # Objectives
         _threat_emission: list[int] = []
@@ -1141,57 +1141,70 @@ class Match(Scene):
                                         piece_standpoint+OESTE+SUR_OESTE])
         
         if perspective == 'defender':
-            for movement in horse_movements:
-                if 0 <= movement <= 63: # NORTE/SUR LIMIT
+            if self.attacker_singleOriginDirectThreat:
+                for movement in horse_movements:
+                    if 0 <= movement <= 63: # NORTE/SUR LIMIT
+                        
+                        if movement not in self.defender_positions:
+                            if movement in self.attacker_directThreatTrace:
+                                self.defender_legalMoves.add('Caballo')
+                        else: continue 
+                return
 
-                    if movement in self.attacker_directThreatTrace:
-                        self.defender_legalMoves.add('Caballo')
-                        return
-                    else: continue 
+            elif self.attacker_singleOriginDirectThreat == None:
+                for movement in horse_movements:
+                    if 0 <= movement <= 63: # NORTE/SUR LIMIT
+                        if movement not in self.defender_positions:
+                            if not self.exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
+                                self.defender_legalMoves.add('Caballo')
+                return
             return
 
         if perspective == 'attacker':
             if self.defender_singleOriginDirectThreat:
-                '''Entonces mis únicos movimientos posibles son bloquear o matar la amenaza.
+                '''
+                Únicos movimientos posibles: bloquear o matar la amenaza.
                 > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
-                > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace'''
+                > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace
+                NO verificar exposing-movements.
+                '''
                 for movement in horse_movements:
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT 
-                        if movement in self.defender_directThreatTrace:
-                            if movement not in self.defender_positions:
-
-                                # BLOCK saving position.
-                                _can_support = True
-                                mov_target_positions.update({movement: self.boardRects[movement]})
-                            elif movement == max(self.defender_directThreatTrace) or movement == min(self.black_directThreatTrace):
-
-                                # KILL saving position.
-                                _can_support = True
-                                on_target_kill_positions.update({movement: self.boardRects[movement]})
-                            else: continue
-                if not _can_support:
-                    return {}, {}
-            else:
+                        if movement not in self.attacker_positions:
+                            if movement in self.defender_directThreatTrace:
+                                if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
+                                    # KILL saving position.
+                                    on_target_kill_positions.update({movement: self.boardRects[movement]})
+                                else:
+                                    # BLOCK saving position.
+                                    mov_target_positions.update({movement: self.boardRects[movement]})
+                        else: continue
+                return mov_target_positions, on_target_kill_positions
+            
+            elif self.defender_singleOriginDirectThreat == None:
+                '''Unica pieza la cual podemos descartar todos sus movimientos si uno solo expone.'''
                 for movement in horse_movements:
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT 
+                        if movement not in self.attacker_positions:
 
-                        '''Unica pieza la cual podemos descartar todos sus movimientos si uno solo expone.'''
-                        if not self.exposing_direction(piece_standpoint, direction=movement):
-                            # Threat on defender king ------------------------
-                            if movement in self.defender_kingLegalMoves: 
-                                self.attacker_threatOnDefender['Caballo'].append(movement)
-                            # ------------------------------------------------
+                            if not self.exposing_direction(piece_standpoint, direction=movement, request_from="attacker"):
+                                # Threat on defender king ------------------------
+                                if movement in self.defender_kingLegalMoves: 
+                                    self.attacker_threatOnDefender['Caballo'].append(movement)
+                                # ------------------------------------------------
 
-                            # Movement
-                            if movement not in self.black_positions and movement not in self.white_positions:
-                                mov_target_positions.update({movement:self.boardRects[movement]})
-                            
-                            # Kill-movement
-                            elif movement in self.defender_positions:
-                                on_target_kill_positions.update({movement:self.boardRects[movement]})
-                        else: return {}, {}
-                        
+                                # Movement
+                                if movement not in self.defender_positions:
+                                    mov_target_positions.update({movement: self.boardRects[movement]})
+                                
+                                # Kill-movement
+                                elif movement in self.defender_positions:
+                                    on_target_kill_positions.update({movement:self.boardRects[movement]})
+
+                            else: return {}, {}
+                return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
+        return
 
     def bishop_objectives(
         self,
