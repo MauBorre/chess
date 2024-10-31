@@ -1650,6 +1650,7 @@ class Match(Scene):
                         if movement not in self.attacker_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
                             if movement not in self.attacker_threatOnDefender: # amenazas directas e indirectas
                                 self.defender_kingLegalMoves.append(movement)
+                    return
                 
                 if perspective == 'attacker':
                     if movement not in self.defender_threatOnAttacker:
@@ -1661,7 +1662,8 @@ class Match(Scene):
                                 self.attacker_kingLegalMoves.append(movement)
                                 on_target_kill_positions.update({movement: self.boardRects[movement]})
 
-        return mov_target_positions, on_target_kill_positions
+                    return mov_target_positions, on_target_kill_positions
+        return
 
     def draw_board(self):
 
