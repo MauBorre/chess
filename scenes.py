@@ -217,7 +217,7 @@ class Match(Scene):
 
         '''Si existe múltiple orígen de amenaza NUNCA habrá legalMoves por parte.
         de las piezas defensoras.'''
-        self.defender_legalMoves: set[str] = {} # NO se considera en SWAP
+        self.defender_legalMoves: set[str] = set() # NO se considera en SWAP
 
         '''Registro de AMENAZAS, MOVIMIENTOS LEGALES DEL REY, POSICIONES DE RESCATE: 
 
