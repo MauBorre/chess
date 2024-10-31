@@ -823,19 +823,19 @@ class Match(Scene):
                         return mov_target_positions, on_target_kill_positions
 
                     elif self.attacker_singleOriginDirectThreat == None: 
-                        if movement not in self.black_positions and movement not in self.white_positions: # piece block
+                        if movement not in self.attacker_positions and movement not in self.defender_positions: # piece block
                             if not self.exposing_direction(piece_standpoint, direction=SUR, request_from="attacker"):
                                 if piece_standpoint in self.in_base_Bpawns:
                                     mov_target_positions.update({movement:self.boardRects[movement]})
 
                                     # 2nd Movement 
                                     if movement+SUR <= 63: # board limit check
-                                        if movement+SUR not in self.black_positions and movement+SUR not in self.white_positions: # piece block
+                                        if movement+SUR not in self.attacker_positions and movement+SUR not in self.defender_positions: # piece block
                                             mov_target_positions.update({movement+SUR:self.boardRects[movement+SUR]})
+                                else: mov_target_positions.update({movement:self.boardRects[movement]})
                             else: pass
-                        else: mov_target_positions.update({movement:self.boardRects[movement]})
-
-                        # kill positions
+                        
+                        # kill-movements
                         # board limits check
                         if piece_standpoint+OESTE not in row_of_(piece_standpoint):
                             kill_positions.append(piece_standpoint+SUR_ESTE)
@@ -847,14 +847,15 @@ class Match(Scene):
                             kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
             
                         for kp in kill_positions:
-                            if kp not in self.black_positions and kp in self.white_positions:
-                                if not self.exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
-                                    on_target_kill_positions.update({kp:self.boardRects[kp]})
-                            
-                                    # Threat on defender king ------------------------
-                                    if kp in self.defender_kingLegalMoves:
-                                        self.attacker_threatOnDefender['Peón'].append(kp)
-                                    # ------------------------------------------------
+                            if kp not in self.attacker_positions:
+                                if kp in self.defender_positions:
+                                    if not self.exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
+                                        on_target_kill_positions.update({kp:self.boardRects[kp]})
+                                
+                                # Threat on defender king ------------------------
+                                if kp in self.defender_kingLegalMoves:
+                                    self.attacker_threatOnDefender['Peón'].append(kp)
+                                # ------------------------------------------------
 
             if self.turn_attacker == 'White': # Ataca hacia el NORTE
                 # 1st Movement
