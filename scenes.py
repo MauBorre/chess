@@ -747,10 +747,32 @@ class Match(Scene):
                             kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
 
                         for kp in kill_positions:
-                            if kp not in self.defender_positions:
+                            if kp in self.attacker_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
                                     if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
                                         self.defender_legalMoves.add('Peón')
+                                        
+                    elif self.attacker_singleOriginDirectThreat == None:
+                        if movement not in self.defender_positions or movement not in self.attacker_positions:
+                            if not self.exposing_direction(piece_standpoint, direction=NORTE, request_from="defender"):
+                                self.defender_legalMoves.add('Peón')
+                            else: pass
+                        
+                        # kill saving positions
+                        # board limits check
+                        if piece_standpoint+OESTE not in row_of_(piece_standpoint):
+                            kill_positions.append(piece_standpoint+NOR_ESTE)
+
+                        if piece_standpoint+ESTE not in row_of_(piece_standpoint):
+                            kill_positions.append(piece_standpoint+NOR_OESTE)
+
+                        elif len(kill_positions) == 0:
+                            kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
+
+                        for kp in kill_positions:
+                            if kp in self.attacker_positions:
+                                if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
+                                    self.defender_legalMoves.add('Peón')
             return
 
         if perspective == 'attacker':
@@ -789,7 +811,7 @@ class Match(Scene):
                         elif movement != max(self.defender_directThreatTrace) or movement != min(self.defender_directThreatTrace):
                             # BLOCK saving position
                             mov_target_positions.update({movement: self.boardRects[movement]})
-                    else:
+                    else: #elif self.attacker_singleOriginDirectThreat == None: 
                         if movement not in self.black_positions and movement not in self.white_positions: # piece block
                             if not self.exposing_direction(piece_standpoint, direction=SUR, request_from="attacker"):
                                 if piece_standpoint in self.in_base_Bpawns:
