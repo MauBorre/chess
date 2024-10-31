@@ -355,7 +355,7 @@ class Match(Scene):
         # Defender -----------------------------------------------------------------------------------------
         king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Rey").pop()
         self.king_objectives(king_standpoint,perspective='defender') # genero/reviso defender_kingLegalMoves.
-
+        
         for _threats_list in self.attacker_threatOnDefender.values():
             if king_standpoint in _threats_list:
                 if self.attacker_singleOriginDirectThreat == True: # Solo resulta True si conecta una vez
@@ -366,7 +366,6 @@ class Match(Scene):
             else: self.attacker_singleOriginDirectThreat = None
 
         if self.attacker_singleOriginDirectThreat != False:
-
             # Defender kingSupport (Actualizan movimientos legales del defensor para ver si perdió o empató)
             pawn_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='Peón')
             for _pawn in pawn_standpoints:
@@ -1062,7 +1061,7 @@ class Match(Scene):
                                         # BLOCK saving position.
                                         mov_target_positions.update({movement: self.boardRects[movement]})
                                 else: continue
-                            else: break     
+                            else: break # chocamos contra un bloqueo - romper el mult
                 return mov_target_positions, on_target_kill_positions
                 
             elif self.defender_singleOriginDirectThreat == None:
@@ -1074,7 +1073,7 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
 
-                            if movement not in self.attacker_positions:
+                            if movement not in self.attacker_positions and movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                     if movement not in self.defender_positions:
                                         mov_target_positions.update({movement: self.boardRects[movement]})
@@ -1087,16 +1086,17 @@ class Match(Scene):
                                         # > king standpoint O  > ya-revisamos-todos-los-legalMoves
                                         _threatening = True
                                 else: break # rompe hasta la siguiente dirección.  
-
+                                
                             # Kill-movement
                             elif movement in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
+                                    
                                     # Threat STOP > king standpoint
                                     if _threatening and self.defender_positions[movement] == 'Rey':
                                         self.attacker_threatOnDefender['Torre'].append(_threat_emission)
                                         _threatening = False
 
-                                    on_target_kill_positions.update({movement:self.boardRects[movement]})
+                                    on_target_kill_positions.update({movement: self.boardRects[movement]})
                                     break
                                 else: break
                                 
@@ -1105,8 +1105,7 @@ class Match(Scene):
                                 self.attacker_threatOnDefender['Torre'].append(_threat_emission)
                                 _threatening = False
 
-                            break # previene propagación mas allá del primer bloqueo - rompe el mult
-                        else: break # rompe hasta la siguiente dirección.
+                            else: break # chocamos contra un bloqueo - romper el mult
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
         return
@@ -1323,6 +1322,7 @@ class Match(Scene):
 
         if perspective == 'attacker':
             if self.defender_singleOriginDirectThreat:
+                print('aaa')
                 '''
                 Únicos movimientos posibles: bloquear o matar la amenaza.
                 > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
@@ -1364,7 +1364,7 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
 
-                            if movement not in self.attacker_positions:
+                            if movement not in self.attacker_positions and movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                     if movement not in self.defender_positions:
                                         mov_target_positions.update({movement:self.boardRects[movement]})
@@ -1396,7 +1396,7 @@ class Match(Scene):
                                 self.attacker_threatOnDefender['Alfil'].append(_threat_emission)
                                 _threatening = False
 
-                            else: break # previene propagación mas allá del primer bloqueo - rompe el mult
+                            else: break # chocamos contra un bloqueo - romper el mult
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
         return
@@ -1576,7 +1576,7 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
                             
-                            if movement not in self.attacker_positions:
+                            if movement not in self.attacker_positions and movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                     if movement not in self.defender_positions:
                                         mov_target_positions.update({movement: self.boardRects[movement]}) 
@@ -1607,8 +1607,7 @@ class Match(Scene):
                                 self.attacker_threatOnDefender['Reina'].append(_threat_emission)
                                 _threatening = False
 
-                            break # previene propagación mas allá del primer bloqueo - rompe el mult
-                        else: break # rompe hasta la siguiente dirección.
+                            else: break # chocamos contra un bloqueo - romper el mult
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
 
