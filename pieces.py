@@ -28,7 +28,7 @@ def reverse_expand_origins(
     de leer para el sistema.'''
     _black_positions: dict[int, str] = {}
     _white_positions: dict[int, str] = {}
-    dict_list = []
+    dict_list: list[dict[int, str]] = []
     for color in pieces_legible_origins.keys():
         key_val_reverse = []
         aux_d={}
