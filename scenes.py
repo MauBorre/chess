@@ -1729,7 +1729,7 @@ class Match(Scene):
                             self.killing = True
                             self.move_here = board_index
 
-                        elif SQUARE_SUBTYPE == "valid-movement": # movimientos inválidos nunca llegan a este estado
+                        elif SQUARE_SUBTYPE == "valid-movement":
                             self.move_here = board_index
                             if board_index in self.in_base_Bpawns:
                                 self.in_base_Bpawns.remove(board_index)
