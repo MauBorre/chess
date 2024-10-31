@@ -599,11 +599,11 @@ class Match(Scene):
 
             bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender,piece="Alfil")
             for _bishop in bishop_standpoints:
-                if self.bishop_objectives(_bishop, perspective='fake-attackerMov-toDef', fake_pos=fake_positions):
+                if self.bishop_objectives(_bishop, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
                     return True
 
             queen_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Reina").pop()
-            if self.queen_objectives(queen_standpoint, perspective='fake-attackerMov-toDef', fake_pos=fake_positions):
+            if self.queen_objectives(queen_standpoint, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
                 return True
             return False
 
@@ -622,11 +622,11 @@ class Match(Scene):
 
             bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="Alfil")
             for _bishop in bishop_standpoints:
-                if self.bishop_objectives(_bishop, perspective='fake-deffenderMov-toAtt', fake_pos=fake_positions):
+                if self.bishop_objectives(_bishop, perspective='fake-deffenderMov-toAtt', fake_positions=fake_positions):
                     return True
 
             queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece="Reina").pop()
-            if self.queen_objectives(queen_standpoint, perspective='fake-deffenderMov-toAtt', fake_pos=fake_positions):
+            if self.queen_objectives(queen_standpoint, perspective='fake-deffenderMov-toAtt', fake_positions=fake_positions):
                 return True
             return False
 
@@ -962,7 +962,7 @@ class Match(Scene):
         _threatening: bool = False
         rook_directions = [NORTE,SUR,ESTE,OESTE]
 
-        if perspective == 'fake-defenderMov-toAtt':
+        if perspective == 'fake-attackerMov-toDef':
             for direction in rook_directions:
                 for mult in range(1,8): # 1 to board_size
                     movement = piece_standpoint+direction*mult
@@ -982,7 +982,7 @@ class Match(Scene):
                                 return True
             return False
 
-        if perspective == 'fake-attackerMov-toDef':
+        if perspective == 'fake-defenderMov-toAtt':
             for direction in rook_directions:
                 for mult in range(1,8): # 1 to board_size
                     movement = piece_standpoint+direction*mult
@@ -1236,7 +1236,7 @@ class Match(Scene):
         _threatening: bool = False
         bishop_directions = [NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
-        if perspective == 'fake-defenderMov-toAtt':
+        if perspective == 'fake-attackerMov-toDef':
             for direction in bishop_directions:
                 for mult in range(1,8):
                     movement = piece_standpoint+direction*mult
@@ -1259,7 +1259,7 @@ class Match(Scene):
                                 return True
             return False
 
-        if perspective == 'fake-attackerMov-toDef':
+        if perspective == 'fake-defenderMov-toAtt':
             for direction in bishop_directions:
                 for mult in range(1,8):
                     movement = piece_standpoint+direction*mult
@@ -1420,16 +1420,15 @@ class Match(Scene):
             '''
         
             # Visual feedback utils
-            mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:self.boardRects[piece_standpoint]} # standpoint is always first pos
-            on_target_kill_positions: dict[int,pygame.Rect] = {}
+            mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: self.boardRects[piece_standpoint]} # standpoint is always first pos
+            on_target_kill_positions: dict[int, pygame.Rect] = {}
 
             # Objectives
             _threat_emission: list[int] = []
             _threatening: bool = False
-            _can_support: bool = False
             queen_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
-            if perspective == 'fake':
+            if perspective == 'fake-attackerMov-toDef': 
                 for direction in queen_directions:
                     for mult in range(1,8):
                         movement = piece_standpoint+direction*mult
@@ -1443,8 +1442,39 @@ class Match(Scene):
                             if movement not in row_of_(piece_standpoint+SUR*mult):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
+
+                            # bloqueos aliados
                             if movement in self.defender_positions:
-                                break # recorrer otra dirección.
+                                break
+                            # descartar kill-movements que NO sean el rey
+                            if movement in self.attacker_positions:
+                                break
+                            elif movement in fake_positions:
+                                if fake_positions[movement] == 'Rey':
+                                    return True
+                return False
+
+            if perspective == 'fake-defenderMov-toAtt':
+                for direction in queen_directions:
+                    for mult in range(1,8):
+                        movement = piece_standpoint+direction*mult
+                        if direction == ESTE or direction == OESTE:
+                            if movement not in row_of_(piece_standpoint):     
+                                break
+                        if direction == NOR_ESTE or direction == NOR_OESTE:
+                            if movement not in row_of_(piece_standpoint+NORTE*mult):
+                                break
+                        if direction == SUR_ESTE or direction == SUR_OESTE:
+                            if movement not in row_of_(piece_standpoint+SUR*mult):
+                                break
+                        if 0 <= movement <= 63: # VALID SQUARE
+
+                            # bloqueos aliados
+                            if movement in self.attacker_positions:
+                                break
+                            # descartar kill-movements que NO sean el rey
+                            if movement in self.defender_positions:
+                                break
                             elif movement in fake_positions:
                                 if fake_positions[movement] == 'Rey':
                                     return True
