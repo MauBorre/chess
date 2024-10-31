@@ -714,29 +714,43 @@ class Match(Scene):
 
             if self.turn_defender == 'White': # defiende hacia el NORTE
 
-                # 1st Movement -BLOCK saving position-
+                # 1st Movement
                 movement = piece_standpoint+NORTE
                 if movement <= 63: # board limit
-                    if movement in self.attacker_directThreatTrace:
-                        self.defender_legalMoves.add('Peón')
 
-                # 2nd Movement -BLOCK saving position-
-                if piece_standpoint in self.in_base_Bpawns:
-                        if movement+NORTE in self.attacker_directThreatTrace:
-                            self.defender_legalMoves.add('Peón')
+                    if self.attacker_singleOriginDirectThreat == True:
+                        if movement not in self.defender_positions:
+                            if not self.exposing_direction(piece_standpoint, direction=NORTE, request_from="defender"):
 
-                # KILL saving positions
-                # Verificamos que el movimiento no rompa los límites del tablero
-                if piece_standpoint+OESTE not in row_of_(piece_standpoint):
-                    kill_positions.append(piece_standpoint+NOR_ESTE)
-                if piece_standpoint+ESTE not in row_of_(piece_standpoint):
-                    kill_positions.append(piece_standpoint+NOR_OESTE)
-                elif len(kill_positions) == 0:
-                    kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
+                                # 1st Movement -BLOCK saving position-
+                                if movement in self.attacker_directThreatTrace:
+                                    self.defender_legalMoves.add('Peón')
+                                
+                                # 2nd Movement
+                                if piece_standpoint in self.in_base_Wpawns:
+                                    if movement+NORTE not in self.defender_positions:
+                                        
+                                        # 2nd Movement -BLOCK saving position-
+                                        if movement+NORTE in self.attacker_directThreatTrace:
+                                            self.defender_legalMoves.add('Peón')
+                            else: pass
+                        else:
+                            # kill saving positions
+                            # board limits check
+                            if piece_standpoint+OESTE not in row_of_(piece_standpoint):
+                                kill_positions.append(piece_standpoint+NOR_ESTE)
 
-                for kp in kill_positions:
-                    if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
-                        self.defender_legalMoves.add('Peón')
+                            if piece_standpoint+ESTE not in row_of_(piece_standpoint):
+                                kill_positions.append(piece_standpoint+NOR_OESTE)
+
+                            elif len(kill_positions) == 0:
+                                kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
+
+                            for kp in kill_positions:
+                                if kp not in self.defender_positions:
+                                    if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
+                                        if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
+                                            self.defender_legalMoves.add('Peón')
             return
 
         if perspective == 'attacker':
