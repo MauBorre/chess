@@ -1396,8 +1396,7 @@ class Match(Scene):
                                 self.attacker_threatOnDefender['Alfil'].append(_threat_emission)
                                 _threatening = False
 
-                            break # previene propagación mas allá del primer bloqueo - rompe el mult
-                        else: break # rompe hasta la siguiente dirección.
+                            else: break # previene propagación mas allá del primer bloqueo - rompe el mult
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
         return
