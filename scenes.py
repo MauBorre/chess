@@ -366,6 +366,7 @@ class Match(Scene):
             else: self.attacker_singleOriginDirectThreat = None
 
         if self.attacker_singleOriginDirectThreat != False:
+
             # Defender kingSupport (Actualizan movimientos legales del defensor para ver si perdió o empató)
             pawn_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='Peón')
             for _pawn in pawn_standpoints:
@@ -853,9 +854,8 @@ class Match(Scene):
                                         on_target_kill_positions.update({kp:self.boardRects[kp]})
                                 
                                 # Threat on defender king ------------------------
-                                if kp in self.defender_kingLegalMoves:
-                                    self.attacker_threatOnDefender['Peón'].append(kp)
-                                # ------------------------------------------------
+                                self.attacker_threatOnDefender.update({'Peón': kp})
+
                         return mov_target_positions, on_target_kill_positions
 
             if self.turn_attacker == 'White': # Ataca hacia el NORTE
@@ -930,9 +930,8 @@ class Match(Scene):
                                         on_target_kill_positions.update({kp:self.boardRects[kp]})
 
                                 # Threat on defender king ------------------------
-                                if kp in self.defender_kingLegalMoves:
-                                    self.attacker_threatOnDefender['Peón'].append(kp)
-                                # ------------------------------------------------
+                                self.attacker_threatOnDefender.update({'Peón': kp})
+
                         return mov_target_positions, on_target_kill_positions
                 
             return mov_target_positions, on_target_kill_positions 
@@ -958,7 +957,6 @@ class Match(Scene):
         
         # Objectives
         _threat_emission: list[int] = []
-        _threatening: bool = False
         rook_directions = [NORTE,SUR,ESTE,OESTE]
 
         if perspective == 'fake-attackerMov-toDef':
@@ -1075,37 +1073,21 @@ class Match(Scene):
 
                             if movement not in self.attacker_positions and movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
-                                    if movement not in self.defender_positions:
-                                        mov_target_positions.update({movement: self.boardRects[movement]})
-
-                                    # Threat on defender king ------------------------
                                     _threat_emission.append(movement)
-                                    if movement in self.defender_kingLegalMoves:
-                                        # Entonces existe threat.
-                                        # Luego de esto corresponde encontrar un STOP:
-                                        # > king standpoint O  > ya-revisamos-todos-los-legalMoves
-                                        _threatening = True
+                                    mov_target_positions.update({movement: self.boardRects[movement]})
                                 else: break # rompe hasta la siguiente dirección.  
                                 
                             # Kill-movement
                             elif movement in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
-                                    
-                                    # Threat STOP > king standpoint
-                                    if _threatening and self.defender_positions[movement] == 'Rey':
-                                        self.attacker_threatOnDefender['Torre'].append(_threat_emission)
-                                        _threatening = False
-
+                                    _threat_emission.append(movement)
                                     on_target_kill_positions.update({movement: self.boardRects[movement]})
                                     break
                                 else: break
-                                
-                            # Threat STOP > ya revisamos todos los legalMoves
-                            elif _threatening and movement not in self.defender_kingLegalMoves:
-                                self.attacker_threatOnDefender['Torre'].append(_threat_emission)
-                                _threatening = False
+                            else: 
+                                self.attacker_threatOnDefender.update({'Torre': _threat_emission})
+                                break # chocamos contra un bloqueo - romper el mult
 
-                            else: break # chocamos contra un bloqueo - romper el mult
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
         return
@@ -1203,9 +1185,7 @@ class Match(Scene):
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
 
                                 # Threat on defender king ------------------------
-                                if movement in self.defender_kingLegalMoves: 
-                                    self.attacker_threatOnDefender['Caballo'].append(movement)
-                                # ------------------------------------------------
+                                self.attacker_threatOnDefender.update({'Caballo': movement})
 
                             else: return {}, {}
                 return mov_target_positions, on_target_kill_positions
@@ -1232,7 +1212,6 @@ class Match(Scene):
         
         # Objectives
         _threat_emission: list[int] = []
-        _threatening: bool = False
         bishop_directions = [NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
         if perspective == 'fake-attackerMov-toDef':
@@ -1322,7 +1301,6 @@ class Match(Scene):
 
         if perspective == 'attacker':
             if self.defender_singleOriginDirectThreat:
-                print('aaa')
                 '''
                 Únicos movimientos posibles: bloquear o matar la amenaza.
                 > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
@@ -1366,37 +1344,21 @@ class Match(Scene):
 
                             if movement not in self.attacker_positions and movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
-                                    if movement not in self.defender_positions:
-                                        mov_target_positions.update({movement:self.boardRects[movement]})
-
-                                    # Threat on defender king ------------------------
-                                    _threat_emission.append(movement)
-                                    # King checks
-                                    if movement in self.defender_kingLegalMoves:
-                                        # Entonces existe threat.
-                                        # Luego de esto corresponde encontrar un STOP:
-                                        # > king standpoint O  > ya-revisamos-todos-los-legalMoves,
-                                        _threatening = True
+                                        _threat_emission.append(movement)
+                                        mov_target_positions.update({movement: self.boardRects[movement]})
                                 else: break # rompe hasta la siguiente dirección.
 
                             # Kill-movement
                             elif movement in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
-                                    # Threat STOP > king standpoint
-                                    if _threatening and self.defender_positions[movement] == 'Rey':
-                                        self.attacker_threatOnDefender['Alfil'].append(_threat_emission)
-                                        _threatening = False
-
+                                    _threat_emission.append(movement)
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
                                     break
                                 else: break
-                            
-                            # Threat STOP > ya-revisamos-todos-los-legalMoves
-                            elif _threatening and movement not in self.defender_kingLegalMoves:
-                                self.attacker_threatOnDefender['Alfil'].append(_threat_emission)
-                                _threatening = False
+                            else:
+                                self.attacker_threatOnDefender.update({'Alfil': _threat_emission})
+                                break # chocamos contra un bloqueo - romper el mult
 
-                            else: break # chocamos contra un bloqueo - romper el mult
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
         return
@@ -1425,7 +1387,6 @@ class Match(Scene):
 
         # Objectives
         _threat_emission: list[int] = []
-        _threatening: bool = False
         queen_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
         if perspective == 'fake-attackerMov-toDef': 
@@ -1578,36 +1539,21 @@ class Match(Scene):
                             
                             if movement not in self.attacker_positions and movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
-                                    if movement not in self.defender_positions:
-                                        mov_target_positions.update({movement: self.boardRects[movement]}) 
-
-                                    # Threat on defender king ------------------------
                                     _threat_emission.append(movement)
-                                    if movement in self.defender_kingLegalMoves:
-                                        # Entonces existe threat.
-                                        # Luego de esto corresponde encontrar un STOP:
-                                        # > king standpoint O  > ya-revisamos-todos-los-legalMoves
-                                        _threatening = True
+                                    mov_target_positions.update({movement: self.boardRects[movement]}) 
                                 else: break
 
                             # Kill-movement
                             elif movement in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
-                                    # Threat STOP > king standpoint
-                                    if _threatening and self.defender_positions[movement] == 'Rey':
-                                        self.attacker_threatOnDefender['Reina'].append(_threat_emission)
-                                        _threatening = False
-                                    
+                                    _threat_emission.append(movement) 
                                     on_target_kill_positions.update({movement: self.boardRects[movement]})
                                     break
                                 else: break
-                            
-                            # Threat STOP > ya-revisamos-todos-los-legalMoves
-                            elif _threatening and movement not in self.defender_kingLegalMoves:
-                                self.attacker_threatOnDefender['Reina'].append(_threat_emission)
-                                _threatening = False
+                            else: 
+                                self.attacker_threatOnDefender.update({'Reina': _threat_emission})
+                                break # chocamos contra un bloqueo - romper el mult
 
-                            else: break # chocamos contra un bloqueo - romper el mult
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
 
@@ -1653,7 +1599,7 @@ class Match(Scene):
                 
                 if perspective == 'attacker':
                     if movement not in self.defender_threatOnAttacker:
-                        if movement not in self.defender_kingLegalMoves:
+                        if movement not in self.defender_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
                             if movement not in self.attacker_positions: # ally block
                                 self.attacker_kingLegalMoves.append(movement)
                                 mov_target_positions.update({movement: self.boardRects[movement]})
