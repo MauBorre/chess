@@ -652,15 +652,31 @@ class Match(Scene):
         if perspective == 'defender' :
             if self.turn_defender == 'Black': # defiende hacia el SUR
             
-                # 1st Movement -BLOCK saving position-
+                # 1st Movement
                 movement = piece_standpoint+SUR
                 if movement <= 63: # board limit
 
-                    '''
-                    Este puede ser un movimiento legal y ya, no se si debo
-                    revisar que "bloquee" tan asi.
-                    O quizas si...
-                    '''
+                    if self.attacker_singleOriginDirectThreat == True:
+                        if movement not in self.defender_positions:
+                            
+                            # 1st Movement -BLOCK saving position-
+                            if movement in self.attacker_directThreatTrace:
+                                self.defender_legalMoves.add('Peón')
+
+                            # 2nd Movement -BLOCK saving position-
+                            if piece_standpoint in self.in_base_Bpawns:
+
+                                if movement+SUR not in self.defender_positions:
+                                    if movement+SUR in self.attacker_directThreatTrace:
+                                        self.defender_legalMoves.add('Peón')    
+
+                    elif self.attacker_singleOriginDirectThreat == None:
+                        # bloqueos
+                        # no-expositivos al jaque
+                        ...
+
+                    # revisar mov no-expositivos al jaque
+
                     if movement in self.attacker_directThreatTrace:
                         self.defender_legalMoves.add('Peón')
 
