@@ -713,6 +713,7 @@ class Match(Scene):
                                 if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
                                         self.defender_legalMoves.add('Peón')
                         return
+                return
 
             if self.turn_defender == 'White': # defiende hacia el NORTE
 
@@ -777,6 +778,7 @@ class Match(Scene):
                                 if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
                                     self.defender_legalMoves.add('Peón')
                         return
+                return
             return
 
         if perspective == 'attacker':
@@ -856,6 +858,7 @@ class Match(Scene):
                                     self.attacker_threatOnDefender['Peón'].append(kp)
                                 # ------------------------------------------------
                         return mov_target_positions, on_target_kill_positions
+                return mov_target_positions, on_target_kill_positions
 
             if self.turn_attacker == 'White': # Ataca hacia el NORTE
 
@@ -910,7 +913,6 @@ class Match(Scene):
                                             mov_target_positions.update({movement+NORTE:self.boardRects[movement+NORTE]}) # 2nd Movement
                                 else: mov_target_positions.update({movement:self.boardRects[movement]}) # 1st Movement
                             else: pass
-                        
                     
                         # kill-movements
                         # board limits check
@@ -934,7 +936,9 @@ class Match(Scene):
                                     self.attacker_threatOnDefender['Peón'].append(kp)
                                 # ------------------------------------------------
                         return mov_target_positions, on_target_kill_positions
-            return mov_target_positions, on_target_kill_positions
+                return mov_target_positions, on_target_kill_positions
+            return 
+        return
 
     def rook_objectives(
         self,
@@ -1008,15 +1012,15 @@ class Match(Scene):
             return False
         
         if perspective == 'defender':
-            for direction in tower_directions:
-                for mult in range(1,8): # 1 to board_size
-                    movement = piece_standpoint+direction*mult
-                    if direction == ESTE or direction == OESTE:
-                        if movement not in row_of_(piece_standpoint):
-                            break
-                    if 0 <= movement <= 63: # VALID SQUARE
+            if self.attacker_singleOriginDirectThreat == True:
+                for direction in tower_directions:
+                    for mult in range(1,8): # 1 to board_size
+                        movement = piece_standpoint+direction*mult
+                        if direction == ESTE or direction == OESTE:
+                            if movement not in row_of_(piece_standpoint):
+                                break
+                        if 0 <= movement <= 63: # VALID SQUARE
 
-                        if self.attacker_singleOriginDirectThreat == True:
                             if movement in self.defender_positions:
                                 break
                             if movement in self.attacker_directThreatTrace:
@@ -1024,15 +1028,23 @@ class Match(Scene):
                                 self.defender_legalMoves.add('Torre') 
                                 return
                             else: continue
+                return
 
-                        elif self.attacker_singleOriginDirectThreat == None: # revisiones normales de movimiento
-                            # bloqueos
+            elif self.attacker_singleOriginDirectThreat == None: # revisiones normales de movimiento
+                for direction in tower_directions:
+                    for mult in range(1,8): # 1 to board_size
+                        movement = piece_standpoint+direction*mult
+                        if direction == ESTE or direction == OESTE:
+                            if movement not in row_of_(piece_standpoint):
+                                break
+                        if 0 <= movement <= 63: # VALID SQUARE
+                            
                             if movement not in self.defender_positions:
-                                # no-expositivos al jaque
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
                                     # sea movement o kill-movement nos vale por igual, tiene posibilidad de movimiento.
                                     self.defender_legalMoves.add('Torre')
                             else: break
+                return
             return
 
         if perspective == 'attacker': 
@@ -1063,7 +1075,7 @@ class Match(Scene):
                             else: continue        
                 if not _can_support:
                     return {}, {}
-            else:
+            elif self.defender_singleOriginDirectThreat == None:
                 for direction in tower_directions:
                     for mult in range(1,8): # 1 to board_size
                         movement = piece_standpoint+direction*mult
@@ -1102,7 +1114,8 @@ class Match(Scene):
                                 self.attacker_threatOnDefender['Torre'].append(_threat_emission)
                                 _threatening = False
 
-                            break # previene propagación mas allá del primer bloqueo - rompe el mult             
+                            break # previene propagación mas allá del primer bloqueo - rompe el mult
+                
             return mov_target_positions, on_target_kill_positions
 
     def horse_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
@@ -1187,10 +1200,6 @@ class Match(Scene):
                         if movement not in self.attacker_positions:
 
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from="attacker"):
-                                # Threat on defender king ------------------------
-                                if movement in self.defender_kingLegalMoves: 
-                                    self.attacker_threatOnDefender['Caballo'].append(movement)
-                                # ------------------------------------------------
 
                                 # Movement
                                 if movement not in self.defender_positions:
@@ -1199,6 +1208,11 @@ class Match(Scene):
                                 # Kill-movement
                                 elif movement in self.defender_positions:
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
+
+                                # Threat on defender king ------------------------
+                                if movement in self.defender_kingLegalMoves: 
+                                    self.attacker_threatOnDefender['Caballo'].append(movement)
+                                # ------------------------------------------------
 
                             else: return {}, {}
                 return mov_target_positions, on_target_kill_positions
