@@ -196,7 +196,7 @@ class Match(Scene):
         # Board defaults ---------------------------------------------------
         # Black
         self.in_base_Bpawns: list[int] = [bpawn for bpawn in pieces.origins['negras']['Peón']] # no swap
-        self.black_positions: dict[int, str] = pieces.black_positions
+        self.black_positions: dict[int, str] = pieces.black_positions.copy()
         self.black_threatOnWhite: dict[str, int] = {piece:[] for piece in pieces.origins['negras']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
         self.black_kingLegalMoves: list[int] = []
         self.black_singleOriginDirectThreat: bool | None = None 
@@ -205,7 +205,7 @@ class Match(Scene):
         # White
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']] # no swap
 
-        self.white_positions: dict[int, str] = pieces.white_positions
+        self.white_positions: dict[int, str] = pieces.white_positions.copy()
         self.white_threatOnBlack: dict[str, int] = {piece:[] for piece in pieces.origins['blancas']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
         self.white_kingLegalMoves: list[int] = []
         self.white_singleOriginDirectThreat: bool | None = None 
@@ -409,7 +409,7 @@ class Match(Scene):
 
         # Black
         self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['negras']['Peón']]
-        self.black_positions: dict[int, str] = pieces.black_positions
+        self.black_positions: dict[int, str] = pieces.black_positions.copy()
         self.black_threatOnWhite: dict[str, int] = {piece:[] for piece in pieces.origins['negras']}
         self.black_kingLegalMoves: list[int] = []
         self.black_singleOriginDirectThreat: bool | None = None 
@@ -417,7 +417,7 @@ class Match(Scene):
 
         # White
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['blancas']['Peón']]
-        self.white_positions: dict[int, str] = pieces.white_positions
+        self.white_positions: dict[int, str] = pieces.white_positions.copy()
         self.white_threatOnBlack: dict[str, int] = {piece:[] for piece in pieces.origins['blancas']} 
         self.white_kingLegalMoves: list[int] = []
         self.white_singleOriginDirectThreat: bool | None = None 
@@ -427,7 +427,7 @@ class Match(Scene):
         # General
         self.turn_attacker: str = 'White'
         self.turn_defender: str = 'Black'
-        self.defender_legalMoves: set[str] = {}
+        self.defender_legalMoves: set[str] = set()
 
         # Defender
         self.defender_positions: dict[int, str] = self.black_positions 
