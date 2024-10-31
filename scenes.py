@@ -1123,7 +1123,6 @@ class Match(Scene):
         on_target_kill_positions: dict[int,pygame.Rect] = {}
 
         # Objectives
-        _can_support: bool = False
         horse_movements = []
 
         # ESTE / OESTE LIMITS
