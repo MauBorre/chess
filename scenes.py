@@ -971,15 +971,12 @@ class Match(Scene):
                             break
                     if 0 <= movement <= 63: # VALID SQUARE
 
-                        # Revisar bloqueos aliados
+                        # bloqueos aliados
                         if movement in self.defender_positions:
                             break 
-
-                        # Des-estimar kill-movements que NO sean al rey
+                        # descartar kill-movements que NO sean al rey
                         if movement in self.attacker_positions:
                             break
-
-                        # Si encontramos al rey, devolver TRUE
                         elif movement in fake_positions:
                             if fake_positions[movement] == 'Rey':
                                 return True
@@ -993,16 +990,12 @@ class Match(Scene):
                         if movement not in row_of_(piece_standpoint):
                             break
                     if 0 <= movement <= 63: # VALID SQUARE
-
-                        # Revisar bloqueos aliados
+                        # bloqueos aliados
                         if movement in self.attacker_positions:
                             break 
-
-                        # Des-estimar kill-movements que NO sean al rey
+                        # descartar kill-movements que NO sean al rey
                         if movement in self.defender_positions:
                             break
-
-                        # Si encontramos al rey, devolver TRUE
                         elif movement in fake_positions:
                             if fake_positions[movement] == 'Rey':
                                 return True
@@ -1241,10 +1234,9 @@ class Match(Scene):
         # Objectives
         _threat_emission: list[int] = []
         _threatening: bool = False
-        _can_support: bool = False
         bishop_directions = [NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
-        if perspective == 'fake':
+        if perspective == 'fake-defenderMov-toAtt':
             for direction in bishop_directions:
                 for mult in range(1,8):
                     movement = piece_standpoint+direction*mult
@@ -1255,8 +1247,35 @@ class Match(Scene):
                         if movement not in row_of_(piece_standpoint+SUR*mult):
                             break
                     if 0 <= movement <= 63: # VALID SQUARE
+
+                        # bloqueos aliados
                         if movement in self.defender_positions:
-                            break # recorrer otra posición
+                            break
+                        # descartar kill-movements que NO sean el rey
+                        if movement in self.attacker_positions:
+                            break
+                        elif movement in fake_positions:
+                            if fake_positions[movement] == 'Rey':
+                                return True
+            return False
+
+        if perspective == 'fake-attackerMov-toDef':
+            for direction in bishop_directions:
+                for mult in range(1,8):
+                    movement = piece_standpoint+direction*mult
+                    if direction == NOR_ESTE or direction == NOR_OESTE:
+                        if movement not in row_of_(piece_standpoint+NORTE*mult):
+                            break
+                    if direction == SUR_ESTE or direction == SUR_OESTE:
+                        if movement not in row_of_(piece_standpoint+SUR*mult):
+                            break
+                    if 0 <= movement <= 63: # VALID SQUARE
+                        # bloqueos aliados
+                        if movement in self.attacker_positions:
+                            break
+                        # descartar kill-movements que NO sean el rey
+                        if movement in self.defender_positions:
+                            break 
                         elif movement in fake_positions:
                             if fake_positions[movement] == 'Rey':
                                 return True
