@@ -348,16 +348,20 @@ class Match(Scene):
             for _horse in horse_standpoints:
                 self.horse_objectives(_horse, perspective='attacker')
 
-            queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece="Reina").pop()
-            self.queen_objectives(queen_standpoint, perspective='attacker')
+            queen_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="Reina")
+            if len(queen_standpoints) != 0:
+                _queen = queen_standpoints.pop()
+                self.queen_objectives(_queen, perspective='attacker')
         # --------------------------------------------------------------------------------------------------
 
         # Defender -----------------------------------------------------------------------------------------
-        king_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Rey").pop()
-        self.king_objectives(king_standpoint,perspective='defender') # genero/reviso defender_kingLegalMoves.
+        king_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender, piece="Rey")
+        if len(king_standpoints) != 0:
+            _king = king_standpoints.pop()
+        self.king_objectives(_king,perspective='defender') # genero/reviso defender_kingLegalMoves.
         
         for _threats_list in self.attacker_threatOnDefender.values():
-            if king_standpoint in _threats_list:
+            if _king in _threats_list:
                 if self.attacker_singleOriginDirectThreat == True: # Solo resulta True si conecta una vez
                     self.attacker_singleOriginDirectThreat == False # False es el caso multiple origen
                 else:
@@ -384,8 +388,10 @@ class Match(Scene):
             for _horse in horse_standpoints:
                 self.horse_objectives(_horse, perspective='defender')
             
-            queen_standpoint = self.get_piece_standpoint(color=self.turn_defender, piece="Reina").pop()
-            self.queen_objectives(queen_standpoint, perspective='defender')
+            queen_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="Reina")
+            if len(queen_standpoints) != 0:
+                _queen = queen_standpoints.pop()
+            self.queen_objectives(_queen, perspective='defender')
         # -------------------------------------------------------------------------------------------------
 
     def reset_board(self):
@@ -593,18 +599,23 @@ class Match(Scene):
             
             # Revisar objetivos inyectando fake_positions.
             rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender,piece="Torre")
-            for _rook in rook_standpoints:
-                if self.rook_objectives(_rook, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
-                    return True
+            if len(rook_standpoints) != 0:
+                for _rook in rook_standpoints:
+                    if self.rook_objectives(_rook, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
+                        return True
 
             bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender,piece="Alfil")
-            for _bishop in bishop_standpoints:
-                if self.bishop_objectives(_bishop, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
-                    return True
+            if len(bishop_standpoints) != 0:
+                for _bishop in bishop_standpoints:
+                    if self.bishop_objectives(_bishop, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
+                        return True
 
-            queen_standpoint: int = self.get_piece_standpoint(color=self.turn_defender, piece="Reina").pop()
-            if self.queen_objectives(queen_standpoint, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
-                return True
+            # BUG similar con el rey, si esta pieza muere salta un error porque se busca algo que ya no existe.
+            queen_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender, piece="Reina")
+            if len(queen_standpoints) != 0:
+                _queen = queen_standpoints.pop()
+                if self.queen_objectives(_queen, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
+                    return True
             return False
 
         if request_from == 'defender':
@@ -625,9 +636,11 @@ class Match(Scene):
                 if self.bishop_objectives(_bishop, perspective='fake-deffenderMov-toAtt', fake_positions=fake_positions):
                     return True
 
-            queen_standpoint: int = self.get_piece_standpoint(color=self.turn_attacker, piece="Reina").pop()
-            if self.queen_objectives(queen_standpoint, perspective='fake-deffenderMov-toAtt', fake_positions=fake_positions):
-                return True
+            queen_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="Reina")
+            if len(queen_standpoints) != 0:
+                _queen = queen_standpoints.pop()
+                if self.queen_objectives(_queen, perspective='fake-deffenderMov-toAtt', fake_positions=fake_positions):
+                    return True
             return False
 
     def pawn_objectives(self, piece_standpoint: int, perspective: str) -> dict[int, pygame.Rect] | None:
@@ -1761,6 +1774,7 @@ class Match(Scene):
             for k,v in self.white_positions.items():
                 if v == piece:
                     _actual_standpoints.append(k)
+
         return _actual_standpoints
 
     def decide_check(self):
