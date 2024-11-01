@@ -4,23 +4,25 @@ from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OE
 from board import row_of_
 import pieces
 
-class PlayerColor__TeamUnit:
-    name = ...
-
-    initial_positions = ...
-
-    actual_positions = ...
-
-    visualFeedback_rects = ...
-
-    pieces = ...
-
-class Black(PlayerColor__TeamUnit):
+class Black:
     name = 'black'
+    positions: dict[int, str] = pieces.black_positions.copy()
+    in_base_pawns: list[int] = [bpawn for bpawn in pieces.origins['black']['pawn']]
+    threat_on_enemy: dict[str, int] = {piece:[] for piece in pieces.origins['black']}
+    king_legal_moves: list[int] = []
+    threat_origin = 'single' or 'mult' or 'none'
+    # singleOrigin_directThreat: bool | None = None
+    direct_threat_trace: list[int] = []
     
-
-class White(PlayerColor__TeamUnit):
+class White:
     name = 'white'
+    positions: dict[int, str] = pieces.white_positions.copy()
+    in_base_panws: list[int] = [wpawn for wpawn in pieces.origins['white']['pawn']]
+    threat_on_enemy: dict[str, int] = {piece:[] for piece in pieces.origins['white']}
+    king_legal_moves: list[int] = []
+    threat_origin = 'single' or 'mult' or 'none'
+    # singleOrigin_directThreat: bool | None = None
+    direct_threat_trace: list[int] = []
 
 class Turn:
     attacker = Black()
@@ -30,9 +32,10 @@ class Turn:
         Turn.defender, Turn.attacker = Turn.attacker, Turn.defender
 
 class Match(MatchDrawer):
-    def __init__(self, instructions):
+    def __init__(self, instructions, ctrl_emitter, screen):
+        super().__init__(screen)
         self._instructions = instructions
-        self._control_input = dict()
+        self._control_input = ctrl_emitter
         Turn()
             
         #screen
