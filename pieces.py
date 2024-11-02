@@ -1,28 +1,28 @@
 origins: dict[str,dict[str,list[int]]] = { #Legible pero no ideal para render
-    'negras': {
-        'Torre':[0,7],
-        'Caballo':[1,6],
-        'Alfil':[2,5],
-        'Reina':[3],
-        'Rey':[4],
-        'Peón':[8,9,10,11,12,13,14,15]
+    'black': {
+        'rook':[0,7],
+        'horse':[1,6],
+        'bishop':[2,5],
+        'queen':[3],
+        'king':[4],
+        'pawn':[8,9,10,11,12,13,14,15]
         },
-    'blancas': {
-        'Torre':[63,56],
-        'Caballo':[62,57],
-        'Alfil':[61,58],
-        'Reina':[59],
-        'Rey':[60],
-        'Peón':[55,54,53,52,51,50,49,48]
+    'white': {
+        'rook':[63,56],
+        'horse':[62,57],
+        'bishop':[61,58],
+        'queen':[59],
+        'king':[60],
+        'pawn':[55,54,53,52,51,50,49,48]
         }
     }
 
 def reverse_expand_origins(
     pieces_legible_origins: dict[str,dict[str,list[int]]]
     ) -> dict[int,str]:
-    '''Transforma dict={'color...': {'peon':[0,1,2]}}
-    En color-A_dict={0:peon,1:peon,2:peon}
-        color-B_dict={0:peon,1:peon,2:peon}
+    '''Transforma dict={'color...': {'pawn':[0,1,2]}}
+    En color-A_dict={0:pawn,1:pawn,2:pawn}
+        color-B_dict={0:pawn,1:pawn,2:pawn}
 
     Uno es fácil de leer para nosotros, el otro es fácil
     de leer para el sistema.'''
