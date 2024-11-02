@@ -268,8 +268,7 @@ class Match(Scene):
         self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace
 
     def update_turn_objectives(self):
-        '''Llama todas las funciones _objectives() con sus correctas perspectivas
-        del turno en juego.
+        '''Llama todas las funciones _objectives() con sus correctas perspectivas-de-turno.
 
         Internamente se revisará:
 
@@ -985,12 +984,11 @@ class Match(Scene):
                         # bloqueos aliados
                         if movement in self.defender_positions:
                             break 
-                        # descartar kill-movements que NO sean al rey
-                        if movement in self.attacker_positions:
-                            break
+
                         elif movement in fake_positions:
                             if fake_positions[movement] == 'king':
                                 return True
+                            else: break # descartar kill-movements que NO sean al rey
             return False
 
         if perspective == 'fake-defenderMov-toAtt':
@@ -1005,12 +1003,11 @@ class Match(Scene):
                         # bloqueos aliados
                         if movement in self.attacker_positions:
                             break 
-                        # descartar kill-movements que NO sean al rey
-                        if movement in self.defender_positions:
-                            break
+
                         elif movement in fake_positions:
                             if fake_positions[movement] == 'king':
                                 return True
+                            else: break # descartar kill-movements que NO sean al rey
             return False
         
         if perspective == 'defender':
@@ -1243,12 +1240,11 @@ class Match(Scene):
                         # bloqueos aliados
                         if movement in self.defender_positions:
                             break
-                        # descartar kill-movements que NO sean el rey
-                        if movement in self.attacker_positions:
-                            break
+
                         elif movement in fake_positions:
                             if fake_positions[movement] == 'king':
                                 return True
+                            else: break # descartar kill-movements que NO sean el rey
             return False
 
         if perspective == 'fake-defenderMov-toAtt':
@@ -1266,12 +1262,11 @@ class Match(Scene):
                         # bloqueos aliados
                         if movement in self.attacker_positions:
                             break
-                        # descartar kill-movements que NO sean el rey
-                        if movement in self.defender_positions:
-                            break 
+                        
                         elif movement in fake_positions:
                             if fake_positions[movement] == 'king':
                                 return True
+                            else: break # descartar kill-movements que NO sean al rey
             return False
 
         if perspective == 'defender':
@@ -1421,12 +1416,11 @@ class Match(Scene):
                         # bloqueos aliados
                         if movement in self.defender_positions:
                             break
-                        # descartar kill-movements que NO sean el rey
-                        if movement in self.attacker_positions:
-                            break
-                        elif movement in fake_positions:
+
+                        if movement in fake_positions:
                             if fake_positions[movement] == 'king':
                                 return True
+                            else: break # descartar kill-movements que NO sean el rey
             return False
 
         if perspective == 'fake-defenderMov-toAtt':
@@ -1447,12 +1441,11 @@ class Match(Scene):
                         # bloqueos aliados
                         if movement in self.attacker_positions:
                             break
-                        # descartar kill-movements que NO sean el rey
-                        if movement in self.defender_positions:
-                            break
+
                         elif movement in fake_positions:
                             if fake_positions[movement] == 'king':
                                 return True
+                            else: break # descartar kill-movements que NO sean al rey
             return False
 
         if perspective == 'defender':
