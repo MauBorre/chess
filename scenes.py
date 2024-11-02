@@ -819,6 +819,7 @@ class Match(Scene):
                                     if movement+SUR in self.defender_directThreatTrace:
                                         # BLOCK saving position
                                         mov_target_positions.update({movement+SUR: self.boardRects[movement+SUR]})
+                                
 
                         # kill-movements
                         # board limits check
@@ -834,19 +835,20 @@ class Match(Scene):
                                 if kp == max(self.defender_directThreatTrace) or kp == min(self.defender_directThreatTrace):
                                     # KILL saving position
                                     on_target_kill_positions.update({kp: self.boardRects[kp]})
+                                    '''Esto es un attacker_legalMove, debería registrarlo?'''
 
                         return mov_target_positions, on_target_kill_positions
 
                     elif self.attacker_singleOriginDirectThreat == None: 
+
                         if movement not in self.attacker_positions and movement not in self.defender_positions: # piece block
                             if not self.exposing_direction(piece_standpoint, direction=SUR, request_from="attacker"):
+                                mov_target_positions.update({movement: self.boardRects[movement]}) # 1st Movement
+
                                 if piece_standpoint in self.in_base_Bpawns:
-                                   
                                     if movement+SUR <= 63: # board limit check
                                         if movement+SUR not in self.attacker_positions and movement+SUR not in self.defender_positions: # piece block
-                                            mov_target_positions.update({movement: self.boardRects[movement]}) # 1st Movement
                                             mov_target_positions.update({movement+SUR: self.boardRects[movement+SUR]}) # 2nd Movement 
-                                else: mov_target_positions.update({movement: self.boardRects[movement]}) # 1st Movement
                             else: pass
                         
                         # kill-movements
@@ -916,13 +918,12 @@ class Match(Scene):
                     elif self.attacker_singleOriginDirectThreat == None:
                         if movement not in self.attacker_positions and movement not in self.defender_positions: # piece block
                             if not self.exposing_direction(piece_standpoint, direction=NORTE, request_from="attacker"):  
-                                if piece_standpoint in self.in_base_Wpawns:
+                                mov_target_positions.update({movement:self.boardRects[movement]}) # 1st Movement
 
+                                if piece_standpoint in self.in_base_Wpawns:
                                     if movement+NORTE >= 0: # board limit check
                                         if movement+NORTE not in self.black_positions and movement+NORTE not in self.white_positions: # piece block
-                                            mov_target_positions.update({movement:self.boardRects[movement]}) # 1st Movement
                                             mov_target_positions.update({movement+NORTE:self.boardRects[movement+NORTE]}) # 2nd Movement
-                                else: mov_target_positions.update({movement:self.boardRects[movement]}) # 1st Movement
                             else: pass
                     
                         # kill-movements
