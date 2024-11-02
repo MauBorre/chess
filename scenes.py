@@ -87,10 +87,9 @@ class MainMenu(Scene):
         otras reglas: ...
         ______________________________________
         ^
-        ^ - - Decididos en la GUI
+        ^ - - Decididos en última página de MainMenu
 
-        Desde aquí (MainMenu) prepararemos toda la información en un dict que deberá
-        pasarse a Match.
+        Prepararemos toda la información en un dict que deberá a Match.
 
         Ejemplo final_dict:
         - modo: 1 jugador
@@ -175,7 +174,11 @@ class Match(Scene):
         super().__init__(master)
 
         # judge variables
-        self.match_mode: dict = self.master.game_variables
+
+        # debería formar parte del init? qué pasa si despues de la partida queremos
+        # reiniciarla con alguna variación de modos/regla?
+        self.match_mode: dict = self.master.game_variables 
+
         self.move_here: int | None = None
         self.winner: bool = False
         self.stalemate: bool = False # Ahogado | draw
@@ -204,7 +207,6 @@ class Match(Scene):
         
         # White
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['white']['pawn']] # no swap
-
         self.white_positions: dict[int, str] = pieces.white_positions.copy()
         self.white_threatOnBlack: dict[str, int] = {piece:[] for piece in pieces.origins['white']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
         self.white_kingLegalMoves: list[int] = []
@@ -215,8 +217,8 @@ class Match(Scene):
         self.turn_attacker: str = 'White'
         self.turn_defender: str = 'Black'
 
-        '''Si existe múltiple orígen de amenaza NUNCA habrá legalMoves por parte.
-        de las piezas defensoras.'''
+        # Si existe múltiple orígen de amenaza NUNCA habrá legalMoves por parte.
+        # de las piezas defensoras.
         self.defender_legalMoves: set[str] = set() # NO se considera en SWAP
 
         '''Registro de AMENAZAS, MOVIMIENTOS LEGALES DEL REY, POSICIONES DE RESCATE: 
@@ -289,36 +291,40 @@ class Match(Scene):
         Primero debemos actualizar la ofensiva -siendo restringido por la defensiva-, y luego la defensiva,
         revisando especialmente si puede salvar a su rey de ser necesario por la última jugada ofensiva.
 
-        singleOriginDirectThreat será siempre y unicamente calculado luego de evaluar la ofensiva,
+        singleOriginDirectThreat será siempre y únicamente calculado luego de evaluar la ofensiva,
         Si es NONE no hay ninguna amenaza directa, pero si es FALSE significa que HAY MULTIPLES AMENAZAS
         DIRECTAS, por lo tanto el rey depende de su propio movimiento (o será jaque-mate).
 
-        DEBO revisar defender_threatOnAttacker en perspectivas ofensivas de piezas,
-        y, si llego a su llamada y singleOriginDirectThreat es TRUE, DEBO revisar SELF.DIRECT_THREATS .
+        DEBO revisar defender_threatOnAttacker y defender_singleOriginDirectThreat en perspectivas
+        ofensivas de turno. Si singleOriginDirectThreat es TRUE, DEBO revisar defender_DIRECT_THREATS .
         
         Al terminar estos cálculos, la funcion decide_check() establecerá si la partida debe continuar o
         terminarse con algún veredicto.
         
         Desde perspectiva = 'attacker' es importante:
+
             >> Atender que si existe defender_singleOriginDirectThreat (jaque), solo puedo moverme/atacar si
                 eso salva a mi rey. 
                 -> if self.defender_singleOriginDirectThreat == True
                    
-            >> Aunque no exista jaque, debo revisar TAMBIEN si "salirme del casillero" -moviendome o matando-
+            >> Si no existe jaque, debo revisar si "salirme del casillero" -moviendome o matando-
                expone a mi rey a un jaque.
-               -> self.try_movement_doesnt_expose_attacker_king(movement)
+               -> self.exposing_movement(standpoint, direction, request_from)
 
             >> Actualizaremos self.attacker_threatOnDefender
-               -> kill-movements aún no hechos pero que "amenazan" al rey defender
+               -> kill-movements aún no hechos pero que "amenazan" CASILLEROS VACÍOS/CASILLEROS CON ALIADOS EN EL.
         
         Desde perspectiva = 'defender' es importante:
 
-            >> Verificar y validar LEGAL-MOVES, teniendo en cuenta exposiciones al rey y bloqueos
-            con otras piezas.
-
-            >> Atender el estado de attacker_singleOriginDirectThreat (jaque) y revisar la posibilidad de
-               que las piezas bloqueen / maten a la pieza amenazante.
-               
+            >> Verificar y validar LEGAL-MOVES, si resultan ser 0 para el actual defensor, el actual atacante ganó o empató.
+            
+            >> Los movimientos descartados (ilegales) son aquellos que no puedan realizarse si,
+            NO ESTANDO EN JAQUE:
+                - Por bloqueo aliado
+                - Por ser expositivos-al-rey
+            ESTANDO EN JAQUE:
+                - Por bloqueo aliado
+                - Por no *salvar al rey* (matando o bloqueando la amenaza)
         '''
 
         self.attacker_threatOnDefender.clear()
@@ -347,9 +353,9 @@ class Match(Scene):
             for _horse in horse_standpoints:
                 self.horse_objectives(_horse, perspective='attacker')
 
-            queen_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="queen")
-            if len(queen_standpoints) != 0:
-                _queen = queen_standpoints.pop()
+            queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="queen")
+            if len(queen_standpoint) != 0:
+                _queen = queen_standpoint.pop()
                 self.queen_objectives(_queen, perspective='attacker')
         # --------------------------------------------------------------------------------------------------
 
@@ -365,7 +371,12 @@ class Match(Scene):
                     self.attacker_singleOriginDirectThreat == False # False es el caso multiple origen
                 else:
                     self.attacker_singleOriginDirectThreat = True
+
+                    # BUG 02-11 NO ESTAMOS ADJUDICANDO STANDPOINTS EN ESTA LISTA DE AMENAZA DIRECTA
+                    # Si encontramos origen múltiple de amenaza, estamos usando una lista de threats
+                    # o todo el attacker_threatOnDefender?
                     self.attacker_directThreatTrace = _threats_list # direct_threats solo puede contener una lista.
+
             else: self.attacker_singleOriginDirectThreat = None
 
         if self.attacker_singleOriginDirectThreat != False:
@@ -387,10 +398,10 @@ class Match(Scene):
             for _horse in horse_standpoints:
                 self.horse_objectives(_horse, perspective='defender')
             
-            queen_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="queen")
-            if len(queen_standpoints) != 0:
-                _queen = queen_standpoints.pop()
-            self.queen_objectives(_queen, perspective='defender')
+            queen_standpoint = self.get_piece_standpoint(color=self.turn_defender, piece="queen")
+            if len(queen_standpoint) != 0:
+                _queen = queen_standpoint.pop()
+                self.queen_objectives(_queen, perspective='defender')
         # -------------------------------------------------------------------------------------------------
 
     def reset_board(self):
@@ -609,10 +620,9 @@ class Match(Scene):
                     if self.bishop_objectives(_bishop, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
                         return True
 
-            # BUG similar con el rey, si esta pieza muere salta un error porque se busca algo que ya no existe.
-            queen_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender, piece="queen")
-            if len(queen_standpoints) != 0:
-                _queen = queen_standpoints.pop()
+            queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_defender, piece="queen")
+            if len(queen_standpoint) != 0:
+                _queen = queen_standpoint.pop()
                 if self.queen_objectives(_queen, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
                     return True
             return False
@@ -635,9 +645,9 @@ class Match(Scene):
                 if self.bishop_objectives(_bishop, perspective='fake-deffenderMov-toAtt', fake_positions=fake_positions):
                     return True
 
-            queen_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="queen")
-            if len(queen_standpoints) != 0:
-                _queen = queen_standpoints.pop()
+            queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="queen")
+            if len(queen_standpoint) != 0:
+                _queen = queen_standpoint.pop()
                 if self.queen_objectives(_queen, perspective='fake-deffenderMov-toAtt', fake_positions=fake_positions):
                     return True
             return False
@@ -809,8 +819,8 @@ class Match(Scene):
                         '''
                         if movement not in self.attacker_positions and movement not in self.defender_positions: # piece block
                             if movement in self.defender_directThreatTrace:
-                                    # BLOCK saving position
-                                    mov_target_positions.update({movement: self.boardRects[movement]})
+                                # BLOCK saving position
+                                mov_target_positions.update({movement: self.boardRects[movement]})
 
                             #probamos con el 2do mov
                             if piece_standpoint in self.in_base_Bpawns:
@@ -834,7 +844,6 @@ class Match(Scene):
                                 if kp == max(self.defender_directThreatTrace) or kp == min(self.defender_directThreatTrace):
                                     # KILL saving position
                                     on_target_kill_positions.update({kp: self.boardRects[kp]})
-                                    '''Esto es un attacker_legalMove, debería registrarlo?'''
 
                         return mov_target_positions, on_target_kill_positions
 
@@ -867,8 +876,8 @@ class Match(Scene):
                                     if not self.exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
                                         on_target_kill_positions.update({kp: self.boardRects[kp]})
                                 
-                                # Threat on defender king ------------------------
-                                self.attacker_threatOnDefender.update({'pawn': [kp]})
+                        # Threat on defender ------------------------
+                        self.attacker_threatOnDefender.update({'pawn': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
 
@@ -878,7 +887,7 @@ class Match(Scene):
                 movement = piece_standpoint+NORTE
                 if movement >= 0: # board limit
                     
-                    if self.defender_singleOriginDirectThreat:
+                    if self.defender_singleOriginDirectThreat: # jaque de único orígen
                         '''
                         Únicos movimientos posibles: bloquear o matar la amenaza.
                         > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
@@ -914,7 +923,8 @@ class Match(Scene):
                         
                         return mov_target_positions, on_target_kill_positions
                                     
-                    elif self.attacker_singleOriginDirectThreat == None:
+                    elif self.attacker_singleOriginDirectThreat == None: # no jaque
+
                         if movement not in self.attacker_positions and movement not in self.defender_positions: # piece block
                             if not self.exposing_direction(piece_standpoint, direction=NORTE, request_from="attacker"):  
                                 mov_target_positions.update({movement:self.boardRects[movement]}) # 1st Movement
@@ -942,8 +952,8 @@ class Match(Scene):
                                     if not self.exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
                                         on_target_kill_positions.update({kp:self.boardRects[kp]})
 
-                                # Threat on defender king ------------------------
-                                self.attacker_threatOnDefender.update({'pawn': [kp]})
+                        # Threat on defender ------------------------
+                        self.attacker_threatOnDefender.update({'pawn': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
                 
@@ -960,7 +970,6 @@ class Match(Scene):
         +SUR
         +ESTE
         +OESTE 
-        "recursivo" hasta limite tablero o pieza aliada/enemiga.
         La torre mata como se mueve.
         '''
 
@@ -1022,7 +1031,7 @@ class Match(Scene):
 
                             if movement in self.defender_positions:
                                 break
-                            if movement in self.attacker_directThreatTrace:
+                            if movement in self.attacker_directThreatTrace: # BUG actualmente att_directThreatTrace NO contiene standpoints de las amenazas
                                 # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
                                 self.defender_legalMoves.add('rook') 
                                 return
@@ -1096,6 +1105,7 @@ class Match(Scene):
                                     break
                                 else: break
                             else: 
+                                _threat_emission.append(movement)
                                 self.attacker_threatOnDefender.update({'rook': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
@@ -1214,7 +1224,6 @@ class Match(Scene):
         +NOR_ESTE
         +SUR_OESTE
         +SUR_ESTE
-        "recursivo" hasta limite tablero o pieza aliada/enemiga
         '''
         
         # Visual feedback utils <- deberíamos desacoplar esto de aquí
@@ -1365,6 +1374,7 @@ class Match(Scene):
                                     break
                                 else: break
                             else:
+                                _threat_emission.append(movement)
                                 self.attacker_threatOnDefender.update({'bishop': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
@@ -1387,7 +1397,6 @@ class Match(Scene):
         +NOR_ESTE
         +SUR_OESTE
         +SUR_ESTE
-        "recursivo" hasta limite tablero o pieza aliada/enemiga
         '''
     
         # Visual feedback utils
@@ -1558,6 +1567,7 @@ class Match(Scene):
                                     break
                                 else: break
                             else: 
+                                _threat_emission.append(movement)
                                 self.attacker_threatOnDefender.update({'queen': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
@@ -1574,7 +1584,6 @@ class Match(Scene):
         +NOR_ESTE
         +SUR_OESTE
         +SUR_ESTE
-        1 casillero a la vez hasta limite tablero o pieza aliada/enemiga
         '''
         
         # Visual feedback utils
@@ -1584,37 +1593,57 @@ class Match(Scene):
         # Objectives
         king_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
-        for direction in king_directions:
-            movement = piece_standpoint+direction
-            if direction == ESTE or direction == OESTE:
-                if movement not in row_of_(piece_standpoint):     
-                    continue
-            if direction == NOR_ESTE or direction == NOR_OESTE:
-                if movement-NORTE not in row_of_(piece_standpoint):
-                    continue
-            if direction == SUR_ESTE or direction == SUR_OESTE:
-                if movement-SUR not in row_of_(piece_standpoint):
-                    continue
-            if 0 <= movement <= 63: # VALID SQUARE
+        if perspective == 'defender':
+            for direction in king_directions:
+                movement = piece_standpoint+direction
+                if direction == ESTE or direction == OESTE:
+                    if movement not in row_of_(piece_standpoint):     
+                        continue
+                if direction == NOR_ESTE or direction == NOR_OESTE:
+                    if movement-NORTE not in row_of_(piece_standpoint):
+                        continue
+                if direction == SUR_ESTE or direction == SUR_OESTE:
+                    if movement-SUR not in row_of_(piece_standpoint):
+                        continue
+                if 0 <= movement <= 63: # VALID SQUARE
 
-                if perspective == 'defender':
-                    if movement not in self.defender_positions: # ally block
-                        if movement not in self.attacker_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
-                            if movement not in self.attacker_threatOnDefender: # amenazas directas e indirectas
-                                self.defender_kingLegalMoves.append(movement)
-                    return
-                
-                if perspective == 'attacker':
-                    if movement not in self.defender_threatOnAttacker:
+                    for threat in self.defender_threatOnAttacker.values():
+                        if movement in threat: movement = None
+
+                    if movement != None:
+                        if movement not in self.defender_positions: # ally block
+                            if movement not in self.attacker_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
+                                    self.defender_kingLegalMoves.append(movement)
+            return
+        
+        if perspective == 'attacker':
+            for direction in king_directions:
+                movement = piece_standpoint+direction
+                if direction == ESTE or direction == OESTE:
+                    if movement not in row_of_(piece_standpoint):
+                        print(movement)
+                        continue
+                if direction == NOR_ESTE or direction == NOR_OESTE:
+                    if movement-NORTE not in row_of_(piece_standpoint):
+                        continue
+                if direction == SUR_ESTE or direction == SUR_OESTE:
+                    if movement-SUR not in row_of_(piece_standpoint):
+                        continue
+                if 0 <= movement <= 63: # VALID SQUARE
+
+                    for threat in self.defender_threatOnAttacker.values():
+                        if movement in threat: movement = None
+
+                    if movement != None:
                         if movement not in self.defender_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
-                            if movement not in self.attacker_positions: # ally block
+                            if movement not in self.attacker_positions and not movement in self.defender_positions:
                                 self.attacker_kingLegalMoves.append(movement)
                                 mov_target_positions.update({movement: self.boardRects[movement]})
                             elif movement in self.defender_positions:
                                 self.attacker_kingLegalMoves.append(movement)
                                 on_target_kill_positions.update({movement: self.boardRects[movement]})
 
-                    return mov_target_positions, on_target_kill_positions
+            return mov_target_positions, on_target_kill_positions
         return
 
     def draw_board(self):
