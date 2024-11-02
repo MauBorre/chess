@@ -8,7 +8,7 @@ class ScreenDrawer:
 
     def draw_text(self,text,color,x,y,center=True,font_size='large'):
         _font = font.large_font if font_size=='large' else font.medium_font
-        surface = self.master.screen
+        surface = self.screen
         textobj = _font.render(text,1,color)
         text_width = textobj.get_width()
         text_height = textobj.get_height()
