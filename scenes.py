@@ -273,16 +273,16 @@ class Match(Scene):
         self,
         defKing_standpoint: int,
         mixedDirections_threats: list[int],
-        attThreat_standpoint: list[int],
+        attThreat_standpoint: int,
         ) -> list[int]:
-        # print('enemigo parado en', attThreat_standpoint)
+        print('enemigo parado en', attThreat_standpoint)
         # direcciones
         cardinal_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         walk_trace: list[int] = []
 
         for direction in cardinal_directions:
             walk_trace.clear()
-            walk_trace.extend(attThreat_standpoint)
+            walk_trace.append(attThreat_standpoint)
             for mult in range(1,8):
                 walk = defKing_standpoint+direction*mult
                 if direction == ESTE or direction == OESTE:
@@ -299,7 +299,7 @@ class Match(Scene):
                     if walk in mixedDirections_threats:
                         print(walk)
                         walk_trace.append(walk)
-                    if walk in attThreat_standpoint:
+                    if walk == attThreat_standpoint:
                         print('encontrado', walk)
                         return walk_trace
         return walk_trace
@@ -418,9 +418,13 @@ class Match(Scene):
                     self.attacker_directThreatTrace.clear()
                 else:
                     self.attacker_singleOriginDirectThreat = True
-                    att_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece=attThreat_piece)
-                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint)
 
+                    # La posición de orígen de la amenaza estará en _threats_list pero aún no sabemos cual es.
+                    # Para ello la deduciremos siendo esta el valor común entre get_piece_standpoint(pieza)
+                    # y el actual encontrado _threats_list.
+                    att_standpoint: int = {true_stand for true_stand in self.get_piece_standpoint(color=self.turn_attacker, piece=attThreat_piece) if true_stand in _threats_list}.pop()
+                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint)
+                    print('lista de threats', _threats_list)
                     print(self.attacker_directThreatTrace)
 
             else: self.attacker_singleOriginDirectThreat = None; self.attacker_directThreatTrace.clear()
@@ -923,6 +927,7 @@ class Match(Scene):
                                         on_target_kill_positions.update({kp: self.boardRects[kp]})
                                 
                         # Threat on defender ------------------------
+                        kill_positions.append(piece_standpoint)
                         self.attacker_threatOnDefender.update({'pawn': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
@@ -999,6 +1004,7 @@ class Match(Scene):
                                         on_target_kill_positions.update({kp:self.boardRects[kp]})
 
                         # Threat on defender ------------------------
+                        kill_positions.append(piece_standpoint)
                         self.attacker_threatOnDefender.update({'pawn': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
@@ -1153,6 +1159,7 @@ class Match(Scene):
                                 else: break
                             else: 
                                 _threat_emission.append(movement)
+                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'rook': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
@@ -1254,7 +1261,7 @@ class Match(Scene):
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
 
                                 # Threat on defender king ------------------------
-                                self.attacker_threatOnDefender.update({'horse': [movement]})
+                                self.attacker_threatOnDefender.update({'horse': [movement, piece_standpoint]})
 
                             else: return {}, {}
                 return mov_target_positions, on_target_kill_positions
@@ -1424,6 +1431,7 @@ class Match(Scene):
                                 else: break
                             else:
                                 _threat_emission.append(movement)
+                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'bishop': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
@@ -1618,6 +1626,7 @@ class Match(Scene):
                                 else: break
                             else: 
                                 _threat_emission.append(movement)
+                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'queen': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
