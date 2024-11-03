@@ -387,7 +387,7 @@ class Match(Scene):
             _king = king_standpoints.pop()
         self.king_objectives(_king,perspective='defender') # genero/reviso defender_kingLegalMoves.
         
-        for _threats_list in self.attacker_threatOnDefender.values():
+        for attThreat_piece, _threats_list in self.attacker_threatOnDefender.items():
             if _king in _threats_list:
                 if self.attacker_singleOriginDirectThreat == True: # Solo resulta True si conecta una vez
                     self.attacker_singleOriginDirectThreat == False # False es el caso multiple origen
@@ -397,7 +397,9 @@ class Match(Scene):
 
                     # BUG en este punto, _threats_list contiene TODOS LOS MOVIMIENTOS Y DIRECCIONES de
                     # la pieza "amenazante". Debemos quedarnos con la ÚNICA DIRECCIÓN que apunta al rey.
-                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list)
+                    att_standpoint = self.get_piece_standpoint(color=self.turn_attacker, piece=attThreat_piece)
+                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint)
+                    
                     print(self.attacker_directThreatTrace)
 
             else: self.attacker_singleOriginDirectThreat = None; self.attacker_directThreatTrace.clear()
