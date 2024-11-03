@@ -1912,6 +1912,7 @@ class Match(Scene):
 
         if self.attacker_singleOriginDirectThreat:
             if len(self.defender_kingLegalMoves) > 0 or len(self.defender_legalMoves) > 0:
+                print('**JAQUE**')
                 # JAQUE
                 '''Esto requiere solo una notificación al jugador correspondiente.
                 defender_color -> notificate CHECK (highlight possible solutions)'''
