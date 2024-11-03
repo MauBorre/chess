@@ -435,7 +435,7 @@ class Match(Scene):
 
         if self.attacker_singleOriginDirectThreat != False:
 
-            # Defender kingSupport (Actualizan movimientos legales del defensor para ver si perdió o empató)
+            # Defender kingSupport (Revision de movimientos legales del defensor para ver si perdió, empató, o nada de eso)
             pawn_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='pawn')
             for _pawn in pawn_standpoints:
                 self.pawn_objectives(_pawn, perspective='defender')
