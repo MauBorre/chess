@@ -269,6 +269,17 @@ class Match(Scene):
         self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
         self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace
 
+    def trace_direction_walk(
+        defKing_standpoint: int,
+        mixed_threats: list[int],
+        attThreat_standpoint: int) -> list[int]:
+        # direcciones
+        # desde defKing_standpoint
+            # hacer un "barrido" de direcciones hasta fin de tablero
+                # encontramos attTreat_standpoint?
+                    # devolver el barrido hasta ahí inclusive.
+        ...
+
     def update_turn_objectives(self):
         '''Llama todas las funciones _objectives() con sus correctas perspectivas-de-turno.
 
@@ -386,13 +397,7 @@ class Match(Scene):
 
                     # BUG en este punto, _threats_list contiene TODOS LOS MOVIMIENTOS Y DIRECCIONES de
                     # la pieza "amenazante". Debemos quedarnos con la ÚNICA DIRECCIÓN que apunta al rey.
-                    #
-                    # Podemos hacer esto de dos maneras, o añadimos código a todas las funciones objectives
-                    # nuevamente o creamos un mecanismo nuevo que detecte la dirección.
-                    # Una vez encontrada la dirección, limpiamos _threats_list con los casilleros
-                    # que no corresponda.
-
-                    self.attacker_directThreatTrace = _threats_list # direct_threats solo puede contener una lista.
+                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list)
                     print(self.attacker_directThreatTrace)
 
             else: self.attacker_singleOriginDirectThreat = None; self.attacker_directThreatTrace.clear()
