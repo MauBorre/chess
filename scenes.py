@@ -885,10 +885,10 @@ class Match(Scene):
                             kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
                         
                         for kp in kill_positions:
-                            if kp in self.defender_positions: 
-                                if kp == max(self.defender_directThreatTrace) or kp == min(self.defender_directThreatTrace):
-                                    # KILL saving position
-                                    on_target_kill_positions.update({kp: self.boardRects[kp]})
+                            if kp in self.defender_positions and kp in self.defender_directThreatTrace: 
+                                # if kp == max(self.defender_directThreatTrace) or kp == min(self.defender_directThreatTrace):
+                                # KILL saving position
+                                on_target_kill_positions.update({kp: self.boardRects[kp]})
 
                         return mov_target_positions, on_target_kill_positions
 
@@ -922,7 +922,6 @@ class Match(Scene):
                                         on_target_kill_positions.update({kp: self.boardRects[kp]})
                                 
                         # Threat on defender ------------------------
-                        kill_positions.append(piece_standpoint)
                         self.attacker_threatOnDefender.update({'pawn': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
@@ -962,10 +961,10 @@ class Match(Scene):
                             kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
                                     
                         for kp in kill_positions:
-                            if kp in self.defender_positions:
-                                if kp == max(self.defender_directThreatTrace) or kp == min(self.defender_directThreatTrace):
-                                    # KILL saving position
-                                    on_target_kill_positions.update({kp: self.boardRects[kp]})
+                            if kp in self.defender_positions and kp in self.defender_directThreatTrace:
+                                # if kp == max(self.defender_directThreatTrace) or kp == min(self.defender_directThreatTrace):
+                                # KILL saving position
+                                on_target_kill_positions.update({kp: self.boardRects[kp]})
                         
                         return mov_target_positions, on_target_kill_positions
                                     
@@ -999,7 +998,6 @@ class Match(Scene):
                                         on_target_kill_positions.update({kp:self.boardRects[kp]})
 
                         # Threat on defender ------------------------
-                        kill_positions.append(piece_standpoint)
                         self.attacker_threatOnDefender.update({'pawn': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
@@ -1119,7 +1117,8 @@ class Match(Scene):
 
                             if movement not in self.attacker_positions:
                                 if movement in self.defender_directThreatTrace:
-                                    if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
+                                    # if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
+                                    if movement in self.defender_positions:
                                         # KILL saving position.
                                         on_target_kill_positions.update({movement: self.boardRects[movement]})
                                     else:
@@ -1153,7 +1152,6 @@ class Match(Scene):
                                 else: break
                             else: 
                                 _threat_emission.append(movement)
-                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'rook': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
@@ -1228,7 +1226,8 @@ class Match(Scene):
 
                         if movement not in self.attacker_positions:
                             if movement in self.defender_directThreatTrace:
-                                if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
+                                # if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
+                                if movement in self.defender_positions:
                                     # KILL saving position.
                                     on_target_kill_positions.update({movement: self.boardRects[movement]})
                                 else:
@@ -1254,7 +1253,7 @@ class Match(Scene):
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
 
                                 # Threat on defender king ------------------------
-                                self.attacker_threatOnDefender.update({'horse': [movement, piece_standpoint]})
+                                self.attacker_threatOnDefender.update({'horse': [movement]})
 
                             else: return {}, {}
                 return mov_target_positions, on_target_kill_positions
@@ -1386,7 +1385,8 @@ class Match(Scene):
 
                             if movement not in self.attacker_positions:
                                 if movement in self.defender_directThreatTrace:
-                                    if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
+                                    # if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
+                                    if movement in self.defender_positions:
                                         # KILL saving position.
                                         on_target_kill_positions.update({movement: self.boardRects[movement]})
                                     else:
@@ -1423,7 +1423,6 @@ class Match(Scene):
                                 else: break
                             else:
                                 _threat_emission.append(movement)
-                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'bishop': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
@@ -1577,9 +1576,8 @@ class Match(Scene):
 
                             if movement not in self.attacker_positions:
                                 if movement in self.defender_directThreatTrace:
-                                    print(movement)
-                                    print(self.defender_directThreatTrace)
-                                    if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
+                                    # if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
+                                    if movement in self.defender_positions:
                                         # KILL saving position.
                                         on_target_kill_positions.update({movement: self.boardRects[movement]})
                                     else:
@@ -1619,7 +1617,6 @@ class Match(Scene):
                                 else: break
                             else: 
                                 _threat_emission.append(movement)
-                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'queen': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
