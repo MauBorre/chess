@@ -1140,6 +1140,7 @@ class Match(Scene):
                 return mov_target_positions, on_target_kill_positions
                 
             elif self.defender_singleOriginDirectThreat == None:
+                _threat_emission.append(piece_standpoint)
                 for direction in rook_directions:
                     for mult in range(1,8): # 1 to board_size
                         movement = piece_standpoint+direction*mult
@@ -1163,7 +1164,6 @@ class Match(Scene):
                                 else: break
                             else: 
                                 _threat_emission.append(movement)
-                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'rook': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
@@ -1409,6 +1409,7 @@ class Match(Scene):
                 return mov_target_positions, on_target_kill_positions
             
             elif self.defender_singleOriginDirectThreat == None:
+                _threat_emission.append(piece_standpoint)
                 for direction in bishop_directions:
                     for mult in range(1,8):
                         movement = piece_standpoint+direction*mult
@@ -1422,8 +1423,8 @@ class Match(Scene):
 
                             if movement not in self.attacker_positions and movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
-                                        _threat_emission.append(movement)
-                                        mov_target_positions.update({movement: self.boardRects[movement]})
+                                    _threat_emission.append(movement)
+                                    mov_target_positions.update({movement: self.boardRects[movement]})
                                 else: break # rompe hasta la siguiente dirección.
 
                             # Kill-movement
@@ -1435,7 +1436,6 @@ class Match(Scene):
                                 else: break
                             else:
                                 _threat_emission.append(movement)
-                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'bishop': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
@@ -1601,6 +1601,7 @@ class Match(Scene):
                 return mov_target_positions, on_target_kill_positions
                 
             elif self.defender_singleOriginDirectThreat == None:
+                _threat_emission.append(piece_standpoint)
                 for direction in queen_directions:
                     for mult in range(1,8):
                         movement = piece_standpoint+direction*mult
@@ -1630,7 +1631,6 @@ class Match(Scene):
                                 else: break
                             else: 
                                 _threat_emission.append(movement)
-                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'queen': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
