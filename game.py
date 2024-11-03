@@ -58,8 +58,6 @@ class GameMaster:
             'mouse0': False,
             'mouse2': False
         }
-        
-        #cualquier otra tecla también es un bool que será trasladado
 
     def update_mouse(self,coordinates):
         self.mx = coordinates[0]
