@@ -45,6 +45,9 @@ class Match(MatchDrawer):
         #screen
         #controles
     
+    def board():
+        ...
+    
 def start_match(instructions):
     '''Instanciar objeto Match como corresponde
     y devolverlo'''
@@ -63,11 +66,13 @@ def render(
     # Peripherals
     game_matchObj._control_input = controller_input
     game_matchObj.screen = screen
+
     # UI/HUD
     game_matchObj.draw_HUD_title()
     game_matchObj.draw_match_mode()
 
     # Game Board
+    game_matchObj.board()
 
 
 print(Turn.attacker.name)
