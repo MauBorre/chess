@@ -47,6 +47,18 @@ class GameMaster:
         self.mx = 0
         self.my = 0
         self.click = False
+
+        self.control_input: dict[str, bool] = {
+            'up': False,
+            'down': False,
+            'left': False,
+            'right': False,
+            'enter': False,
+            'escape': False,
+            'mouse0': False,
+            'mouse2': False
+        }
+        
         #cualquier otra tecla también es un bool que será trasladado
 
     def update_mouse(self,coordinates):
@@ -168,7 +180,7 @@ class GameMaster:
             pygame.display.flip()
             self.clock.tick(60)
     
-    def start_game(self,scene=None): # Es responsabilidad del manager 100%
+    def start_manager(self,scene=None): # Es responsabilidad del manager 100%
         if scene!=None:
             self.scene_manager = scene # defaults MainMenu (init)
         # Registro de escenas --------------------------
@@ -186,4 +198,4 @@ class GameMaster:
 
 if __name__ == '__main__':
     gm = GameMaster()
-    gm.start_game(scene=Match)
+    gm.start_manager(scene=Match)
