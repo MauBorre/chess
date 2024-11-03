@@ -327,17 +327,24 @@ class Match(Scene):
                 - Por no *salvar al rey* (matando o bloqueando la amenaza)
         '''
 
+        '''
+        defender_directThreatTrace y defender_threatOnAttacker son aflicciones
+        del atacante "mientras está (y puede) moverse".
+
+        En este punto de la ejecución, el atacante ya hizo su acción
+        
+        debemos entonces limpiar ambos, porque su efecto ya se terminó y vendrán
+        otros O nada.
+        
+        '''
+
         self.attacker_threatOnDefender.clear()
-        # self.defender_threatOnAttacker será siempre resultado de SWAP, contiene *posible jaque* actual.
-        self.attacker_kingLegalMoves.clear()
+        self.defender_threatOnAttacker.clear()
+        self.attacker_kingLegalMoves.clear() # creo que está mal limpiar esto
         self.defender_kingLegalMoves.clear()
         self.attacker_directThreatTrace.clear()
-
-        # debería ser resultado de SWAP? Si a def_threatOnAtt no le hacemos clear()...
-        # self.defender_directThreatTrace.clear() 
-
+        self.defender_directThreatTrace.clear() 
         self.defender_legalMoves.clear()
-
 
         # Attacker ----------------------------------------------------------------------------------------
         if self.defender_singleOriginDirectThreat != False:
@@ -907,7 +914,8 @@ class Match(Scene):
                             #probamos con el 2do mov
                             if piece_standpoint in self.in_base_Wpawns:
                                 if movement+NORTE not in self.attacker_positions and movement+NORTE not in self.defender_positions:# piece block
-                                    if movement+NORTE not in self.defender_directThreatTrace:
+                                    if movement+NORTE in self.defender_directThreatTrace:
+                                        print('a desde incorrecto')
                                         # BLOCK saving position
                                         mov_target_positions.update({movement+NORTE: self.boardRects[movement+NORTE]})
 
