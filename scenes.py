@@ -278,11 +278,11 @@ class Match(Scene):
         print('enemigo parado en', attThreat_standpoint)
         # direcciones
         cardinal_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
-        walk_trace: list[int] = []
+        walk_trace: set[int] = set()
 
         for direction in cardinal_directions:
             walk_trace.clear()
-            walk_trace.append(attThreat_standpoint)
+            walk_trace.add(attThreat_standpoint)
             for mult in range(1,8):
                 walk = defKing_standpoint+direction*mult
                 if direction == ESTE or direction == OESTE:
@@ -298,7 +298,7 @@ class Match(Scene):
 
                     if walk in mixedDirections_threats:
                         print(walk)
-                        walk_trace.append(walk)
+                        walk_trace.add(walk)
                     if walk == attThreat_standpoint:
                         print('encontrado', walk)
                         return walk_trace
@@ -424,7 +424,6 @@ class Match(Scene):
                     # y el actual encontrado _threats_list.
                     att_standpoint: int = {true_stand for true_stand in self.get_piece_standpoint(color=self.turn_attacker, piece=attThreat_piece) if true_stand in _threats_list}.pop()
                     self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint)
-                    print('lista de threats', _threats_list)
                     print(self.attacker_directThreatTrace)
 
             else: self.attacker_singleOriginDirectThreat = None; self.attacker_directThreatTrace.clear()
@@ -1083,7 +1082,7 @@ class Match(Scene):
 
                             if movement in self.defender_positions:
                                 break
-                            if movement in self.attacker_directThreatTrace: # BUG actualmente att_directThreatTrace NO contiene standpoints de las amenazas
+                            if movement in self.attacker_directThreatTrace:
                                 # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
                                 self.defender_legalMoves.add('rook') 
                                 return
@@ -1688,6 +1687,12 @@ class Match(Scene):
                     if movement-SUR not in row_of_(piece_standpoint):
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
+
+                    '''
+                    BUG necesito poder diferenciar el orígen de una amenaza como
+                    comible o no, ya que a veces es posible siempre y cuando este orígen
+                    no sea un casillero threat de OTRA pieza.
+                    '''
 
                     for threat in self.defender_threatOnAttacker.values():
                         if movement in threat: movement = None
