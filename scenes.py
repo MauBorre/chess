@@ -261,7 +261,12 @@ class Match(Scene):
         self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
         self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat
         self.defender_directThreatTrace: list[int] = self.black_directThreatTrace
-        
+
+        # EXPERIMENTAL Y NO HAY SWAP AUN CUIDADO
+        self.defender_threatOriginStandpoint: int
+        self.attacker_threatOriginStandpoint: int
+
+
         # Attacker
         self.attacker_positions: dict[int, str] = self.white_positions 
         self.attacker_threatOnDefender: dict[str, list[int]] = self.white_threatOnBlack
@@ -1654,6 +1659,7 @@ class Match(Scene):
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         
         # Objectives
+        threat_is_alone: bool = False
         king_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
         if perspective == 'defender':
@@ -1702,12 +1708,26 @@ class Match(Scene):
                     for threat in self.defender_threatOnAttacker.values():
                         if movement in threat: 
                             # ok, entonces no debería hacer nada, pero si es EL-STANDPOINT-ORIGEN, y
-                            # solo hay una copia de el en este conjunto entonces PUEDO COMERLO
+                            # solo hay una copia de el en este conjunto entonces PODRÍA COMERLO.
                             # ^
                             # ^ - Esto es correcto, si hay otro numero igual a standpoint-origen descartamos
                             # el movimiento, pero mientras haya solo una copia QUIZAS podemos comerlo, sino
                             # será denegado también.
-                            movement = None
+
+                            '''CUIDADO esto puede llegar a dar positivo en casos donde haya
+                            un mero casillero de amenaza (donde NUNCA podré mover), pero buscamos
+                            específicamente el casillero valido para kill, NO mov.'''
+                            for values in self.defender_threatOnAttacker.values():
+                                if self.defender_threatOriginStandpoint in values:
+                                    if threat_is_alone:
+                                        movement = None
+                                        threat_is_alone = False
+                                    threat_is_alone = True
+                            if threat_is_alone:
+
+                                continue
+
+                            else: movement = None
 
                     if movement != None:
                         if movement not in self.defender_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
