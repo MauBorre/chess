@@ -262,11 +262,6 @@ class Match(Scene):
         self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat
         self.defender_directThreatTrace: list[int] = self.black_directThreatTrace
 
-        # EXPERIMENTAL Y NO HAY SWAP AUN CUIDADO
-        self.defender_threatOriginStandpoint: int
-        self.attacker_threatOriginStandpoint: int
-
-
         # Attacker
         self.attacker_positions: dict[int, str] = self.white_positions 
         self.attacker_threatOnDefender: dict[str, list[int]] = self.white_threatOnBlack
@@ -280,14 +275,13 @@ class Match(Scene):
         mixedDirections_threats: list[int],
         attThreat_standpoint: int,
         ) -> list[int]:
-        print('enemigo parado en', attThreat_standpoint)
         # direcciones
         cardinal_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         walk_trace: set[int] = set()
 
         for direction in cardinal_directions:
             walk_trace.clear()
-            walk_trace.add(attThreat_standpoint)
+            walk_trace.add(defKing_standpoint)
             for mult in range(1,8):
                 walk = defKing_standpoint+direction*mult
                 if direction == ESTE or direction == OESTE:
@@ -301,12 +295,12 @@ class Match(Scene):
                         break
                 if 0 <= walk <= 63: # VALID SQUARE
 
-                    if walk in mixedDirections_threats:
-                        print(walk)
-                        walk_trace.add(walk)
                     if walk == attThreat_standpoint:
-                        print('encontrado', walk)
                         return walk_trace
+
+                    elif walk in mixedDirections_threats:
+                        walk_trace.add(walk)
+                    
         return walk_trace
 
     def update_turn_objectives(self):
@@ -431,6 +425,7 @@ class Match(Scene):
                     self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint)
 
                     print('Traza de amenaza directa', self.attacker_directThreatTrace)
+                    _threats_list.remove(att_standpoint) # Necesario para identificar al orígen como -matable- (a veces).
 
                     # BUG's en attacker_threatOnDefender. No se estan considerando AMBOS rook, AMBOS horses, TODOS los pawns,
                     # parece que estamos retornando antes de tiempo o algo.
@@ -1699,35 +1694,8 @@ class Match(Scene):
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    '''
-                    BUG necesito poder diferenciar el orígen de una amenaza como
-                    comible o no, ya que a veces es posible; siempre y cuando este orígen
-                    no sea un casillero threat de OTRA pieza.
-                    '''
-
                     for threat in self.defender_threatOnAttacker.values():
-                        if movement in threat: 
-                            # ok, entonces no debería hacer nada, pero si es EL-STANDPOINT-ORIGEN, y
-                            # solo hay una copia de el en este conjunto entonces PODRÍA COMERLO.
-                            # ^
-                            # ^ - Esto es correcto, si hay otro numero igual a standpoint-origen descartamos
-                            # el movimiento, pero mientras haya solo una copia QUIZAS podemos comerlo, sino
-                            # será denegado también.
-
-                            '''CUIDADO esto puede llegar a dar positivo en casos donde haya
-                            un mero casillero de amenaza (donde NUNCA podré mover), pero buscamos
-                            específicamente el casillero valido para kill, NO mov.'''
-                            for values in self.defender_threatOnAttacker.values():
-                                if self.defender_threatOriginStandpoint in values:
-                                    if threat_is_alone:
-                                        movement = None
-                                        threat_is_alone = False
-                                    threat_is_alone = True
-                            if threat_is_alone:
-
-                                continue
-
-                            else: movement = None
+                        if movement in threat: movement = None
 
                     if movement != None:
                         if movement not in self.defender_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
