@@ -273,36 +273,29 @@ class Match(Scene):
         self,
         defKing_standpoint: int,
         mixedDirections_threats: list[int],
-        attThreat_standpoint: int) -> list[int]:
-        print(mixedDirections_threats)
+        ) -> list[int]:
+
         # direcciones
         cardinal_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         walk_trace: list[int] = []
+
         for direction in cardinal_directions:
             for mult in range(1,8):
                 walk = defKing_standpoint+direction*mult
                 if direction == ESTE or direction == OESTE:
                     if walk not in row_of_(defKing_standpoint):     
                         break
-                    if direction == NOR_ESTE or direction == NOR_OESTE:
-                        if walk not in row_of_(defKing_standpoint+NORTE*mult):
-                            break
-                    if direction == SUR_ESTE or direction == SUR_OESTE:
-                        if walk not in row_of_(defKing_standpoint+SUR*mult):
-                            break
-                    if 0 <= walk <= 63: # VALID SQUARE
-                        print(walk)
-                        # if walk in mixedDirections_threats:
-                        #     print('yes')
-                        #     if walk != attThreat_standpoint:
-                        #         walk_trace.append(walk)
-                        #         continue
-                        #     else:
-                        #         walk_trace.append(attThreat_standpoint)
-                        #         return walk_trace
-                        # else:
-                        #     walk_trace.clear()
-                        #     break
+                if direction == NOR_ESTE or direction == NOR_OESTE:
+                    if walk not in row_of_(defKing_standpoint+NORTE*mult):
+                        break
+                if direction == SUR_ESTE or direction == SUR_OESTE:
+                    if walk not in row_of_(defKing_standpoint+SUR*mult):
+                        break
+                if 0 <= walk <= 63: # VALID SQUARE
+
+                    if walk in mixedDirections_threats:
+                        walk_trace.append(walk)
+        return walk_trace
 
     def update_turn_objectives(self):
         '''Llama todas las funciones _objectives() con sus correctas perspectivas-de-turno.
@@ -421,8 +414,8 @@ class Match(Scene):
 
                     # BUG en este punto, _threats_list contiene TODOS LOS MOVIMIENTOS Y DIRECCIONES de
                     # la pieza "amenazante". Debemos quedarnos con la ÚNICA DIRECCIÓN que apunta al rey.
-                    att_standpoint = self.get_piece_standpoint(color=self.turn_attacker, piece=attThreat_piece)
-                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint)
+                    
+                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list)
 
                     print(self.attacker_directThreatTrace)
 
