@@ -273,13 +273,15 @@ class Match(Scene):
         self,
         defKing_standpoint: int,
         mixedDirections_threats: list[int],
+        attThreat_standpoint: list[int],
         ) -> list[int]:
-
+        print('enemigo parado en', attThreat_standpoint)
         # direcciones
         cardinal_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         walk_trace: list[int] = []
 
         for direction in cardinal_directions:
+            walk_trace.clear()
             for mult in range(1,8):
                 walk = defKing_standpoint+direction*mult
                 if direction == ESTE or direction == OESTE:
@@ -294,7 +296,11 @@ class Match(Scene):
                 if 0 <= walk <= 63: # VALID SQUARE
 
                     if walk in mixedDirections_threats:
+                        print(walk)
                         walk_trace.append(walk)
+                        if walk in attThreat_standpoint:
+                            print('encontrado', walk)
+                            return walk_trace
         return walk_trace
 
     def update_turn_objectives(self):
@@ -411,11 +417,8 @@ class Match(Scene):
                     self.attacker_directThreatTrace.clear()
                 else:
                     self.attacker_singleOriginDirectThreat = True
-
-                    # BUG en este punto, _threats_list contiene TODOS LOS MOVIMIENTOS Y DIRECCIONES de
-                    # la pieza "amenazante". Debemos quedarnos con la ÚNICA DIRECCIÓN que apunta al rey.
-                    
-                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list)
+                    att_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece=attThreat_piece)
+                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint)
 
                     print(self.attacker_directThreatTrace)
 
@@ -1574,6 +1577,8 @@ class Match(Scene):
 
                             if movement not in self.attacker_positions:
                                 if movement in self.defender_directThreatTrace:
+                                    print(movement)
+                                    print(self.defender_directThreatTrace)
                                     if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
                                         # KILL saving position.
                                         on_target_kill_positions.update({movement: self.boardRects[movement]})
@@ -1668,7 +1673,6 @@ class Match(Scene):
                 movement = piece_standpoint+direction
                 if direction == ESTE or direction == OESTE:
                     if movement not in row_of_(piece_standpoint):
-                        print(movement)
                         continue
                 if direction == NOR_ESTE or direction == NOR_OESTE:
                     if movement-NORTE not in row_of_(piece_standpoint):
