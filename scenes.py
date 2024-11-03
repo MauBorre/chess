@@ -275,13 +275,14 @@ class Match(Scene):
         mixedDirections_threats: list[int],
         attThreat_standpoint: list[int],
         ) -> list[int]:
-        print('enemigo parado en', attThreat_standpoint)
+        # print('enemigo parado en', attThreat_standpoint)
         # direcciones
         cardinal_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         walk_trace: list[int] = []
 
         for direction in cardinal_directions:
             walk_trace.clear()
+            walk_trace.extend(attThreat_standpoint)
             for mult in range(1,8):
                 walk = defKing_standpoint+direction*mult
                 if direction == ESTE or direction == OESTE:
@@ -298,9 +299,9 @@ class Match(Scene):
                     if walk in mixedDirections_threats:
                         print(walk)
                         walk_trace.append(walk)
-                        if walk in attThreat_standpoint:
-                            print('encontrado', walk)
-                            return walk_trace
+                    if walk in attThreat_standpoint:
+                        print('encontrado', walk)
+                        return walk_trace
         return walk_trace
 
     def update_turn_objectives(self):
