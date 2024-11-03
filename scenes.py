@@ -1654,7 +1654,6 @@ class Match(Scene):
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         
         # Objectives
-        threat_is_alone: bool = False
         king_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
         if perspective == 'defender':
