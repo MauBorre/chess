@@ -424,7 +424,12 @@ class Match(Scene):
                     # y el actual encontrado _threats_list.
                     att_standpoint: int = {true_stand for true_stand in self.get_piece_standpoint(color=self.turn_attacker, piece=attThreat_piece) if true_stand in _threats_list}.pop()
                     self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint)
-                    print(self.attacker_directThreatTrace)
+
+                    print('Traza de amenaza directa', self.attacker_directThreatTrace)
+
+                    # BUG's en attacker_threatOnDefender. No se estan considerando AMBOS rook, AMBOS horses, TODOS los pawns,
+                    # parece que estamos retornando antes de tiempo o algo.
+                    print('amenaza en general', self.attacker_threatOnDefender)
 
             else: self.attacker_singleOriginDirectThreat = None; self.attacker_directThreatTrace.clear()
 
@@ -1690,12 +1695,19 @@ class Match(Scene):
 
                     '''
                     BUG necesito poder diferenciar el orígen de una amenaza como
-                    comible o no, ya que a veces es posible siempre y cuando este orígen
+                    comible o no, ya que a veces es posible; siempre y cuando este orígen
                     no sea un casillero threat de OTRA pieza.
                     '''
 
                     for threat in self.defender_threatOnAttacker.values():
-                        if movement in threat: movement = None
+                        if movement in threat: 
+                            # ok, entonces no debería hacer nada, pero si es EL-STANDPOINT-ORIGEN, y
+                            # solo hay una copia de el en este conjunto entonces PUEDO COMERLO
+                            # ^
+                            # ^ - Esto es correcto, si hay otro numero igual a standpoint-origen descartamos
+                            # el movimiento, pero mientras haya solo una copia QUIZAS podemos comerlo, sino
+                            # será denegado también.
+                            movement = None
 
                     if movement != None:
                         if movement not in self.defender_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
