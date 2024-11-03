@@ -331,8 +331,12 @@ class Match(Scene):
         # self.defender_threatOnAttacker será siempre resultado de SWAP, contiene *posible jaque* actual.
         self.attacker_kingLegalMoves.clear()
         self.defender_kingLegalMoves.clear()
-        self.defender_legalMoves.clear()
         self.attacker_directThreatTrace.clear()
+
+        # debería ser resultado de SWAP? Si a def_threatOnAtt no le hacemos clear()...
+        # self.defender_directThreatTrace.clear() 
+
+        self.defender_legalMoves.clear()
 
 
         # Attacker ----------------------------------------------------------------------------------------
