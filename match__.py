@@ -1,3 +1,4 @@
+import pygame
 from screen_drawer__ import MatchDrawer
 import board
 from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE # piece directions
@@ -31,12 +32,15 @@ class Turn:
     def swap():
         Turn.defender, Turn.attacker = Turn.attacker, Turn.defender
 
+class Board: ...
+
 class Match(MatchDrawer):
     def __init__(self, instructions, ctrl_emitter, screen):
         super().__init__(screen)
         self._instructions = instructions
         self._control_input = ctrl_emitter
         Turn()
+        Board()
             
         #screen
         #controles
@@ -45,19 +49,23 @@ def start_match(instructions):
     '''Instanciar objeto Match como corresponde
     y devolverlo'''
 
-    game_match = Match(instructions)
-    return game_match
+    match_ = Match(instructions)
+    return match_
 
 game_match = start_match(dict())
 
-def render(controller_input, screen):
+def render(
+    game_matchObj: Match,
+    controller_input: dict[str, bool],
+    screen: pygame.Surface
+    ):
 
     # Peripherals
-    game_match._control_input = controller_input
-
+    game_matchObj._control_input = controller_input
+    game_matchObj.screen = screen
     # UI/HUD
-    game_match.draw_HUD_title()
-    game_match.draw_match_mode()
+    game_matchObj.draw_HUD_title()
+    game_matchObj.draw_match_mode()
 
     # Game Board
 
