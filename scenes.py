@@ -628,11 +628,11 @@ class Match(Scene):
             return False
 
         if request_from == 'defender':
-            for ap in self.defender_positions.keys():
-                if standpoint != ap:
-                    fake_positions.update({ap: self.defender_positions[ap]})
+            for dp in self.defender_positions.keys():
+                if standpoint != dp:
+                    fake_positions.update({dp: self.defender_positions[dp]})
                 else:
-                    fake_positions.update({fake_move: self.defender_positions[ap]})
+                    fake_positions.update({fake_move: self.defender_positions[dp]})
 
             # Revisar objetivos inyectando fake_positions.
             rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="rook")
