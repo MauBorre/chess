@@ -380,15 +380,22 @@ class Match(Scene):
             if _king in _threats_list:
                 if self.attacker_singleOriginDirectThreat == True: # Solo resulta True si conecta una vez
                     self.attacker_singleOriginDirectThreat == False # False es el caso multiple origen
+                    self.attacker_directThreatTrace.clear()
                 else:
                     self.attacker_singleOriginDirectThreat = True
 
-                    # BUG 02-11 NO ESTAMOS ADJUDICANDO STANDPOINTS EN ESTA LISTA DE AMENAZA DIRECTA
-                    # Si encontramos origen múltiple de amenaza, estamos usando una lista de threats
-                    # o todo el attacker_threatOnDefender?
-                    self.attacker_directThreatTrace = _threats_list # direct_threats solo puede contener una lista.
+                    # BUG en este punto, _threats_list contiene TODOS LOS MOVIMIENTOS Y DIRECCIONES de
+                    # la pieza "amenazante". Debemos quedarnos con la ÚNICA DIRECCIÓN que apunta al rey.
+                    #
+                    # Podemos hacer esto de dos maneras, o añadimos código a todas las funciones objectives
+                    # nuevamente o creamos un mecanismo nuevo que detecte la dirección.
+                    # Una vez encontrada la dirección, limpiamos _threats_list con los casilleros
+                    # que no corresponda.
 
-            else: self.attacker_singleOriginDirectThreat = None
+                    self.attacker_directThreatTrace = _threats_list # direct_threats solo puede contener una lista.
+                    print(self.attacker_directThreatTrace)
+
+            else: self.attacker_singleOriginDirectThreat = None; self.attacker_directThreatTrace.clear()
 
         if self.attacker_singleOriginDirectThreat != False:
 
@@ -915,7 +922,6 @@ class Match(Scene):
                             if piece_standpoint in self.in_base_Wpawns:
                                 if movement+NORTE not in self.attacker_positions and movement+NORTE not in self.defender_positions:# piece block
                                     if movement+NORTE in self.defender_directThreatTrace:
-                                        print('a desde incorrecto')
                                         # BLOCK saving position
                                         mov_target_positions.update({movement+NORTE: self.boardRects[movement+NORTE]})
 
