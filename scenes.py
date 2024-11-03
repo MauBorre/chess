@@ -1835,8 +1835,9 @@ class Match(Scene):
             pygame.draw.rect(self.screen,'RED',valid_kill_RECT,width=2)
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
-        '''> Argumentar pieza exactamente igual que en pieces.origins
-        > Utilizar .pop() en piezas de posiciones singulares como Rey y Reina'''
+        '''
+        > Argumentar pieza exactamente igual que en pieces.origins
+        '''
         _actual_standpoints: list[int] = []
         if color == 'Black':
             for k,v in self.black_positions.items():
