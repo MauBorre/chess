@@ -877,6 +877,7 @@ class Match(Scene):
                                         on_target_kill_positions.update({kp: self.boardRects[kp]})
                                 
                         # Threat on defender ------------------------
+                        kill_positions.append(piece_standpoint)
                         self.attacker_threatOnDefender.update({'pawn': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
@@ -953,6 +954,7 @@ class Match(Scene):
                                         on_target_kill_positions.update({kp:self.boardRects[kp]})
 
                         # Threat on defender ------------------------
+                        kill_positions.append(piece_standpoint)
                         self.attacker_threatOnDefender.update({'pawn': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
@@ -1106,6 +1108,7 @@ class Match(Scene):
                                 else: break
                             else: 
                                 _threat_emission.append(movement)
+                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'rook': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
@@ -1206,7 +1209,7 @@ class Match(Scene):
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
 
                                 # Threat on defender king ------------------------
-                                self.attacker_threatOnDefender.update({'horse': [movement]})
+                                self.attacker_threatOnDefender.update({'horse': [movement, piece_standpoint]})
 
                             else: return {}, {}
                 return mov_target_positions, on_target_kill_positions
@@ -1375,6 +1378,7 @@ class Match(Scene):
                                 else: break
                             else:
                                 _threat_emission.append(movement)
+                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'bishop': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
@@ -1568,6 +1572,7 @@ class Match(Scene):
                                 else: break
                             else: 
                                 _threat_emission.append(movement)
+                                _threat_emission.append(piece_standpoint)
                                 self.attacker_threatOnDefender.update({'queen': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
 
