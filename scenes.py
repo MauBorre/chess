@@ -280,6 +280,7 @@ class Match(Scene):
         mixedDirections_threats: list[int],
         attThreat_standpoint: int,
         ) -> list[int]:
+        '''Caminamos desde el rey hasta la amenaza devolviendo una traza.'''
         # direcciones
         cardinal_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         walk_trace: set[int] = set()
@@ -1244,7 +1245,7 @@ class Match(Scene):
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
 
                                 # Threat on defender king ------------------------
-                                self.attacker_threatOnDefender.update({f'horse{piece_standpoint}': [movement, piece_standpoint]})
+                                self.attacker_threatOnDefender.update({f'horse{piece_standpoint}': [movement]})
 
                             else: return {}, {}
                 return mov_target_positions, on_target_kill_positions
@@ -1669,7 +1670,7 @@ class Match(Scene):
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    for threat in self.defender_threatOnAttacker.values():
+                    for threat in self.defender_threatOnAttacker.values(): # BUG 
                         if movement in threat: movement = None
 
                     if movement != None:
