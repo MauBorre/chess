@@ -919,8 +919,7 @@ class Match(Scene):
                             kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
                         
                         for kp in kill_positions:
-                            if kp in self.defender_positions and kp in self.defender_directThreatTrace: 
-                                # if kp == max(self.defender_directThreatTrace) or kp == min(self.defender_directThreatTrace):
+                            if kp not in self.attacker_positions and kp in self.defender_singleOriginT_standpoint: 
                                 # KILL saving position
                                 on_target_kill_positions.update({kp: self.boardRects[kp]})
 
@@ -996,8 +995,7 @@ class Match(Scene):
                             kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
                                     
                         for kp in kill_positions:
-                            if kp in self.defender_positions and kp in self.defender_directThreatTrace:
-                                # if kp == max(self.defender_directThreatTrace) or kp == min(self.defender_directThreatTrace):
+                            if kp not in self.attacker_positions and kp in self.defender_singleOriginT_standpoint:
                                 # KILL saving position
                                 on_target_kill_positions.update({kp: self.boardRects[kp]})
                         
@@ -1153,13 +1151,11 @@ class Match(Scene):
 
                             if movement not in self.attacker_positions:
                                 if movement in self.defender_directThreatTrace:
-                                    # if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
-                                    if movement in self.defender_positions:
+                                    # BLOCK saving position.
+                                    mov_target_positions.update({movement: self.boardRects[movement]})
+                                elif movement == self.defender_singleOriginT_standpoint:
                                         # KILL saving position.
                                         on_target_kill_positions.update({movement: self.boardRects[movement]})
-                                    else:
-                                        # BLOCK saving position.
-                                        mov_target_positions.update({movement: self.boardRects[movement]})
                                 else: continue
                             else: break # chocamos contra un bloqueo - romper el mult
                 return mov_target_positions, on_target_kill_positions
@@ -1420,13 +1416,11 @@ class Match(Scene):
 
                             if movement not in self.attacker_positions:
                                 if movement in self.defender_directThreatTrace:
-                                    # if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
-                                    if movement in self.defender_positions:
-                                        # KILL saving position.
-                                        on_target_kill_positions.update({movement: self.boardRects[movement]})
-                                    else:
-                                        # BLOCK saving position.
+                                    # BLOCK saving position.
                                         mov_target_positions.update({movement: self.boardRects[movement]})
+                                elif movement == self.defender_singleOriginT_standpoint:
+                                    # KILL saving position.
+                                    on_target_kill_positions.update({movement: self.boardRects[movement]})
                                 else: continue
                             else: break
                 return mov_target_positions, on_target_kill_positions
@@ -1612,13 +1606,11 @@ class Match(Scene):
 
                             if movement not in self.attacker_positions:
                                 if movement in self.defender_directThreatTrace:
-                                    # if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
-                                    if movement in self.defender_positions:
-                                        # KILL saving position.
-                                        on_target_kill_positions.update({movement: self.boardRects[movement]})
-                                    else:
-                                        # BLOCK saving position.
+                                    # BLOCK saving position.
                                         mov_target_positions.update({movement: self.boardRects[movement]})
+                                elif movement == self.defender_singleOriginT_standpoint:
+                                    # KILL saving position.
+                                    on_target_kill_positions.update({movement: self.boardRects[movement]})       
                                 else: continue
                             else: break
                 return mov_target_positions, on_target_kill_positions
