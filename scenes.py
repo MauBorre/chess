@@ -203,7 +203,8 @@ class Match(Scene):
         self.black_threatOnWhite: dict[str, int] = {piece:[] for piece in pieces.origins['black']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
         self.black_kingLegalMoves: list[int] = []
         self.black_singleOriginDirectThreat: bool | None = None 
-        self.black_directThreatTrace: list[int] = [] 
+        self.black_directThreatTrace: list[int] = []
+        self.black_singleOriginT_standpoint: int | None
         
         # White
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['white']['pawn']] # no swap
@@ -212,6 +213,7 @@ class Match(Scene):
         self.white_kingLegalMoves: list[int] = []
         self.white_singleOriginDirectThreat: bool | None = None 
         self.white_directThreatTrace: list[int] = [] 
+        self.white_singleOriginT_standpoint: int | None
 
         # Turn lookups --------------------------------------------------------------------------------
         self.turn_attacker: str = 'White'
@@ -261,6 +263,7 @@ class Match(Scene):
         self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
         self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat
         self.defender_directThreatTrace: list[int] = self.black_directThreatTrace
+        self.defender_singleOriginT_standpoint: int | None
 
         # Attacker
         self.attacker_positions: dict[int, str] = self.white_positions 
@@ -268,6 +271,7 @@ class Match(Scene):
         self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
         self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
         self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace
+        self.attacker_singleOriginT_standpoint: int | None
 
     def trace_direction_walk(
         self,
@@ -374,34 +378,38 @@ class Match(Scene):
 
         self.attacker_threatOnDefender.clear()
         self.defender_threatOnAttacker.clear()
-        self.attacker_kingLegalMoves.clear() # creo que está mal limpiar esto
+        self.attacker_kingLegalMoves.clear()
         self.defender_kingLegalMoves.clear()
         self.attacker_directThreatTrace.clear()
         self.defender_directThreatTrace.clear() 
         self.defender_legalMoves.clear()
+        self.attacker_singleOriginDirectThreat = None
+        self.defender_singleOriginDirectThreat = None
+
+        self.attacker_singleOriginT_standpoint = None
+        self.defender_singleOriginT_standpoint = None
 
         # Attacker ----------------------------------------------------------------------------------------
-        if self.defender_singleOriginDirectThreat != False:
-            pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="pawn")
-            for _pawn in pawn_standpoints:
-                self.pawn_objectives(_pawn, perspective='attacker')
+        pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="pawn")
+        for _pawn in pawn_standpoints:
+            self.pawn_objectives(_pawn, perspective='attacker')
 
-            rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="rook")
-            for _rook in rook_standpoints:
-                self.rook_objectives(_rook, perspective='attacker')
+        rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="rook")
+        for _rook in rook_standpoints:
+            self.rook_objectives(_rook, perspective='attacker')
 
-            bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="bishop")
-            for _bishop in bishop_standpoints:
-                self.bishop_objectives(_bishop, perspective='attacker')
+        bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="bishop")
+        for _bishop in bishop_standpoints:
+            self.bishop_objectives(_bishop, perspective='attacker')
 
-            horse_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="horse")
-            for _horse in horse_standpoints:
-                self.horse_objectives(_horse, perspective='attacker')
+        horse_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="horse")
+        for _horse in horse_standpoints:
+            self.horse_objectives(_horse, perspective='attacker')
 
-            queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="queen")
-            if len(queen_standpoint) != 0:
-                _queen = queen_standpoint.pop()
-                self.queen_objectives(_queen, perspective='attacker')
+        queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="queen")
+        if len(queen_standpoint) != 0:
+            _queen = queen_standpoint.pop()
+            self.queen_objectives(_queen, perspective='attacker')
         # --------------------------------------------------------------------------------------------------
 
         # Defender -----------------------------------------------------------------------------------------
@@ -423,15 +431,16 @@ class Match(Scene):
                     # y el actual encontrado _threats_list.
                     att_standpoint: int = {true_stand for true_stand in self.get_piece_standpoint(color=self.turn_attacker, piece=attThreat_piece) if true_stand in _threats_list}.pop()
                     self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint)
-
-                    print('Traza de amenaza directa', self.attacker_directThreatTrace)
-                    _threats_list.remove(att_standpoint) # Necesario para identificar al orígen como -matable- (a veces).
+                    
+                    # Necesario para que el rey pueda identificar al orígen como -matable-.
+                    # BUG ahora las otras piezas no pueden identificarlo, quizás sí debamos
+                    # hacer una variable de mayor alcance para deducir su eliminación
+                    self.attacker_singleOriginT_standpoint = att_standpoint
+                    _threats_list.remove(att_standpoint) 
 
                     # BUG's en attacker_threatOnDefender. No se estan considerando AMBOS rook, AMBOS horses, TODOS los pawns,
                     # parece que estamos retornando antes de tiempo o algo.
-                    print('amenaza en general', self.attacker_threatOnDefender)
-
-            else: self.attacker_singleOriginDirectThreat = None; self.attacker_directThreatTrace.clear()
+                    # print('amenaza en general', self.attacker_threatOnDefender)
 
         if self.attacker_singleOriginDirectThreat != False:
 
@@ -556,6 +565,10 @@ class Match(Scene):
             self.white_directThreatTrace = self.attacker_directThreatTrace
             self.black_directThreatTrace = self.defender_directThreatTrace
 
+            # > singleOriginThreat standpoint
+            self.white_singleOriginT_standpoint = self.attacker_singleOriginT_standpoint
+            self.black_singleOriginT_standpoint = self.defender_singleOriginT_standpoint
+
             # Target Swap (attacker = black | defender = white ) ---------------------------
             # > positions
             self.attacker_positions = self.black_positions
@@ -576,6 +589,10 @@ class Match(Scene):
             # > directThreatTrace
             self.attacker_directThreatTrace = self.black_directThreatTrace
             self.defender_directThreatTrace = self.white_directThreatTrace
+
+            # > SingleOriginThreat standpoint
+            self.attacker_singleOriginT_standpoint = self.black_singleOriginT_standpoint
+            self.defender_singleOriginT_standpoint = self.white_singleOriginT_standpoint
 
             return
         
@@ -605,6 +622,10 @@ class Match(Scene):
             self.white_directThreatTrace = self.defender_directThreatTrace
             self.black_directThreatTrace = self.attacker_directThreatTrace
 
+            # > singleOriginThreat standpoint
+            self.white_singleOriginT_standpoint = self.defender_singleOriginT_standpoint
+            self.black_singleOriginT_standpoint = self.attacker_singleOriginT_standpoint
+
             # Target Swap (attacker = white | defender = black) ---------------------
             # > positions
             self.attacker_positions = self.white_positions
@@ -625,6 +646,10 @@ class Match(Scene):
             # > directThreatTrace
             self.attacker_directThreatTrace = self.white_directThreatTrace
             self.defender_directThreatTrace = self.black_directThreatTrace
+
+            # > singleOriginThreat standpoint
+            self.attacker_singleOriginT_standpoint = self.white_singleOriginT_standpoint
+            self.defender_singleOriginT_standpoint = self.black_singleOriginT_standpoint
 
             return
     
@@ -1238,13 +1263,11 @@ class Match(Scene):
 
                         if movement not in self.attacker_positions:
                             if movement in self.defender_directThreatTrace:
-                                # if movement == max(self.defender_directThreatTrace) or movement == min(self.defender_directThreatTrace):
-                                if movement in self.defender_positions:
-                                    # KILL saving position.
-                                    on_target_kill_positions.update({movement: self.boardRects[movement]})
-                                else:
                                     # BLOCK saving position.
                                     mov_target_positions.update({movement: self.boardRects[movement]})
+                            elif movement == self.defender_singleOriginT_standpoint:
+                                # KILL saving position.
+                                on_target_kill_positions.update({movement: self.boardRects[movement]}) 
                         else: continue
                 return mov_target_positions, on_target_kill_positions
             
