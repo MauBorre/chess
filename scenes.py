@@ -893,7 +893,7 @@ class Match(Scene):
                         '''
                         Únicos movimientos posibles: bloquear o matar la amenaza.
                         > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
-                        > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace
+                        > Matar la amenaza es kill-movement coincidente en self.defender_singleOriginT_standpoint
                         NO verificar exposing-movements.
                         '''
                         if movement not in self.attacker_positions and movement not in self.defender_positions: # piece block
@@ -919,7 +919,7 @@ class Match(Scene):
                             kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
                         
                         for kp in kill_positions:
-                            if kp not in self.attacker_positions and kp in self.defender_singleOriginT_standpoint: 
+                            if kp not in self.attacker_positions and kp == self.defender_singleOriginT_standpoint: 
                                 # KILL saving position
                                 on_target_kill_positions.update({kp: self.boardRects[kp]})
 
@@ -970,7 +970,7 @@ class Match(Scene):
                         '''
                         Únicos movimientos posibles: bloquear o matar la amenaza.
                         > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
-                        > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace
+                        > Matar la amenaza es kill-movement coincidente en self.defender_singleOriginT_standpoint
                         NO verificar exposing-movements.
                         '''
                         if movement not in self.attacker_positions and movement not in self.defender_positions: # piece block
@@ -995,7 +995,7 @@ class Match(Scene):
                             kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
                                     
                         for kp in kill_positions:
-                            if kp not in self.attacker_positions and kp in self.defender_singleOriginT_standpoint:
+                            if kp not in self.attacker_positions and kp == self.defender_singleOriginT_standpoint:
                                 # KILL saving position
                                 on_target_kill_positions.update({kp: self.boardRects[kp]})
                         
@@ -1138,7 +1138,7 @@ class Match(Scene):
                 '''
                 Únicos movimientos posibles: bloquear o matar la amenaza.
                 > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
-                > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace
+                > Matar la amenaza es kill-movement coincidente en self.defender_singleOriginT_standpoint
                 NO verificar exposing-movements.
                 '''
                 for direction in rook_directions:
@@ -1251,7 +1251,7 @@ class Match(Scene):
                 '''
                 Únicos movimientos posibles: bloquear o matar la amenaza.
                 > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
-                > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace
+                > Matar la amenaza es kill-movement coincidente en self.defender_singleOriginT_standpoint
                 NO verificar exposing-movements.
                 '''
                 for movement in horse_movements:
@@ -1400,7 +1400,7 @@ class Match(Scene):
                 '''
                 Únicos movimientos posibles: bloquear o matar la amenaza.
                 > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
-                > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace
+                > Matar la amenaza es kill-movement coincidente en self.defender_singleOriginT_standpoint
                 NO verificar exposing-movements.
                 '''
                 for direction in bishop_directions:
@@ -1454,11 +1454,14 @@ class Match(Scene):
                             else:
                                 _threat_emission.append(movement)
                                 self.attacker_threatOnDefender.update({'bishop': _threat_emission})
+                                print('el bishop parado en', piece_standpoint, 'adjudicó un threat total de', self.attacker_threatOnDefender['bishop'])
+                                print('----')
+                                # print(self.attacker_threatOnDefender)
                                 break # chocamos contra un bloqueo - romper el mult
 
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
-        return
+        # return
 
     def queen_objectives(
         self,
@@ -1587,7 +1590,7 @@ class Match(Scene):
                 '''
                 Únicos movimientos posibles: bloquear o matar la amenaza.
                 > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
-                > Matar la amenaza es kill-movement coincidente en min o max de defender_directThreatTrace
+                > Matar la amenaza es kill-movement coincidente en self.defender_singleOriginT_standpoint
                 NO verificar exposing-movements.
                 '''
                 for direction in queen_directions:
