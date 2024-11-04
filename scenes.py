@@ -173,12 +173,19 @@ class Match(Scene):
     def __init__(self, master):
         super().__init__(master)
 
-        # judge variables
-
         # debería formar parte del init? qué pasa si despues de la partida queremos
         # reiniciarla con alguna variación de modos/regla?
         self.match_mode: dict = self.master.game_variables 
 
+        # board config
+        self.board_begin = pygame.Vector2(
+            (self.midScreen_pos.x - board.width/2,
+            self.midScreen_pos.y - board.height/2))
+        self.boardRects: list[pygame.Rect] = board.make_rects(self.board_begin)
+        self.make_match_content()
+        
+    def make_match_content(self):
+        # in-game variables
         self.move_here: int | None = None
         self.winner: bool = False
         self.stalemate: bool = False # Ahogado | draw
@@ -186,12 +193,6 @@ class Match(Scene):
         self.player_deciding_match = False
         self.killing: bool = False
 
-        # board config
-        self.board_begin = pygame.Vector2(
-            (self.midScreen_pos.x - board.width/2,
-            self.midScreen_pos.y - board.height/2))
-        self.boardRects: list[pygame.Rect] = board.make_rects(self.board_begin)
-        
         # board feedback utilities
         self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
         self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {} 
@@ -378,7 +379,6 @@ class Match(Scene):
         
         debemos entonces limpiar ambos, porque su efecto ya se terminó y vendrán
         otros O nada.
-        
         '''
 
         self.attacker_threatOnDefender.clear()
@@ -390,7 +390,6 @@ class Match(Scene):
         self.defender_legalMoves.clear()
         self.attacker_singleOriginDirectThreat = None
         self.defender_singleOriginDirectThreat = None
-
         self.attacker_singleOriginT_standpoint = None
         self.defender_singleOriginT_standpoint = None
 
@@ -422,7 +421,7 @@ class Match(Scene):
         for at, d in self.attacker_threatOnDefender.items(): print(at, d)
         print('------------')
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        
+
         # Defender -----------------------------------------------------------------------------------------
         king_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender, piece="king")
         if len(king_standpoints) != 0:
@@ -477,59 +476,9 @@ class Match(Scene):
         # -------------------------------------------------------------------------------------------------
 
     def reset_board(self):
-
-        '''Idealmente esta funcion reiniciaria el objeto match por completo.
-        A menos que necesitemos obtener un puntaje por ejemplo, simplemente llamando
-        al init deberiamos reiniciar TODo
-        
-        Creo que *lo ideal* es que Match exponga una API que utilizará el GameMaster
-        para realizar cosas como estas... quizás...'''
-        # self.__init__(master=self.master)
-
-        # judge variables
-        self.winner = False
-        self.stalemate = False
-        self.match_state = ''
-        self.player_deciding_match = False
-
-        # Board defaults ---------------------------------------------------------------------------
-        self.boardRects: list[pygame.Rect] = board.make_rects(self.board_begin)
-
-        # Black
-        self.in_base_Bpawns = [bpawn for bpawn in pieces.origins['black']['pawn']]
-        self.black_positions: dict[int, str] = pieces.black_positions.copy()
-        self.black_threatOnWhite: dict[str, int] = {piece:[] for piece in pieces.origins['black']}
-        self.black_kingLegalMoves: list[int] = []
-        self.black_singleOriginDirectThreat: bool | None = None 
-        self.black_directThreatTrace: list[int] = []
-
-        # White
-        self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['white']['pawn']]
-        self.white_positions: dict[int, str] = pieces.white_positions.copy()
-        self.white_threatOnBlack: dict[str, int] = {piece:[] for piece in pieces.origins['white']} 
-        self.white_kingLegalMoves: list[int] = []
-        self.white_singleOriginDirectThreat: bool | None = None 
-        self.white_directThreatTrace: list[int] = [] 
-    
-        # Turn lookups ------------------------------------------------------------------------------
-        # General
-        self.turn_attacker: str = 'White'
-        self.turn_defender: str = 'Black'
-        self.defender_legalMoves: set[str] = set()
-
-        # Defender
-        self.defender_positions: dict[int, str] = self.black_positions 
-        self.defender_threatOnAttacker: dict[str, list[int]] = self.black_threatOnWhite 
-        self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
-        self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat
-        self.defender_directThreatTrace: list[int] = self.black_directThreatTrace 
-        
-        # Attacker
-        self.attacker_positions: dict[int, str] = self.white_positions 
-        self.attacker_threatOnDefender: dict[str, list[int]] = self.white_threatOnBlack
-        self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
-        self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
-        self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace 
+        '''Puede que haya casos en los que el contenido del match varíe en su reinicio
+        por eso debo tener cuidado *dónde* lo hago.'''
+        self.make_match_content()
 
     def turn_swap(self):
         '''
@@ -1190,6 +1139,7 @@ class Match(Scene):
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                     _threat_emission.append(movement)
                                     on_target_kill_positions.update({movement: self.boardRects[movement]})
+                                    self.attacker_threatOnDefender.update({f'rook{piece_standpoint}': _threat_emission})
                                     break
                                 else: break
                             else: 
@@ -1458,6 +1408,7 @@ class Match(Scene):
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                     _threat_emission.append(movement)
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
+                                    self.attacker_threatOnDefender.update({f'bishop{piece_standpoint}': _threat_emission})
                                     break
                                 else: break
                             else:
@@ -1694,7 +1645,7 @@ class Match(Scene):
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    for threat in self.defender_threatOnAttacker.values():
+                    for threat in self.attacker_threatOnDefender.values():
                         if movement in threat: movement = None
 
                     if movement != None:
@@ -1936,11 +1887,15 @@ class Match(Scene):
 
         if self.attacker_singleOriginDirectThreat:
             if len(self.defender_kingLegalMoves) > 0 or len(self.defender_legalMoves) > 0:
-                print('**JAQUE**')
                 # JAQUE
                 '''Esto requiere solo una notificación al jugador correspondiente.
                 defender_color -> notificate CHECK (highlight possible solutions)'''
                 ...
+
+                print('**JAQUE**')
+                print(self.defender_kingLegalMoves); print(self.defender_legalMoves)
+                print('**JAQUE**')
+                
                 if self.turn_attacker == 'Black':
                     self.match_state = 'White en jaque.'
 
