@@ -307,6 +307,11 @@ class Match(Scene):
                     
         return walk_trace
 
+    def no_digits_name(self, piece_key_name: str) -> str:
+        '''Utilidad para limpiar los nombre de algunas piezas
+        que acarrean una identificación numérica'''
+        return ''.join([c for c in piece_key_name if not c.isdigit()])
+
     def update_turn_objectives(self):
         '''Llama todas las funciones _objectives() con sus correctas perspectivas-de-turno.
 
@@ -411,9 +416,13 @@ class Match(Scene):
             _queen = queen_standpoint.pop()
             self.queen_objectives(_queen, perspective='attacker')
         # --------------------------------------------------------------------------------------------------
+
+        # TURN DEBUG ++++++++++++++++++++++++++++++++++++++++++++++++++++++
         print(f'El jugador {self.turn_attacker} dejó estas amenazas:')
         for at, d in self.attacker_threatOnDefender.items(): print(at, d)
         print('------------')
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        
         # Defender -----------------------------------------------------------------------------------------
         king_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender, piece="king")
         if len(king_standpoints) != 0:
@@ -431,18 +440,16 @@ class Match(Scene):
                     # La posición de orígen de la amenaza estará en _threats_list pero aún no sabemos cual es.
                     # Para ello la deduciremos siendo esta el valor común entre get_piece_standpoint(pieza)
                     # y el actual encontrado _threats_list.
-                    att_standpoint: int = {true_stand for true_stand in self.get_piece_standpoint(color=self.turn_attacker, piece=attThreat_piece) if true_stand in _threats_list}.pop()
+                    att_standpoint: int = {
+                        value_true_standP for value_true_standP in self.get_piece_standpoint(
+                            color=self.turn_attacker,
+                            piece=self.no_digits_name(attThreat_piece)) 
+                            if value_true_standP in _threats_list
+                            }.pop()
                     self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint)
-                    
-                    # Necesario para que el rey pueda identificar al orígen como -matable-.
-                    # BUG ahora las otras piezas no pueden identificarlo, quizás sí debamos
-                    # hacer una variable de mayor alcance para deducir su eliminación
                     self.attacker_singleOriginT_standpoint = att_standpoint
+                    # Necesario para que el rey pueda identificar al orígen como -matable-.
                     _threats_list.remove(att_standpoint) 
-
-                    # BUG's en attacker_threatOnDefender. No se estan considerando AMBOS rook, AMBOS horses, TODOS los pawns,
-                    # parece que estamos retornando antes de tiempo o algo.
-                    # print('amenaza en general', self.attacker_threatOnDefender)
 
         if self.attacker_singleOriginDirectThreat != False:
 
