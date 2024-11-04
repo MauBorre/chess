@@ -482,12 +482,13 @@ class Match(Scene):
 
     def turn_swap(self):
         '''
-        En todo swap computamos 5 variables
+        En todo swap computamos 6 variables
         >> positions
         >> threatOn
         >> kingLegalMoves
         >> singleOriginDirectThreat
         >> directThreatTrace
+        >> singleOriginThreat standpoint
         
         Match aplicará cambios siempre sobre conjuntos "generalizados" attacker/defender,
         entonces luego de realizados:
