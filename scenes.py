@@ -396,6 +396,12 @@ class Match(Scene):
         self.defender_singleOriginT_standpoint = None
 
         # Attacker ----------------------------------------------------------------------------------------
+        #LLAMAR OBJETIVOS DE KING ATTACKER ACA
+        king_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="king")
+        if len(king_standpoints) != 0:
+            _king = king_standpoints.pop()
+            self.king_objectives(_king, perspective='attacker')
+
         pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="pawn")
         for _pawn in pawn_standpoints:
             self.pawn_objectives(_pawn, perspective='attacker')
@@ -1698,6 +1704,7 @@ class Match(Scene):
         on_target_kill_positions: dict[int,pygame.Rect] = {}
         
         # Objectives
+        _threat_emission: list[int] = []
         king_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
         if perspective == 'defender':
@@ -1719,8 +1726,7 @@ class Match(Scene):
 
                     if movement != None:
                         if movement not in self.defender_positions: # ally block
-                            if movement not in self.attacker_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
-                                    self.defender_kingLegalMoves.append(movement)
+                            self.defender_kingLegalMoves.append(movement)
             return
         
         if perspective == 'attacker':
@@ -1742,14 +1748,19 @@ class Match(Scene):
 
                     if movement != None:
 
-                        if movement not in self.defender_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
-                            if movement not in self.attacker_positions and not movement in self.defender_positions:
-                                self.attacker_kingLegalMoves.append(movement)
-                                mov_target_positions.update({movement: self.boardRects[movement]})
-                            elif movement in self.defender_positions:
-                                self.attacker_kingLegalMoves.append(movement)
-                                on_target_kill_positions.update({movement: self.boardRects[movement]})
+                        if movement not in self.attacker_positions and not movement in self.defender_positions:
+                            _threat_emission.append(movement)
+                            self.attacker_kingLegalMoves.append(movement)
+                            mov_target_positions.update({movement: self.boardRects[movement]})
+                        elif movement in self.defender_positions:
+                            _threat_emission.append(movement)
+                            self.attacker_kingLegalMoves.append(movement)
+                            on_target_kill_positions.update({movement: self.boardRects[movement]})
+                        else:
+                            _threat_emission.append(movement)
 
+            _threat_emission.append(piece_standpoint)
+            self.attacker_threatOnDefender.update({'king': _threat_emission})
             return mov_target_positions, on_target_kill_positions
         return
 
