@@ -242,7 +242,7 @@ class Match(Scene):
                 A menos que haya más de un orígen de amenaza DIRECTA -> solo el rey moviendose puede escapar
 
             Threat de bishop, queen y tower pueden bloquearse
-            Threat de pawn y horse no pueden bloquearse
+            Threat de pawn y knight no pueden bloquearse
 
         >> Color-King-legalMovements
             Posición actual + posibles movimientos (bloqueos aliados / casilleros threat).
@@ -282,6 +282,7 @@ class Match(Scene):
         ) -> list[int]:
         '''Caminamos desde el rey hasta la amenaza devolviendo una traza.
         INCLUYE STANDPOINT DEL REY PERO NO DE LA AMENAZA'''
+
         # direcciones
         cardinal_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
         walk_trace: set[int] = set()
@@ -310,10 +311,10 @@ class Match(Scene):
                     
         return walk_trace
 
-    def no_digits_name(self, piece_key_name: str) -> str:
-        '''Utilidad para limpiar los nombre de algunas piezas
-        que acarrean una identificación numérica'''
-        return ''.join([c for c in piece_key_name if not c.isdigit()])
+    # def no_digits_name(self, piece_key_name: str) -> str:
+    #     '''Utilidad para limpiar los nombre de algunas piezas
+    #     que acarrean una identificación numérica'''
+    #     return ''.join([c for c in piece_key_name if not c.isdigit()])
 
     def update_turn_objectives(self):
         '''Llama todas las funciones _objectives() con sus correctas perspectivas-de-turno.
@@ -414,9 +415,9 @@ class Match(Scene):
         for _bishop in bishop_standpoints:
             self.bishop_objectives(_bishop, perspective='attacker')
 
-        horse_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="horse")
-        for _horse in horse_standpoints:
-            self.horse_objectives(_horse, perspective='attacker')
+        knight_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="knight")
+        for _knight in knight_standpoints:
+            self.knight_objectives(_knight, perspective='attacker')
 
         queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="queen")
         if len(queen_standpoint) != 0:
@@ -441,9 +442,13 @@ class Match(Scene):
                 self.attacker_singleOriginDirectThreat = True
 
                 # La posición de orígen de la amenaza estará SIEMPRE en _threats_list[-1].
-                # attacker_directThreatTrace NO INCLUYE STANDPOINT DE LA AMENAZA
-                self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, _threats_list[-1]) 
+                # attacker_directThreatTrace NO INCLUYE STANDPOINT DE LA AMENAZA.
+                # Si la pieza amenazante es el caballo NO llamar a trace_direction_walk.
                 self.attacker_singleOriginT_standpoint = _threats_list[-1]
+                knight_walk_exception: str = self.attacker_positions[_threats_list[-1]]
+                if knight_walk_exception != 'knight':
+                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, _threats_list[-1]) 
+                else: self.attacker_directThreatTrace = []
                 break
 
         self.remove_all_attacker_standpoints() # Necesario para que el rey pueda identificar piezas como -quizás matable-.
@@ -462,9 +467,9 @@ class Match(Scene):
         for _bishop in bishop_standpoints:
             self.bishop_objectives(_bishop, perspective='defender')
         
-        horse_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="horse")
-        for _horse in horse_standpoints:
-            self.horse_objectives(_horse, perspective='defender')
+        knight_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="knight")
+        for _knight in knight_standpoints:
+            self.knight_objectives(_knight, perspective='defender')
         
         queen_standpoint = self.get_piece_standpoint(color=self.turn_defender, piece="queen")
         if len(queen_standpoint) != 0:
@@ -1204,7 +1209,7 @@ class Match(Scene):
             return mov_target_positions, on_target_kill_positions
         return
 
-    def horse_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
+    def knight_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
         '''Movimiento Caballo:
         doble-norte + este
         doble-norte + oeste
@@ -1223,42 +1228,42 @@ class Match(Scene):
 
         # Objectives
         _threat_emission: list[int] = []
-        horse_movements = []
+        knight_movements = []
 
         # ESTE / OESTE LIMITS
         if piece_standpoint+ESTE in row_of_(piece_standpoint):
-            horse_movements.extend([piece_standpoint+NORTE+NOR_ESTE,
+            knight_movements.extend([piece_standpoint+NORTE+NOR_ESTE,
                                     piece_standpoint+SUR+SUR_ESTE])
             if piece_standpoint+ESTE*2 in row_of_(piece_standpoint):
-                horse_movements.extend([piece_standpoint+ESTE+NOR_ESTE,
+                knight_movements.extend([piece_standpoint+ESTE+NOR_ESTE,
                                         piece_standpoint+ESTE+SUR_ESTE])
         if piece_standpoint+OESTE in row_of_(piece_standpoint):
-            horse_movements.extend([piece_standpoint+NORTE+NOR_OESTE,
+            knight_movements.extend([piece_standpoint+NORTE+NOR_OESTE,
                                     piece_standpoint+SUR+SUR_OESTE])
             if piece_standpoint+OESTE*2 in row_of_(piece_standpoint):
-                horse_movements.extend([piece_standpoint+OESTE+NOR_OESTE,
+                knight_movements.extend([piece_standpoint+OESTE+NOR_OESTE,
                                         piece_standpoint+OESTE+SUR_OESTE])
         
         if perspective == 'defender':
             if self.attacker_singleOriginDirectThreat:
-                for movement in horse_movements:
+                for movement in knight_movements:
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT
                         
                         if movement not in self.defender_positions:
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
                                 if movement in self.attacker_directThreatTrace:
-                                    self.defender_legalMoves.add('horse')
+                                    self.defender_legalMoves.add('knight')
                                 if movement == self.attacker_singleOriginT_standpoint:
-                                    self.defender_legalMoves.add('horse')
+                                    self.defender_legalMoves.add('knight')
                         else: continue 
                 return
 
             elif self.attacker_singleOriginDirectThreat == None:
-                for movement in horse_movements:
+                for movement in knight_movements:
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT
                         if movement not in self.defender_positions:
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
-                                self.defender_legalMoves.add('horse')
+                                self.defender_legalMoves.add('knight')
                 return
             return
 
@@ -1270,7 +1275,7 @@ class Match(Scene):
                 > Matar la amenaza es kill-movement coincidente en self.defender_singleOriginT_standpoint
                 NO verificar exposing-movements.
                 '''
-                for movement in horse_movements:
+                for movement in knight_movements:
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT 
 
                         if movement not in self.attacker_positions and movement not in self.defender_positions:
@@ -1287,7 +1292,7 @@ class Match(Scene):
             
             elif self.defender_singleOriginDirectThreat == None:
                 '''Unica pieza la cual podemos descartar todos sus movimientos si uno solo expone.'''
-                for movement in horse_movements:
+                for movement in knight_movements:
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT 
 
                         if movement not in self.attacker_positions:
@@ -1305,7 +1310,7 @@ class Match(Scene):
                             else: return {}, {}
                         else:  _threat_emission.append(movement)
                 _threat_emission.append(piece_standpoint)
-                self.attacker_threatOnDefender.update({f'horse{piece_standpoint}': _threat_emission})
+                self.attacker_threatOnDefender.update({f'knight{piece_standpoint}': _threat_emission})
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
         return
@@ -1587,7 +1592,7 @@ class Match(Scene):
                                     self.defender_legalMoves.add('queen')
                                 if movement == self.attacker_singleOriginT_standpoint:
                                     # kill saving position
-                                    self.defender_legalMoves.add('rook')
+                                    self.defender_legalMoves.add('queen')
                             else: continue
                 return
             elif self.attacker_singleOriginDirectThreat == None:
@@ -1847,10 +1852,10 @@ class Match(Scene):
                                 if interacted_PColor == self.turn_attacker:
                                     self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.rook_objectives(board_index, perspective='attacker')
                             
-                            if SQUARE_TYPE == 'horse':
+                            if SQUARE_TYPE == 'knight':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.horse_objectives(board_index, perspective='attacker')
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.knight_objectives(board_index, perspective='attacker')
                         
                             if SQUARE_TYPE == 'bishop':
                                 self.pieceValidMovement_posDisplay.clear()
@@ -1927,31 +1932,24 @@ class Match(Scene):
         Al momento de checkear este objetivo que tengo revisar el king DEFENSOR en jaque.
 
         JAQUE > El rey es apuntado directamente, PUEDE escapar moviendose o siendo
-            salvado por pieza aliada (matando O bloqueando amenaza)
+            salvado por pieza aliada (matando O bloqueando amenaza) - defensa tiene movimientos legales 
 
         JAQUE-MATE > El rey es apuntado directamente, NO PUEDE escapar moviendose ni
-            siendo salvado por pieza aliada. 
+            siendo salvado por pieza aliada. - defensa NO tiene movimientos legales
 
         STALE-MATE > El rey no es apuntado directamente, pero no puede moverse ni
-            ser salvado por pieza aliada. Estado de empate.        
+            ser salvado por pieza aliada. Estado de empate. - defensa NO tiene movimientos legales
+        
+        DRAW > Solo quedan dos reyes en juego.
         '''
 
         if self.attacker_singleOriginDirectThreat == None:
+            if len(self.attacker_positions) == 1 and len(self.defender_positions) == 1:
+                # Solo pueden ser los reyes, asi que es DRAW
+                self.match_state = 'Draw'
+                self.stalemate = True
+
             if len(self.defender_kingLegalMoves) == 0 and len(self.defender_legalMoves) == 0:
-                '''BUG hay algo más que debo verificar acá.
-
-                El empate sucede cuando EL REY NO ESTÁ EN AMENAZA DIRECTA pero el defensor NO
-                TIENE MOVIMIENTOS LEGALES (*o cualquier movimiento posible dejaría al rey
-                expuesto a un JAQUE*).
-
-                Además de los kingLegalMoves, todas sus otras piezas pueden tener o no
-                movimientos legales, los cuales se basan en si MOVER-EXPONE AL REY, si
-                están BLOQUEADAS (caso peón: bloqueado de frente y por aliados, resto de
-                las piezas pueden estar bloqueadas por aliados).
-
-                Es importar notar que en este estado, CUALQUIER movimiento del actual defensor,
-                dejaría al rey en JAQUE.
-                '''
 
                 #STALE-MATE
                 '''Termina el juego en empate.'''
@@ -1976,7 +1974,7 @@ class Match(Scene):
 
                 print('**JAQUE**')
                 print('El rey defensor puede moverse en: ', self.defender_kingLegalMoves);
-                print('Las piezas aliadas del rey defensor pueden moverse en: ', self.defender_legalMoves)
+                print('Las piezas aliadas del rey defensor pueden moverse: ', self.defender_legalMoves)
                 print('**JAQUE**')
                 
                 if self.turn_attacker == 'Black':
