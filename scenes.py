@@ -1806,8 +1806,8 @@ class Match(Scene):
                                                       SQUARE_RECT.left + board.square_width/2,
                                                       SQUARE_RECT.top + board.square_height/2)
 
-            # hidden/visible elements upon paused state (or finished_game state?)
-            if not self.master.paused:#  and not self.winner or not self.stalemate ?
+            # hidden/visible elements upon paused/finished game state
+            if not self.master.paused and not self.winner and not self.stalemate:
                 if SQUARE_RECT.collidepoint((self.master.mx,self.master.my)):
 
                     # Hover -----------------------
@@ -2088,7 +2088,7 @@ class Match(Scene):
         pygame.draw.rect(self.screen,(100,100,100),
                         pygame.Rect(self.master.screen.get_width()-400,150,width,height))
         # tooltip
-        self.draw_text(self.match_state, 'black', self.screen.get_width()-400, 150, center=False)
+        self.draw_text('La partida ha finalizado.', 'black', self.screen.get_width()-400, 150, center=False)
         self.draw_postgame_again_btn()
         self.draw_exit_to_mainMenu_btn()
         #opciones de cambiar equipo...
