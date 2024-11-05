@@ -1,7 +1,7 @@
 origins: dict[str,dict[str,list[int]]] = { #Legible pero no ideal para render
     'black': {
         'rook':[0,7],
-        'horse':[1,6],
+        'knight':[1,6],
         'bishop':[2,5],
         'queen':[3],
         'king':[4],
@@ -9,7 +9,7 @@ origins: dict[str,dict[str,list[int]]] = { #Legible pero no ideal para render
         },
     'white': {
         'rook':[63,56],
-        'horse':[62,57],
+        'knight':[62,57],
         'bishop':[61,58],
         'queen':[59],
         'king':[60],
