@@ -317,18 +317,21 @@ class Match(Scene):
     #     return ''.join([c for c in piece_key_name if not c.isdigit()])
 
     def update_turn_objectives(self):
-        '''Llama todas las funciones _objectives() con sus correctas perspectivas-de-turno.
+        '''Llama a todas las funciones _objectives() con sus correctas perspectivas-de-turno.
+        En este punto de la ejecución, el atacante ya hizo su acción.
 
         Internamente se revisará:
 
             >> attacker_threatOnDefender
             >> attacker_kingLegalMoves
             >> attacker_singleOriginDirectThreat
-
+            >> attacker_singleOriginT_standpoint
+            >> attacker_directThreatTrace
+            >> defender_directThreatTrace
             >> defender_threatOnAttacker
             >> defender_kingLegalMoves
             >> defender_singleOriginDirectThreat
-            
+            >> defender_singleOriginT_standpoint
             >> defender_legalMoves
         
         Antes de ser utilizadas, estas variables (excepto defender_threatOnAttacker que puede contener
@@ -374,16 +377,6 @@ class Match(Scene):
                 - Por no *salvar al rey* (matando o bloqueando la amenaza)
         '''
 
-        '''
-        defender_directThreatTrace y defender_threatOnAttacker son aflicciones
-        del atacante "mientras está (y puede) moverse".
-
-        En este punto de la ejecución, el atacante ya hizo su acción
-        
-        debemos entonces limpiar ambos, porque su efecto ya se terminó y vendrán
-        otros O nada.
-        '''
-
         self.attacker_threatOnDefender.clear()
         self.defender_threatOnAttacker.clear()
         self.attacker_kingLegalMoves.clear()
@@ -397,7 +390,6 @@ class Match(Scene):
         self.defender_singleOriginT_standpoint = None
 
         # Attacker ----------------------------------------------------------------------------------------
-        #LLAMAR OBJETIVOS DE KING ATTACKER ACA
         king_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="king")
         if len(king_standpoints) != 0:
             _king = king_standpoints.pop()
