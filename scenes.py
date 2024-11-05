@@ -1154,12 +1154,13 @@ class Match(Scene):
                                 break
                         if 0 <= movement <= 63: # VALID SQUARE
 
-                            if movement not in self.attacker_positions:
+                            if movement not in self.attacker_positions and movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                     if movement in self.defender_directThreatTrace:
                                         # BLOCK saving position.
                                         mov_target_positions.update({movement: self.boardRects[movement]})
                                         break
+                                else: break
                                     
                             elif movement == self.defender_singleOriginT_standpoint:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
@@ -1272,7 +1273,7 @@ class Match(Scene):
                 for movement in horse_movements:
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT 
 
-                        if movement not in self.attacker_positions:
+                        if movement not in self.attacker_positions and movement not in self.defender_positions:
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from='attacker'):
                                 if movement in self.defender_directThreatTrace:
                                     # BLOCK saving position.
