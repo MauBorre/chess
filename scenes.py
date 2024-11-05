@@ -455,10 +455,9 @@ class Match(Scene):
                 de no-matables.'''
                 # Necesario para que el rey pueda identificar al orígen como -quizás matable-.
                 _threats_list.remove(att_standpoint)
-
                 break
 
-        # if self.attacker_singleOriginDirectThreat != False:
+        self.remove_all_attacker_standpoints() # Necesario para que el rey pueda identificar piezas como -quizás matable-.
         self.king_objectives(_king, perspective='defender') # genero/reviso defender_kingLegalMoves.
 
         # Defender kingSupport (Revision de movimientos legales del defensor para ver si perdió, empató, o nada de eso)
@@ -621,6 +620,15 @@ class Match(Scene):
 
             return
     
+    def remove_all_attacker_standpoints(self):
+        '''
+        mecanismo que quite TODOS los standpoints de attacker_threatOn
+        (aquí evaluado en su vuelta como def_threatOnAtt), de esta forma identificaremos
+        piezas enemigas como amenazas siempre y cuando su posición no esté en threatOn
+        "como debe ser"
+        '''
+
+
     def exposing_direction(self, standpoint: int, direction: int, request_from: str) -> bool:
         '''Para verificar si un movimiento expone al rey aliado "falsificaremos" 
         un movimiento contra el conjunto de piezas que corresponda.
@@ -1679,13 +1687,20 @@ class Match(Scene):
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    for threat in self.attacker_threatOnDefender.values(): 
+                    for threat in self.attacker_threatOnDefender.values():
+                        # el posible standpoint orígen de amenaza ya fue removido.
+                        # ^ 
+                        # ^ - debería ser ya borramos todos los standpoints enemigos de aquí
+
+                        # BUG CUANDO **NO** HAY JAQUE QUIZAS PODEMOS COMER EN UN LUGAR
+                        # THREAT PERO NO LO ESTAMOS IDENTIFICANDO
                         if movement in threat: movement = None
 
                     if movement != None:
                         if movement not in self.defender_positions: # ally block
                             if movement not in self.attacker_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
                                     self.defender_kingLegalMoves.append(movement)
+            print(self.defender_kingLegalMoves)
             return
         
         if perspective == 'attacker':
@@ -1701,22 +1716,19 @@ class Match(Scene):
                     if movement-SUR not in row_of_(piece_standpoint):
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
-                        
-                    # BUG A veces NO es jaque y podemos matar a una pieza, pero al
-                    # estar aún el standpoint enemigo aquí como amenaza es desestimada por completo.
-
-                    # puedo sino crear un mecanismo que quite TODOS los standpoints de attacker_threatOn
-                    # (aquí evaluado en su vuelta como def_threatOnAtt), de esta forma identificaremos
-                    # piezas enemigas como amenazas siempre y cuando su posición no esté en threatOn
-                    # "como debe ser"
 
                     for threat in self.defender_threatOnAttacker.values():
+                        # el posible standpoint orígen de amenaza ya fue removido.
+                        # ^ 
+                        # ^ - debería ser ya borramos todos los standpoints enemigos de aquí
+
+                        # BUG CUANDO **NO** HAY JAQUE QUIZAS PODEMOS COMER EN UN LUGAR
+                        # THREAT PERO NO LO ESTAMOS IDENTIFICANDO
                         if movement in threat: movement = None
 
                     if movement != None:
 
                         if movement not in self.defender_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
-                            # if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                             if movement not in self.attacker_positions and not movement in self.defender_positions:
                                 self.attacker_kingLegalMoves.append(movement)
                                 mov_target_positions.update({movement: self.boardRects[movement]})
