@@ -419,9 +419,9 @@ class Match(Scene):
         # --------------------------------------------------------------------------------------------------
 
         # TURN DEBUG ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        print(f'El jugador {self.turn_attacker} dejó estas amenazas:')
-        for at, d in self.attacker_threatOnDefender.items(): print(at, d)
-        print('------------')
+        # print(f'El jugador {self.turn_attacker} dejó estas amenazas:')
+        # for at, d in self.attacker_threatOnDefender.items(): print(at, d)
+        # print('------------')
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         # Defender -----------------------------------------------------------------------------------------
@@ -447,14 +447,8 @@ class Match(Scene):
                 self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint) 
                 self.attacker_singleOriginT_standpoint = att_standpoint
 
-                '''Hacer un mecanismo para quitar TODOS los standpoints de att_threatOnDef?
-                debería usarse siempre después de esta revisión de jaque, se haya encontrado
-                jaque o no.
-                
-                Es necesario hacer esto para que el rey identifique y diferencie amenazas matables
-                de no-matables.'''
                 # Necesario para que el rey pueda identificar al orígen como -quizás matable-.
-                _threats_list.remove(att_standpoint)
+                # _threats_list.remove(att_standpoint)
                 break
 
         self.remove_all_attacker_standpoints() # Necesario para que el rey pueda identificar piezas como -quizás matable-.
@@ -622,12 +616,17 @@ class Match(Scene):
     
     def remove_all_attacker_standpoints(self):
         '''
-        mecanismo que quite TODOS los standpoints de attacker_threatOn
-        (aquí evaluado en su vuelta como def_threatOnAtt), de esta forma identificaremos
-        piezas enemigas como amenazas siempre y cuando su posición no esté en threatOn
-        "como debe ser"
-        '''
+        Quita TODOS los standpoints de attacker_threatOndefender
+        (y por consecuente su vuelta como def_threatOnAtt).
 
+        Los standpoints coinciden SIEMPRE en el último item de la lista de amenazas.
+
+        De esta forma aclaramos la visión al rey correspondiente en cuanto a amenazas
+        matables y no-matables.
+        '''
+        for _threats in self.attacker_threatOnDefender.values():
+            _threats.pop()
+        # print('Resultado de POPs: \n', self.attacker_threatOnDefender,'\n----')
 
     def exposing_direction(self, standpoint: int, direction: int, request_from: str) -> bool:
         '''Para verificar si un movimiento expone al rey aliado "falsificaremos" 
@@ -1148,7 +1147,7 @@ class Match(Scene):
                 return mov_target_positions, on_target_kill_positions
                 
             elif self.defender_singleOriginDirectThreat == None:
-                _threat_emission.append(piece_standpoint)
+                
                 for direction in rook_directions:
                     for mult in range(1,8): # 1 to board_size
                         movement = piece_standpoint+direction*mult
@@ -1167,15 +1166,18 @@ class Match(Scene):
                             elif movement in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                     _threat_emission.append(movement)
+                                    # _threat_emission.append(piece_standpoint)
                                     on_target_kill_positions.update({movement: self.boardRects[movement]})
                                     self.attacker_threatOnDefender.update({f'rook{piece_standpoint}': _threat_emission})
                                     break
                                 else: break
                             else: 
                                 _threat_emission.append(movement)
-                                self.attacker_threatOnDefender.update({f'rook{piece_standpoint}': _threat_emission})
+                                # _threat_emission.append(piece_standpoint)
+                                # self.attacker_threatOnDefender.update({f'rook{piece_standpoint}': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
-
+                _threat_emission.append(piece_standpoint)
+                self.attacker_threatOnDefender.update({f'rook{piece_standpoint}': _threat_emission})
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
         return
@@ -1198,6 +1200,7 @@ class Match(Scene):
         on_target_kill_positions: dict[int,pygame.Rect] = {}
 
         # Objectives
+        _threat_emission: list[int] = []
         horse_movements = []
 
         # ESTE / OESTE LIMITS
@@ -1263,21 +1266,21 @@ class Match(Scene):
                 for movement in horse_movements:
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT 
                         if movement not in self.attacker_positions:
-
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from="attacker"):
 
                                 # Movement
                                 if movement not in self.defender_positions:
+                                    _threat_emission.append(movement)
                                     mov_target_positions.update({movement: self.boardRects[movement]})
                                 
                                 # Kill-movement
                                 elif movement in self.defender_positions:
+                                    _threat_emission.append(movement)
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
-
-                                # Threat on defender king ------------------------
-                                self.attacker_threatOnDefender.update({f'horse{piece_standpoint}': [movement]})
-
                             else: return {}, {}
+                        else:  _threat_emission.append(movement)
+                _threat_emission.append(piece_standpoint)
+                self.attacker_threatOnDefender.update({f'horse{piece_standpoint}': _threat_emission})
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
         return
@@ -1423,7 +1426,7 @@ class Match(Scene):
                 return mov_target_positions, on_target_kill_positions
             
             elif self.defender_singleOriginDirectThreat == None:
-                _threat_emission.append(piece_standpoint)
+                
                 for direction in bishop_directions:
                     for mult in range(1,8):
                         movement = piece_standpoint+direction*mult
@@ -1438,6 +1441,7 @@ class Match(Scene):
                             if movement not in self.attacker_positions and movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                     _threat_emission.append(movement)
+                                    # _threat_emission.append(piece_standpoint)
                                     mov_target_positions.update({movement: self.boardRects[movement]})
                                 else: break # rompe hasta la siguiente dirección.
 
@@ -1445,15 +1449,17 @@ class Match(Scene):
                             elif movement in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                     _threat_emission.append(movement)
+                                    # _threat_emission.append(piece_standpoint)
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
-                                    self.attacker_threatOnDefender.update({f'bishop{piece_standpoint}': _threat_emission})
+                                    # self.attacker_threatOnDefender.update({f'bishop{piece_standpoint}': _threat_emission})
                                     break
                                 else: break
                             else:
                                 _threat_emission.append(movement)
-                                self.attacker_threatOnDefender.update({f'bishop{piece_standpoint}': _threat_emission})
+                                # self.attacker_threatOnDefender.update({f'bishop{piece_standpoint}': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
-
+                _threat_emission.append(piece_standpoint)
+                self.attacker_threatOnDefender.update({f'bishop{piece_standpoint}': _threat_emission})
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
 
@@ -1618,7 +1624,7 @@ class Match(Scene):
                 return mov_target_positions, on_target_kill_positions
                 
             elif self.defender_singleOriginDirectThreat == None:
-                _threat_emission.append(piece_standpoint)
+                
                 for direction in queen_directions:
                     for mult in range(1,8):
                         movement = piece_standpoint+direction*mult
@@ -1643,14 +1649,17 @@ class Match(Scene):
                             elif movement in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                     _threat_emission.append(movement) 
+                                    # _threat_emission.append(piece_standpoint)
                                     on_target_kill_positions.update({movement: self.boardRects[movement]})
                                     break
                                 else: break
                             else: 
                                 _threat_emission.append(movement)
-                                self.attacker_threatOnDefender.update({'queen': _threat_emission})
+                                # _threat_emission.append(piece_standpoint)
+                                # self.attacker_threatOnDefender.update({'queen': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
-
+                _threat_emission.append(piece_standpoint)
+                self.attacker_threatOnDefender.update({'queen': _threat_emission})
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
 
@@ -1688,19 +1697,12 @@ class Match(Scene):
                 if 0 <= movement <= 63: # VALID SQUARE
 
                     for threat in self.attacker_threatOnDefender.values():
-                        # el posible standpoint orígen de amenaza ya fue removido.
-                        # ^ 
-                        # ^ - debería ser ya borramos todos los standpoints enemigos de aquí
-
-                        # BUG CUANDO **NO** HAY JAQUE QUIZAS PODEMOS COMER EN UN LUGAR
-                        # THREAT PERO NO LO ESTAMOS IDENTIFICANDO
                         if movement in threat: movement = None
 
                     if movement != None:
                         if movement not in self.defender_positions: # ally block
                             if movement not in self.attacker_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
                                     self.defender_kingLegalMoves.append(movement)
-            print(self.defender_kingLegalMoves)
             return
         
         if perspective == 'attacker':
@@ -1718,12 +1720,6 @@ class Match(Scene):
                 if 0 <= movement <= 63: # VALID SQUARE
 
                     for threat in self.defender_threatOnAttacker.values():
-                        # el posible standpoint orígen de amenaza ya fue removido.
-                        # ^ 
-                        # ^ - debería ser ya borramos todos los standpoints enemigos de aquí
-
-                        # BUG CUANDO **NO** HAY JAQUE QUIZAS PODEMOS COMER EN UN LUGAR
-                        # THREAT PERO NO LO ESTAMOS IDENTIFICANDO
                         if movement in threat: movement = None
 
                     if movement != None:
