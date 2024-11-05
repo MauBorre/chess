@@ -446,8 +446,16 @@ class Match(Scene):
                 # attacker_directThreatTrace NO INCLUYE STANDPOINT DE LA AMENAZA
                 self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint) 
                 self.attacker_singleOriginT_standpoint = att_standpoint
+
+                '''Hacer un mecanismo para quitar TODOS los standpoints de att_threatOnDef?
+                debería usarse siempre después de esta revisión de jaque, se haya encontrado
+                jaque o no.
+                
+                Es necesario hacer esto para que el rey identifique y diferencie amenazas matables
+                de no-matables.'''
                 # Necesario para que el rey pueda identificar al orígen como -quizás matable-.
                 _threats_list.remove(att_standpoint)
+
                 break
 
         # if self.attacker_singleOriginDirectThreat != False:
@@ -624,7 +632,7 @@ class Match(Scene):
         "fake-defenderMov-toAtt"
         E inyectandoles posiciones falsas de "quien consulta".
 
-        Esta perspectiva de pieza devolverá:
+        Cada piece_objective(perspective="fake...") devolverá:
             TRUE si encontró al rey en amenaza directa.
             FALSE si NO lo hizo.
         
@@ -1693,24 +1701,22 @@ class Match(Scene):
                     if movement-SUR not in row_of_(piece_standpoint):
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
-
+                        
                     # BUG A veces NO es jaque y podemos matar a una pieza, pero al
                     # estar aún el standpoint enemigo aquí como amenaza es desestimada por completo.
+
+                    # puedo sino crear un mecanismo que quite TODOS los standpoints de attacker_threatOn
+                    # (aquí evaluado en su vuelta como def_threatOnAtt), de esta forma identificaremos
+                    # piezas enemigas como amenazas siempre y cuando su posición no esté en threatOn
+                    # "como debe ser"
+
                     for threat in self.defender_threatOnAttacker.values():
-                        if movement in threat:
-                            '''
-                            Si encuentro solo UNA aparicion, puede ser kill si es pieza enemiga,
-                            pero NO movimiento
-                            
-                            También puedo ver si existe defender_singleOriginT_standpoint y considerarla
-                            un movimiento válido si mi movimiento -no es exposing-
-                            Pero si solucionamos de este modo, no queda totalmente obsoleto
-                            el threatOn?
-                            '''
-                            print(f'INVA {movement}'); movement = None
+                        if movement in threat: movement = None
 
                     if movement != None:
+
                         if movement not in self.defender_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
+                            # if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                             if movement not in self.attacker_positions and not movement in self.defender_positions:
                                 self.attacker_kingLegalMoves.append(movement)
                                 mov_target_positions.update({movement: self.boardRects[movement]})
