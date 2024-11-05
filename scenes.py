@@ -430,25 +430,14 @@ class Match(Scene):
             _king = king_standpoints.pop()
 
         # Revisión del estado de la amenaza del atacante sobre el rey defensor (jaque)
-        for attThreat_piece, _threats_list in self.attacker_threatOnDefender.items():
+        for _threats_list in self.attacker_threatOnDefender.values():
             if _king in _threats_list:
                 self.attacker_singleOriginDirectThreat = True
 
-                # La posición de orígen de la amenaza estará en _threats_list pero aún no sabemos cual es.
-                # Para ello la deduciremos siendo este orígen el valor común entre get_piece_standpoint(pieza-enemiga)
-                # y el actual encontrado _threats_list.
-                att_standpoint: int = {
-                    value_true_standP for value_true_standP in self.get_piece_standpoint(
-                        color=self.turn_attacker,
-                        piece=self.no_digits_name(attThreat_piece)) 
-                        if value_true_standP in _threats_list
-                        }.pop()
+                # La posición de orígen de la amenaza estará SIEMPRE en _threats_list[-1].
                 # attacker_directThreatTrace NO INCLUYE STANDPOINT DE LA AMENAZA
-                self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint) 
-                self.attacker_singleOriginT_standpoint = att_standpoint
-
-                # Necesario para que el rey pueda identificar al orígen como -quizás matable-.
-                # _threats_list.remove(att_standpoint)
+                self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, _threats_list[-1]) 
+                self.attacker_singleOriginT_standpoint = _threats_list[-1]
                 break
 
         self.remove_all_attacker_standpoints() # Necesario para que el rey pueda identificar piezas como -quizás matable-.
@@ -1462,7 +1451,6 @@ class Match(Scene):
                 self.attacker_threatOnDefender.update({f'bishop{piece_standpoint}': _threat_emission})
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
-
 
     def queen_objectives(
         self,
