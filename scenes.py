@@ -2018,15 +2018,14 @@ class Match(Scene):
         self.draw_text(self.match_state, 'black', 400, 20, center=False)
         self.draw_board()
         self.draw_text(self.turn_attacker,'black',self.midScreen_pos.x - 25, board.height+70,center=False)
-        if self.master.paused:
-            if not self.player_deciding_match:
+        if self.master.paused or self.winner or self.stalemate: # debería ser si el jugador apreto la tecla ESC.
+            if not self.player_deciding_match and not self.winner and not self.stalemate:
                 self.draw_pause_menu()
-            else:
+            if self.winner or self.stalemate:
+                self.draw_post_game_menu()
+            elif self.player_deciding_match:
                 self.draw_confirm_restart_menu()
-        if self.winner or self.stalemate:
-            # self.master.paused = True
-            self.draw_post_game_menu()
-
+            
     def draw_confirm_restart_menu(self,width=300,height=300):
         # frame
         pygame.draw.rect(self.screen,(100,100,100),
@@ -2114,7 +2113,8 @@ class Match(Scene):
             #hover
             pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
             if self.master.click:
-
+                self.master.pause = False
+                self.player_deciding_match = False
                 self.reset_board()
 
     def draw_play_again_btn(self):
@@ -2125,4 +2125,4 @@ class Match(Scene):
             pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
             if self.master.click:
                 self.player_deciding_match = True
-                self.reset_board()
+                # self.reset_board()
