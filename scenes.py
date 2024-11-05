@@ -709,18 +709,18 @@ class Match(Scene):
 
             rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="rook")
             for _rook in rook_standpoints:
-                if self.rook_objectives(_rook, perspective='fake-deffenderMov-toAtt', fake_positions=fake_positions):
+                if self.rook_objectives(_rook, perspective='fake-defenderMov-toAtt', fake_positions=fake_positions):
                     return True
 
             bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="bishop")
             for _bishop in bishop_standpoints:
-                if self.bishop_objectives(_bishop, perspective='fake-deffenderMov-toAtt', fake_positions=fake_positions):
+                if self.bishop_objectives(_bishop, perspective='fake-defenderMov-toAtt', fake_positions=fake_positions):
                     return True
 
             queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="queen")
             if len(queen_standpoint) != 0:
                 _queen = queen_standpoint.pop()
-                if self.queen_objectives(_queen, perspective='fake-deffenderMov-toAtt', fake_positions=fake_positions):
+                if self.queen_objectives(_queen, perspective='fake-defenderMov-toAtt', fake_positions=fake_positions):
                     return True
             return False
 
@@ -756,7 +756,7 @@ class Match(Scene):
                                 
                                 # 1st Movement -BLOCK saving position-
                                 if movement in self.attacker_directThreatTrace:
-                                    self.defender_legalMoves.add('pawn')
+                                    self.defender_legalMoves.add(f'pawn{piece_standpoint}')
 
                                 # 2nd Movement
                                 if piece_standpoint in self.in_base_Bpawns:
@@ -764,7 +764,7 @@ class Match(Scene):
 
                                         # 2nd Movement -BLOCK saving position-
                                         if movement+SUR in self.attacker_directThreatTrace:
-                                            self.defender_legalMoves.add('pawn')    
+                                            self.defender_legalMoves.add(f'pawn{piece_standpoint}')    
                             else: pass
                         
                         # kill saving positions
@@ -783,13 +783,13 @@ class Match(Scene):
                                 if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
                                     # if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
                                     if kp == self.attacker_singleOriginT_standpoint:
-                                        self.defender_legalMoves.add('pawn')
+                                        self.defender_legalMoves.add(f'pawn{piece_standpoint}')
                         return
                             
                     elif self.attacker_singleOriginDirectThreat == None: 
                         if movement not in self.defender_positions or movement not in self.attacker_positions:
                             if not self.exposing_direction(piece_standpoint, direction=SUR, request_from="defender"):
-                                self.defender_legalMoves.add('pawn')
+                                self.defender_legalMoves.add(f'pawn{piece_standpoint}')
                             else: pass
                         
                         # kill positions
@@ -806,7 +806,7 @@ class Match(Scene):
                         for kp in kill_positions:
                             if kp in self.attacker_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
-                                    self.defender_legalMoves.add('pawn')
+                                    self.defender_legalMoves.add(f'pawn{piece_standpoint}')
                         return
                 return
 
@@ -822,7 +822,7 @@ class Match(Scene):
 
                                 # 1st Movement -BLOCK saving position-
                                 if movement in self.attacker_directThreatTrace:
-                                    self.defender_legalMoves.add('pawn')
+                                    self.defender_legalMoves.add(f'pawn{piece_standpoint}')
                                 
                                 # 2nd Movement
                                 if piece_standpoint in self.in_base_Wpawns:
@@ -830,7 +830,7 @@ class Match(Scene):
                                         
                                         # 2nd Movement -BLOCK saving position-
                                         if movement+NORTE in self.attacker_directThreatTrace:
-                                            self.defender_legalMoves.add('pawn')
+                                            self.defender_legalMoves.add(f'pawn{piece_standpoint}')
                             else: pass
                     
                         # kill saving positions
@@ -849,13 +849,13 @@ class Match(Scene):
                                 if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
                                     # if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
                                     if kp == self.attacker_singleOriginT_standpoint:
-                                        self.defender_legalMoves.add('pawn')
+                                        self.defender_legalMoves.add(f'pawn{piece_standpoint}')
                         return
                                         
                     elif self.attacker_singleOriginDirectThreat == None:
                         if movement not in self.defender_positions or movement not in self.attacker_positions:
                             if not self.exposing_direction(piece_standpoint, direction=NORTE, request_from="defender"):
-                                self.defender_legalMoves.add('pawn')
+                                self.defender_legalMoves.add(f'pawn{piece_standpoint}')
                             else: pass
                         
                         # kill saving positions
@@ -872,7 +872,7 @@ class Match(Scene):
                         for kp in kill_positions:
                             if kp in self.attacker_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
-                                    self.defender_legalMoves.add('pawn')
+                                    self.defender_legalMoves.add(f'pawn{piece_standpoint}')
                         return
                 return
             return
@@ -1112,10 +1112,10 @@ class Match(Scene):
                             if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
                                 if movement in self.attacker_directThreatTrace:
                                     # block saving position
-                                    self.defender_legalMoves.add('rook') 
+                                    self.defender_legalMoves.add(f'rook{piece_standpoint}') 
                                 if movement == self.attacker_singleOriginT_standpoint:
                                     # kill saving position
-                                    self.defender_legalMoves.add('rook')
+                                    self.defender_legalMoves.add(f'rook{piece_standpoint}')
                             else: continue
                 return
             elif self.attacker_singleOriginDirectThreat == None:
@@ -1130,7 +1130,7 @@ class Match(Scene):
                             if movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
                                     # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
-                                    self.defender_legalMoves.add('rook')
+                                    self.defender_legalMoves.add(f'rook{piece_standpoint}')
                         # else: break
                 return
             return
@@ -1244,9 +1244,9 @@ class Match(Scene):
                         if movement not in self.defender_positions:
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
                                 if movement in self.attacker_directThreatTrace:
-                                    self.defender_legalMoves.add('knight')
+                                    self.defender_legalMoves.add(f'knight{piece_standpoint}')
                                 if movement == self.attacker_singleOriginT_standpoint:
-                                    self.defender_legalMoves.add('knight')
+                                    self.defender_legalMoves.add(f'knight{piece_standpoint}')
                         else: continue 
                 return
 
@@ -1255,7 +1255,7 @@ class Match(Scene):
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT
                         if movement not in self.defender_positions:
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
-                                self.defender_legalMoves.add('knight')
+                                self.defender_legalMoves.add(f'knight{piece_standpoint}')
                 return
             return
 
@@ -1390,10 +1390,10 @@ class Match(Scene):
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
                                 if movement in self.attacker_directThreatTrace:
                                     # block saving position
-                                    self.defender_legalMoves.add('bishop')
+                                    self.defender_legalMoves.add(f'bishop{piece_standpoint}')
                                 if movement == self.attacker_singleOriginT_standpoint:
                                     # kill saving position
-                                    self.defender_legalMoves.add('bishop')
+                                    self.defender_legalMoves.add(f'bishop{piece_standpoint}')
                             else: continue
                 return
             elif self.attacker_singleOriginDirectThreat == None:
@@ -1410,7 +1410,7 @@ class Match(Scene):
 
                             if movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
-                                    self.defender_legalMoves.add('bishop')
+                                    self.defender_legalMoves.add(f'bishop{piece_standpoint}')
                             else: break
                 return
             return
@@ -1581,10 +1581,10 @@ class Match(Scene):
                             if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
                                 if movement in self.attacker_directThreatTrace:
                                     # block saving position
-                                    self.defender_legalMoves.add('queen')
+                                    self.defender_legalMoves.add(f'queen{piece_standpoint}')
                                 if movement == self.attacker_singleOriginT_standpoint:
                                     # kill saving position
-                                    self.defender_legalMoves.add('queen')
+                                    self.defender_legalMoves.add(f'queen{piece_standpoint}')
                             else: continue
                 return
             elif self.attacker_singleOriginDirectThreat == None:
@@ -1604,8 +1604,7 @@ class Match(Scene):
 
                             if movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
-                                    self.defender_legalMoves.add('queen')
-                        # else: break
+                                    self.defender_legalMoves.add(f'queen{piece_standpoint}')
                 return
             return                      
         
@@ -1940,6 +1939,7 @@ class Match(Scene):
                 # Solo pueden ser los reyes, asi que es DRAW
                 self.match_state = 'Draw'
                 self.stalemate = True
+                self.master.pause = True
 
             if len(self.defender_kingLegalMoves) == 0 and len(self.defender_legalMoves) == 0:
 
@@ -1948,10 +1948,12 @@ class Match(Scene):
                 if self.turn_attacker == 'Black':
                     self.stalemate = True # repercute en render() - termina la partida
                     self.match_state = 'Rey White ahogado.  -  Empate.'
+                    self.master.pause = True
 
                 if self.turn_attacker == 'White':
                     self.stalemate = True # repercute en render() - termina la partida
                     self.match_state = 'Rey Black ahogado.  -  Empate.'
+                    self.master.pause = True
 
             else:
                 self.match_state = ''
@@ -1976,33 +1978,31 @@ class Match(Scene):
                     self.match_state = 'Black en jaque.'
 
             elif len(self.defender_kingLegalMoves) == 0 and len(self.defender_legalMoves) == 0:
-
                 #JAQUE-MATE
                 '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
-                ...
                 if self.turn_attacker == 'Black':
-                    self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                    self.winner = True # automaticamente repercutirá draw() 
                     self.match_state = 'Black gana.  -  White en jaque-mate.'
-
+                    self.master.pause = True
                 if self.turn_attacker == 'White':
-                    self.winner = True # automaticamente repercutirá draw() - 29/09 NO TESTEADA
+                    self.winner = True # automaticamente repercutirá draw()
                     self.match_state = 'White gana  -  Black en jaque-mate.'
+                    self.master.pause = True
 
         if self.attacker_singleOriginDirectThreat == False: # múltiple origen de amenaza.
             if len(self.defender_kingLegalMoves) == 0:
-
                 #JAQUE-MATE
                 '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
-                ...
                 if self.turn_attacker == 'Black':
                     self.winner = True # repercute en render() - termina la partida
                     self.match_state = 'Black gana.  -  White en jaque-mate.'
+                    self.master.pause = True
 
                 if self.turn_attacker == 'White':
                     self.winner = True # repercute en render() - termina la partida
                     self.match_state = 'White gana  -  Black en jaque-mate.'
+                    self.master.pause = True
             else:
-
                 # JAQUE
                 '''Notificar al jugador correspondiente.'''
                 if self.turn_attacker == 'Black':
