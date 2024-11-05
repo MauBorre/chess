@@ -2125,4 +2125,3 @@ class Match(Scene):
             pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
             if self.master.click:
                 self.player_deciding_match = True
-                # self.reset_board()
