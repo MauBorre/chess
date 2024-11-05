@@ -1267,10 +1267,12 @@ class Match(Scene):
                     if 0 <= movement <= 63: # NORTE/SUR LIMIT 
 
                         if movement not in self.attacker_positions:
-                            if movement in self.defender_directThreatTrace:
-                                # BLOCK saving position.
-                                mov_target_positions.update({movement: self.boardRects[movement]})
-                            elif movement == self.defender_singleOriginT_standpoint:
+                            if not self.exposing_direction(piece_standpoint, direction=movement, request_from='attacker'):
+                                if movement in self.defender_directThreatTrace:
+                                    # BLOCK saving position.
+                                    mov_target_positions.update({movement: self.boardRects[movement]})
+                        elif movement == self.defender_singleOriginT_standpoint:
+                            if not self.exposing_direction(piece_standpoint, direction=movement, request_from='attacker'):
                                 # KILL saving position.
                                 on_target_kill_positions.update({movement: self.boardRects[movement]}) 
                         else: continue
