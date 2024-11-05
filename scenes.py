@@ -447,7 +447,8 @@ class Match(Scene):
                 self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, att_standpoint) 
                 self.attacker_singleOriginT_standpoint = att_standpoint
                 # Necesario para que el rey pueda identificar al orígen como -quizás matable-.
-                _threats_list.remove(att_standpoint) 
+                _threats_list.remove(att_standpoint)
+                break
 
         # if self.attacker_singleOriginDirectThreat != False:
         self.king_objectives(_king, perspective='defender') # genero/reviso defender_kingLegalMoves.
@@ -748,7 +749,7 @@ class Match(Scene):
                             if kp in self.attacker_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
                                     # if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
-                                    if kp in self.attacker_singleOriginT_standpoint:
+                                    if kp == self.attacker_singleOriginT_standpoint:
                                         self.defender_legalMoves.add('pawn')
                         return
                             
@@ -814,7 +815,7 @@ class Match(Scene):
                             if kp in self.attacker_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
                                     # if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
-                                    if kp in self.attacker_singleOriginT_standpoint:
+                                    if kp == self.attacker_singleOriginT_standpoint:
                                         self.defender_legalMoves.add('pawn')
                         return
                                         
@@ -1079,7 +1080,7 @@ class Match(Scene):
                                 if movement in self.attacker_directThreatTrace:
                                     # block saving position
                                     self.defender_legalMoves.add('rook') 
-                                if movement in self.attacker_singleOriginT_standpoint:
+                                if movement == self.attacker_singleOriginT_standpoint:
                                     # kill saving position
                                     self.defender_legalMoves.add('rook')
                             else: continue
@@ -1206,7 +1207,7 @@ class Match(Scene):
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
                                 if movement in self.attacker_directThreatTrace:
                                     self.defender_legalMoves.add('horse')
-                                if movement in self.attacker_singleOriginT_standpoint:
+                                if movement == self.attacker_singleOriginT_standpoint:
                                     self.defender_legalMoves.add('horse')
                         else: continue 
                 return
@@ -1349,7 +1350,7 @@ class Match(Scene):
                                 if movement in self.attacker_directThreatTrace:
                                     # block saving position
                                     self.defender_legalMoves.add('bishop')
-                                if movement in self.attacker_singleOriginT_standpoint:
+                                if movement == self.attacker_singleOriginT_standpoint:
                                     # kill saving position
                                     self.defender_legalMoves.add('bishop')
                             else: continue
@@ -1534,11 +1535,11 @@ class Match(Scene):
 
                             if movement in self.defender_positions:
                                 break
-                            if movement not in self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
+                            if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
                                 if movement in self.attacker_directThreatTrace:
                                     # block saving position
                                     self.defender_legalMoves.add('queen')
-                                if movement in self.attacker_singleOriginT_standpoint:
+                                if movement == self.attacker_singleOriginT_standpoint:
                                     # kill saving position
                                     self.defender_legalMoves.add('rook')
                             else: continue
@@ -1670,14 +1671,6 @@ class Match(Scene):
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    if self.attacker_singleOriginDirectThreat == True:
-                        ...
-
-                    # elif self.attacker_singleOriginDirectThreat == None:
-                    #     ...
-
-                    # BUG aqui hay una posicion kill que aun no se toma como válida
-                    # por que no se "expulso" de threatOnDef aún.
                     for threat in self.attacker_threatOnDefender.values(): 
                         if movement in threat: movement = None
 
@@ -1702,9 +1695,19 @@ class Match(Scene):
                 if 0 <= movement <= 63: # VALID SQUARE
 
                     # BUG A veces NO es jaque y podemos matar a una pieza, pero al
-                    # estar aún su standpoint aqui es desestimada por completo.
+                    # estar aún el standpoint enemigo aquí como amenaza es desestimada por completo.
                     for threat in self.defender_threatOnAttacker.values():
-                        if movement in threat: print(f'INVA {movement}'); movement = None
+                        if movement in threat:
+                            '''
+                            Si encuentro solo UNA aparicion, puede ser kill si es pieza enemiga,
+                            pero NO movimiento
+                            
+                            También puedo ver si existe defender_singleOriginT_standpoint y considerarla
+                            un movimiento válido si mi movimiento -no es exposing-
+                            Pero si solucionamos de este modo, no queda totalmente obsoleto
+                            el threatOn?
+                            '''
+                            print(f'INVA {movement}'); movement = None
 
                     if movement != None:
                         if movement not in self.defender_kingLegalMoves: # Los reyes no pueden solapar sus posiciones
@@ -1928,7 +1931,8 @@ class Match(Scene):
                 ...
 
                 print('**JAQUE**')
-                print(self.defender_kingLegalMoves); print(self.defender_legalMoves)
+                print('El rey defensor puede moverse en: ', self.defender_kingLegalMoves);
+                print('Las piezas aliadas del rey defensor pueden moverse en: ', self.defender_legalMoves)
                 print('**JAQUE**')
                 
                 if self.turn_attacker == 'Black':
