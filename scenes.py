@@ -484,7 +484,7 @@ class Match(Scene):
         >> directThreatTrace
         >> singleOriginThreat standpoint
         
-        Match aplicará cambios siempre sobre conjuntos "generalizados" attacker/defender,
+        Match aplicará cambios siempre sobre conjuntos generalizados bajo attacker/defender,
         entonces luego de realizados:
 
         PRIMERO los volveremos a adjudicar a su variable de color-origen. "COMO ERAN"
@@ -497,7 +497,7 @@ class Match(Scene):
             self.turn_attacker = 'Black'
             self.turn_defender = 'White'
 
-            # Target Transfer (white <- attacker | black <- defender) -----------------
+            # Target Transfer (white <- attacker | black <- defender) ---------------------
             # > positions
             self.white_positions = self.attacker_positions
             self.black_positions = self.defender_positions
@@ -554,7 +554,7 @@ class Match(Scene):
             self.turn_attacker = 'White'
             self.turn_defender = 'Black'
 
-            # Target Transfer (white <- defender | black <- attacker) -----------------
+            # Target Transfer (white <- defender | black <- attacker) ----------------------
             # > positions
             self.white_positions = self.defender_positions
             self.black_positions = self.attacker_positions
@@ -579,7 +579,7 @@ class Match(Scene):
             self.white_singleOriginT_standpoint = self.defender_singleOriginT_standpoint
             self.black_singleOriginT_standpoint = self.attacker_singleOriginT_standpoint
 
-            # Target Swap (attacker = white | defender = black) ---------------------
+            # Target Swap (attacker = white | defender = black) ----------------------------
             # > positions
             self.attacker_positions = self.white_positions
             self.defender_positions = self.black_positions
@@ -781,7 +781,6 @@ class Match(Scene):
                         for kp in kill_positions:
                             if kp in self.attacker_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
-                                    # if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
                                     if kp == self.attacker_singleOriginT_standpoint:
                                         self.defender_legalMoves.add(f'pawn{piece_standpoint}')
                         return
@@ -847,7 +846,6 @@ class Match(Scene):
                         for kp in kill_positions:
                             if kp in self.attacker_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
-                                    # if kp == max(self.attacker_directThreatTrace) or kp == min(self.attacker_directThreatTrace):
                                     if kp == self.attacker_singleOriginT_standpoint:
                                         self.defender_legalMoves.add(f'pawn{piece_standpoint}')
                         return
@@ -1463,7 +1461,6 @@ class Match(Scene):
                             if movement not in self.attacker_positions and movement not in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                     _threat_emission.append(movement)
-                                    # _threat_emission.append(piece_standpoint)
                                     mov_target_positions.update({movement: self.boardRects[movement]})
                                 else: break # rompe hasta la siguiente dirección.
 
@@ -1471,14 +1468,11 @@ class Match(Scene):
                             elif movement in self.defender_positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                     _threat_emission.append(movement)
-                                    # _threat_emission.append(piece_standpoint)
                                     on_target_kill_positions.update({movement:self.boardRects[movement]})
-                                    # self.attacker_threatOnDefender.update({f'bishop{piece_standpoint}': _threat_emission})
                                     break
                                 else: break
                             else:
                                 _threat_emission.append(movement)
-                                # self.attacker_threatOnDefender.update({f'bishop{piece_standpoint}': _threat_emission})
                                 break # chocamos contra un bloqueo - romper el mult
                 _threat_emission.append(piece_standpoint)
                 self.attacker_threatOnDefender.update({f'bishop{piece_standpoint}': _threat_emission})
@@ -1777,7 +1771,7 @@ class Match(Scene):
                            SQUARE_RECT.top + board.square_height -17,
                            center=False, font_size='medium')
             
-            # Diccionarios de posiciones --------------------------
+            # Diccionarios de posiciones -------------------------------------------------------------------------
             if board_index in self.black_positions.keys():
                 SQUARE_SUBTYPE = "kill-movement" if board_index in self.pieceValidKill_posDisplay.keys() else ""
                 SQUARE_TYPE =  self.black_positions[board_index]
@@ -1794,7 +1788,7 @@ class Match(Scene):
                 interacted_PColor = ""
 
             else: SQUARE_TYPE = "EMPTY"; interacted_PColor = ""; SQUARE_SUBTYPE = ""
-            # ----------------------------------------------------
+            # ----------------------------------------------------------------------------------------------------
 
             # draw piece
             if SQUARE_TYPE != "EMPTY":
