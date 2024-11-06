@@ -1892,7 +1892,7 @@ class Match(Scene):
                 self.white_positions.update({self.move_here:_piece})
 
             # POST MOVIMIENTOS / ATAQUES ---------------------
-            self.check_pawn_promotion()
+            self.check_pawn_promotion() # working...
             self.update_turn_objectives() 
             self.decide_check() # <- El juego debe continuar? 
 
