@@ -195,6 +195,7 @@ class Match(Scene):
         # pawn promotion
         self.player_deciding_promotion: bool = False
         self.pawnPromotion_selection: str = ''
+        self.promoting_pawn: int | None = None
 
         # board feedback utilities
         self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
@@ -220,8 +221,8 @@ class Match(Scene):
         self.white_singleOriginT_standpoint: int | None
 
         # Turn lookups --------------------------------------------------------------------------------
-        self.turn_attacker: str = 'White'
-        self.turn_defender: str = 'Black'
+        self.turn_attacker: str = 'white'
+        self.turn_defender: str = 'black'
 
         # Si existe múltiple orígen de amenaza NUNCA habrá legalMoves por parte.
         # de las piezas defensoras.
@@ -278,16 +279,39 @@ class Match(Scene):
         self.attacker_singleOriginT_standpoint: int | None
 
     def check_pawn_promotion(self):
-        # obtener standpoints PAWN de attacker
-        # revisar si esta en el límite de tablero correspondiente
-            #(northest para white | southest para black)
-        # si está: 
-            # self.master.pause = True
-            # self.player_deciding_promotion = True
-        # si pawnPromotion_selection != '':
-            # self.attacker_positions[prev_pawn_stand] = pawnPromotion_selection
+        # Obtener standpoints PAWN de attacker
+        pawn_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker,piece="pawn")
+        
+        # Revisar si algun pawn llegó a la fila objetivo 
+        if self.turn_attacker == 'white':
+            for _pawn in pawn_standpoints:
+                if _pawn in row_of_(0): # NORTHMOST ROW
+                    self.promoting_pawn = _pawn
+                    self.master.pause = True
+                    self.player_deciding_promotion = True
+                    # if self.pawnPromotion_selection != '':
+                    #     self.attacker_positions.update({_pawn: self.pawnPromotion_selection})
+        
+        # Revisar si algun pawn llegó a la fila objetivo
+        if self.turn_attacker == 'black':
+            for _pawn in pawn_standpoints:
+                if _pawn in row_of_(63): # SOUTHMOST ROW
+                    self.promoting_pawn = _pawn
+                    self.master.pause = True
+                    self.player_deciding_promotion = True
+                    # if self.pawnPromotion_selection != '':
+                    #     self.attacker_positions.update({_pawn: self.pawnPromotion_selection})
 
-        ...
+    def make_promotion(self):
+        # En este punto la pieza promovida corresponde a DEFENDER.
+        # BUG debemos hacerlo de tal forma que aún es atacante, 
+        # porque la promoción PUEDE DEJAR AL REY EN JAQUE, no se debe
+        # pasar de turno automaticamente.
+        if self.pawnPromotion_selection != '':
+            self.defender_positions.update({self.promoting_pawn: self.pawnPromotion_selection})
+            self.pawnPromotion_selection == ''
+            self.promoting_pawn = None
+
 
     def trace_direction_walk(
         self,
@@ -507,10 +531,10 @@ class Match(Scene):
         LUEGO los intercambiamos por el color-equipo que corresponde. "COMO RESULTAN AHORA"
         '''
 
-        if self.turn_attacker == 'White':
+        if self.turn_attacker == 'white':
 
-            self.turn_attacker = 'Black'
-            self.turn_defender = 'White'
+            self.turn_attacker = 'black'
+            self.turn_defender = 'white'
 
             # Target Transfer (white <- attacker | black <- defender) ---------------------
             # > positions
@@ -564,10 +588,10 @@ class Match(Scene):
 
             return
         
-        if self.turn_attacker == 'Black':
+        if self.turn_attacker == 'black':
 
-            self.turn_attacker = 'White'
-            self.turn_defender = 'Black'
+            self.turn_attacker = 'white'
+            self.turn_defender = 'black'
 
             # Target Transfer (white <- defender | black <- attacker) ----------------------
             # > positions
@@ -759,7 +783,7 @@ class Match(Scene):
         movement: int
 
         if perspective == 'defender' :
-            if self.turn_defender == 'Black': # defiende hacia el SUR
+            if self.turn_defender == 'black': # defiende hacia el SUR
             
                 # 1st Movement
                 movement = piece_standpoint+SUR
@@ -824,7 +848,7 @@ class Match(Scene):
                         return
                 return
 
-            if self.turn_defender == 'White': # defiende hacia el NORTE
+            if self.turn_defender == 'white': # defiende hacia el NORTE
 
                 # 1st Movement
                 movement = piece_standpoint+NORTE
@@ -891,7 +915,7 @@ class Match(Scene):
             return
 
         if perspective == 'attacker':
-            if self.turn_attacker == 'Black': # Ataca hacia el SUR
+            if self.turn_attacker == 'black': # Ataca hacia el SUR
 
                 # 1st Movement
                 movement = piece_standpoint+SUR
@@ -970,7 +994,7 @@ class Match(Scene):
 
                         return mov_target_positions, on_target_kill_positions
 
-            if self.turn_attacker == 'White': # Ataca hacia el NORTE
+            if self.turn_attacker == 'white': # Ataca hacia el NORTE
 
                 # 1st Movement
                 movement = piece_standpoint+NORTE
@@ -1790,12 +1814,12 @@ class Match(Scene):
             if board_index in self.black_positions.keys():
                 SQUARE_SUBTYPE = "kill-movement" if board_index in self.pieceValidKill_posDisplay.keys() else ""
                 SQUARE_TYPE =  self.black_positions[board_index]
-                interacted_PColor = "Black"
+                interacted_PColor = "black"
 
             elif board_index in self.white_positions.keys():
                 SQUARE_SUBTYPE = "kill-movement" if board_index in self.pieceValidKill_posDisplay.keys() else ""
                 SQUARE_TYPE = self.white_positions[board_index]
-                interacted_PColor = "White"
+                interacted_PColor = "white"
 
             elif board_index in self.pieceValidMovement_posDisplay.keys():
                 SQUARE_SUBTYPE = "valid-movement"
@@ -1807,16 +1831,16 @@ class Match(Scene):
 
             # draw piece
             if SQUARE_TYPE != "EMPTY":
-                if interacted_PColor == 'Black':
+                if interacted_PColor == 'black':
                     self.draw_text(SQUARE_TYPE,'black', SQUARE_RECT.left + board.square_width/2,
                                                         SQUARE_RECT.top + board.square_height/2)
-                if interacted_PColor == 'White':
+                if interacted_PColor == 'white':
                     self.draw_text(SQUARE_TYPE,(120,120,120),
                                                       SQUARE_RECT.left + board.square_width/2,
                                                       SQUARE_RECT.top + board.square_height/2)
 
             # hidden/visible elements upon paused/finished game state
-            if not self.master.paused and not self.winner and not self.stalemate:
+            if not self.master.paused and not self.winner and not self.stalemate and not self.player_deciding_promotion:
                 if SQUARE_RECT.collidepoint((self.master.mx,self.master.my)):
 
                     # Hover -----------------------
@@ -1879,20 +1903,21 @@ class Match(Scene):
         if self.move_here != None:
             ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
 
-            if self.turn_defender == 'White':
+            if self.turn_defender == 'white':
                 _piece = self.black_positions.pop(ex_value)
                 if self.killing:
                     self.white_positions.pop(self.move_here)
                 self.black_positions.update({self.move_here:_piece})               
 
-            if self.turn_defender == 'Black':
+            if self.turn_defender == 'black':
                 _piece = self.white_positions.pop(ex_value)
                 if self.killing:
                     self.black_positions.pop(self.move_here) 
                 self.white_positions.update({self.move_here:_piece})
 
             # POST MOVIMIENTOS / ATAQUES ---------------------
-            self.check_pawn_promotion() # working...
+            self.check_pawn_promotion()
+            
             self.update_turn_objectives() 
             self.decide_check() # <- El juego debe continuar? 
 
@@ -1913,11 +1938,11 @@ class Match(Scene):
         > Argumentar pieza exactamente igual que en pieces.origins
         '''
         _actual_standpoints: list[int] = []
-        if color == 'Black':
+        if color == 'black':
             for k,v in self.black_positions.items():
                 if v == piece:
                     _actual_standpoints.append(k)
-        if color == 'White':
+        if color == 'white':
             for k,v in self.white_positions.items():
                 if v == piece:
                     _actual_standpoints.append(k)
@@ -1953,12 +1978,12 @@ class Match(Scene):
 
                 #STALE-MATE
                 '''Termina el juego en empate.'''
-                if self.turn_attacker == 'Black':
+                if self.turn_attacker == 'black':
                     self.stalemate = True # repercute en render() - termina la partida
                     self.match_state = 'Rey White ahogado.  -  Empate.'
                     self.master.pause = True
 
-                if self.turn_attacker == 'White':
+                if self.turn_attacker == 'white':
                     self.stalemate = True # repercute en render() - termina la partida
                     self.match_state = 'Rey Black ahogado.  -  Empate.'
                     self.master.pause = True
@@ -1979,20 +2004,20 @@ class Match(Scene):
                 print('Las piezas aliadas del rey defensor pueden moverse: ', self.defender_legalMoves)
                 print('**JAQUE**')
                 
-                if self.turn_attacker == 'Black':
+                if self.turn_attacker == 'black':
                     self.match_state = 'White en jaque.'
 
-                if self.turn_attacker == 'White':
+                if self.turn_attacker == 'white':
                     self.match_state = 'Black en jaque.'
 
             elif len(self.defender_kingLegalMoves) == 0 and len(self.defender_legalMoves) == 0:
                 #JAQUE-MATE
                 '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
-                if self.turn_attacker == 'Black':
+                if self.turn_attacker == 'black':
                     self.winner = True # automaticamente repercutirá draw() 
                     self.match_state = 'Black gana.  -  White en jaque-mate.'
                     self.master.pause = True
-                if self.turn_attacker == 'White':
+                if self.turn_attacker == 'white':
                     self.winner = True # automaticamente repercutirá draw()
                     self.match_state = 'White gana  -  Black en jaque-mate.'
                     self.master.pause = True
@@ -2001,22 +2026,22 @@ class Match(Scene):
             if len(self.defender_kingLegalMoves) == 0:
                 #JAQUE-MATE
                 '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
-                if self.turn_attacker == 'Black':
+                if self.turn_attacker == 'black':
                     self.winner = True # repercute en render() - termina la partida
                     self.match_state = 'Black gana.  -  White en jaque-mate.'
                     self.master.pause = True
 
-                if self.turn_attacker == 'White':
+                if self.turn_attacker == 'white':
                     self.winner = True # repercute en render() - termina la partida
                     self.match_state = 'White gana  -  Black en jaque-mate.'
                     self.master.pause = True
             else:
                 # JAQUE
                 '''Notificar al jugador correspondiente.'''
-                if self.turn_attacker == 'Black':
+                if self.turn_attacker == 'black':
                     self.match_state = 'White en jaque.'
                     
-                if self.turn_attacker == 'White':
+                if self.turn_attacker == 'white':
                     self.match_state = 'Black en jaque.'
 
     def render(self):
@@ -2166,6 +2191,7 @@ class Match(Scene):
                 self.pawnPromotion_selection = 'rook'
                 self.player_deciding_promotion = False
                 self.master.pause = False
+                self.make_promotion()
 
     def draw_knightOPT_btn(self): 
         self.draw_text('Knight', 'white', self.screen.get_width()-400, 300, center=False)
@@ -2177,6 +2203,7 @@ class Match(Scene):
                 self.pawnPromotion_selection = 'knight'
                 self.player_deciding_promotion = False
                 self.master.pause = False
+                self.make_promotion()
 
     def draw_bishopOPT_btn(self): 
         self.draw_text('Bishop', 'white', self.screen.get_width()-400, 400, center=False)
@@ -2188,6 +2215,7 @@ class Match(Scene):
                 self.pawnPromotion_selection = 'bishop'
                 self.player_deciding_promotion = False
                 self.master.pause = False
+                self.make_promotion()
     
     def draw_queenOPT_btn(self): 
         self.draw_text('Queen', 'white', self.screen.get_width()-400, 500, center=False)
@@ -2199,4 +2227,5 @@ class Match(Scene):
                 self.pawnPromotion_selection = 'queen'
                 self.player_deciding_promotion = False
                 self.master.pause = False
+                self.make_promotion()
     # --------------------------------------------------------------------------------------------------------
