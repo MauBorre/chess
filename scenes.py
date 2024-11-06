@@ -2095,6 +2095,7 @@ class Match(Scene):
                         pygame.Rect(self.master.screen.get_width()-400,150,width,height))
         # tooltip
         self.draw_text('Paused','black',self.screen.get_width()-400,150,center=False)
+        # buttons
         self.draw_continue_btn()
         self.draw_play_again_btn()
         self.draw_exit_to_mainMenu_btn()
@@ -2112,10 +2113,61 @@ class Match(Scene):
                 self.reset_board()
 
     def draw_play_again_btn(self):
-        self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400,400,center=False)
-        play_again_rect = pygame.Rect(self.screen.get_width()-400,400,200,50)
+        self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400, 400, center=False)
+        play_again_rect = pygame.Rect(self.screen.get_width()-400, 400, 200, 50)
         if play_again_rect.collidepoint((self.master.mx, self.master.my)):
             #hover
-            pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
+            pygame.draw.rect(self.screen, (255,0,0), play_again_rect, width=1)
             if self.master.click:
                 self.player_deciding_match = True
+    
+    def pawn_promotion_selection(self, width=300, height=400):
+        # frame
+        pygame.draw.rect(self.screen, (100,100,100),
+                        pygame.Rect(self.screen.get_width()-400, 150, width, height))
+        # tooltip
+        self.draw_text('Elija su promoción', 'white', self.screen.get_width()-100, 400, center=True)
+        self.draw_rookOPT_btn()
+        self.draw_knightOPT_btn()
+        self.draw_queenOPT_btn()
+        self.draw_bishopOPT_btn()
+    
+    def draw_rookOPT_btn(self): 
+        self.draw_text('Rook', 'white', self.screen.get_width()-400, 200, center=False)
+        selection_rect = pygame.Rect(self.screen.get_width()-400, 200, 200, 50)
+        if selection_rect.collidepoint((self.master.mx, self.master.my)):
+            #hover
+            pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
+            if self.master.click:
+                # make game variable selected = 'rook'
+                ...
+
+    def draw_knightOPT_btn(self): 
+        self.draw_text('Knight', 'white', self.screen.get_width()-400, 300, center=False)
+        selection_rect = pygame.Rect(self.screen.get_width()-400, 300, 300, 50)
+        if selection_rect.collidepoint((self.master.mx, self.master.my)):
+            #hover
+            pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
+            if self.master.click:
+                # make game variable selected = 'knight'
+                ...
+
+    def draw_bishopOPT_btn(self): 
+        self.draw_text('Bishop', 'white', self.screen.get_width()-400, 400, center=False)
+        selection_rect = pygame.Rect(self.screen.get_width()-400, 400, 300, 50)
+        if selection_rect.collidepoint((self.master.mx, self.master.my)):
+            #hover
+            pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
+            if self.master.click:
+                # make game variable selected = 'bishop'
+                ...
+    
+    def draw_queenOPT_btn(self): 
+        self.draw_text('Queen', 'white', self.screen.get_width()-400, 500, center=False)
+        selection_rect = pygame.Rect(self.screen.get_width()-400, 500, 300, 50)
+        if selection_rect.collidepoint((self.master.mx, self.master.my)):
+            #hover
+            pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
+            if self.master.click:
+                # make game variable selected = 'queen'
+                ...
