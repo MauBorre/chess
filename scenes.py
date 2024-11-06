@@ -1823,14 +1823,14 @@ class Match(Scene):
     def draw_board(self):
 
         # main board frame
-        pygame.draw.rect(self.screen,(200,200,200),
+        pygame.draw.rect(self.screen, (200,200,200),
                     pygame.Rect(self.board_begin.x,self.board_begin.y,
                                 board.width,board.height),width=3)
 
         for board_index, SQUARE_RECT in enumerate(self.boardRects): #celdas que sirven por posición, índice y medida.
 
             # individual grid frame
-            pygame.draw.rect(self.screen,(200,200,200),SQUARE_RECT,width=1)
+            pygame.draw.rect(self.screen, (200,200,200), SQUARE_RECT, width=1)
             self.draw_text(f'{board_index}',(150,150,150),
                            SQUARE_RECT.left +3,
                            SQUARE_RECT.top + board.square_height -17,
@@ -1867,13 +1867,13 @@ class Match(Scene):
 
             # hidden/visible elements upon paused/finished game state
             if not self.master.paused and not self.winner and not self.stalemate and not self.player_deciding_promotion:
-                if SQUARE_RECT.collidepoint((self.master.mx,self.master.my)):
+                if SQUARE_RECT.collidepoint((self.master.mx, self.master.my)):
 
                     # Hover -----------------------
                     if interacted_PColor == self.turn_attacker:
-                        pygame.draw.rect(self.screen,'GREEN',SQUARE_RECT,width=2) # PIECE hover
+                        pygame.draw.rect(self.screen, 'GREEN', SQUARE_RECT, width=2) # PIECE hover
                     else:
-                        pygame.draw.rect(self.screen,(150,150,150),SQUARE_RECT,width=2) # EMPTY hover
+                        pygame.draw.rect(self.screen, (150,150,150), SQUARE_RECT, width=2) # EMPTY hover
                     # Hover -----------------------
                 
                     if self.master.click:
@@ -1920,7 +1920,7 @@ class Match(Scene):
                             if SQUARE_TYPE == 'king':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.king_objectives(board_index,perspective='attacker')
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.king_objectives(board_index, perspective='attacker')
                                 
                             if SQUARE_TYPE == "EMPTY":
                                 self.pieceValidMovement_posDisplay.clear()
@@ -1928,9 +1928,9 @@ class Match(Scene):
         # Pre-movements visual feedback
         if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0:
             for valid_mov_RECT in self.pieceValidMovement_posDisplay.values():
-                pygame.draw.rect(self.screen,'GREEN',valid_mov_RECT,width=2)
+                pygame.draw.rect(self.screen, 'GREEN', valid_mov_RECT, width=2)
         for valid_kill_RECT in self.pieceValidKill_posDisplay.values():
-            pygame.draw.rect(self.screen,'RED',valid_kill_RECT,width=2)
+            pygame.draw.rect(self.screen, 'RED', valid_kill_RECT, width=2)
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''
