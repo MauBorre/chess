@@ -21,8 +21,8 @@ def reverse_expand_origins(
     pieces_legible_origins: dict[str,dict[str,list[int]]]
     ) -> dict[int,str]:
     '''Transforma dict={'color...': {'pawn':[0,1,2]}}
-    En color-A_dict={0:pawn,1:pawn,2:pawn}
-        color-B_dict={0:pawn,1:pawn,2:pawn}
+    En color-A_dict={0: pawn, 1: pawn, 2: pawn}
+        color-B_dict={0: pawn, 1: pawn, 2: pawn}
 
     Uno es fácil de leer para nosotros, el otro es fácil
     de leer para el sistema.'''
