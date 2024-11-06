@@ -192,6 +192,7 @@ class Match(Scene):
         self.match_state: str = '' # HUD info
         self.player_deciding_match: bool = False
         self.killing: bool = False
+        self.finish_turn: bool = False # turn halt
         # pawn promotion
         self.player_deciding_promotion: bool = False
         self.pawnPromotion_selection: str = ''
@@ -289,8 +290,7 @@ class Match(Scene):
                     self.promoting_pawn = _pawn
                     self.master.pause = True
                     self.player_deciding_promotion = True
-                    # if self.pawnPromotion_selection != '':
-                    #     self.attacker_positions.update({_pawn: self.pawnPromotion_selection})
+                    self.finish_turn = False
         
         # Revisar si algun pawn llegó a la fila objetivo
         if self.turn_attacker == 'black':
@@ -299,19 +299,17 @@ class Match(Scene):
                     self.promoting_pawn = _pawn
                     self.master.pause = True
                     self.player_deciding_promotion = True
-                    # if self.pawnPromotion_selection != '':
-                    #     self.attacker_positions.update({_pawn: self.pawnPromotion_selection})
+                    self.finish_turn = False
+        
+        # allows turn to finish
+        if self.promoting_pawn == None: self.finish_turn = True
 
     def make_promotion(self):
-        # En este punto la pieza promovida corresponde a DEFENDER.
-        # BUG debemos hacerlo de tal forma que aún es atacante, 
-        # porque la promoción PUEDE DEJAR AL REY EN JAQUE, no se debe
-        # pasar de turno automaticamente.
         if self.pawnPromotion_selection != '':
-            self.defender_positions.update({self.promoting_pawn: self.pawnPromotion_selection})
+            self.attacker_positions.update({self.promoting_pawn: self.pawnPromotion_selection})
             self.pawnPromotion_selection == ''
             self.promoting_pawn = None
-
+            self.finish_turn = True
 
     def trace_direction_walk(
         self,
@@ -1900,31 +1898,32 @@ class Match(Scene):
                                 self.pieceValidMovement_posDisplay.clear()
 
         # updating element's positions and game relevant state if a movement/kill was stated
-        if self.move_here != None:
-            ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
+        # if self.move_here != None:
+        #     ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
 
-            if self.turn_defender == 'white':
-                _piece = self.black_positions.pop(ex_value)
-                if self.killing:
-                    self.white_positions.pop(self.move_here)
-                self.black_positions.update({self.move_here:_piece})               
+        #     if self.turn_defender == 'white':
+        #         _piece = self.black_positions.pop(ex_value)
+        #         if self.killing:
+        #             self.white_positions.pop(self.move_here)
+        #         self.black_positions.update({self.move_here:_piece})               
 
-            if self.turn_defender == 'black':
-                _piece = self.white_positions.pop(ex_value)
-                if self.killing:
-                    self.black_positions.pop(self.move_here) 
-                self.white_positions.update({self.move_here:_piece})
+        #     if self.turn_defender == 'black':
+        #         _piece = self.white_positions.pop(ex_value)
+        #         if self.killing:
+        #             self.black_positions.pop(self.move_here) 
+        #         self.white_positions.update({self.move_here:_piece})
 
+            # self.make_moves()
             # POST MOVIMIENTOS / ATAQUES ---------------------
-            self.check_pawn_promotion()
+            # self.check_pawn_promotion()
             
-            self.update_turn_objectives() 
-            self.decide_check() # <- El juego debe continuar? 
+            # self.update_turn_objectives() 
+            # self.decide_check() # <- El juego debe continuar? 
 
-            self.turn_swap()
-            self.pieceValidMovement_posDisplay.clear()
-            self.move_here = None
-            self.killing = False
+            # self.turn_swap()
+            # self.pieceValidMovement_posDisplay.clear()
+            # self.move_here = None
+            # self.killing = False
 
         # Pre-movements visual feedback
         if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0:
@@ -2044,13 +2043,45 @@ class Match(Scene):
                 if self.turn_attacker == 'white':
                     self.match_state = 'Black en jaque.'
 
+    def make_moves(self):
+        # if self.move_here != None:
+        ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
+
+        if self.turn_defender == 'white':
+            _piece = self.black_positions.pop(ex_value)
+            if self.killing:
+                self.white_positions.pop(self.move_here)
+            self.black_positions.update({self.move_here:_piece})               
+
+        if self.turn_defender == 'black':
+            _piece = self.white_positions.pop(ex_value)
+            if self.killing:
+                self.black_positions.pop(self.move_here) 
+            self.white_positions.update({self.move_here:_piece})
+        
+        self.pieceValidMovement_posDisplay.clear()
+        self.move_here = None
+        self.killing = False
+
     def render(self):
-        #hud
-        self.draw_text('Match scene','black',20,20,center=False)
-        self.draw_text(f'{self.match_mode['mode']}','black',200,20,center=False)
+        # hud
+        self.draw_text('Match scene', 'black', 20, 20, center=False)
+        self.draw_text(f'{self.match_mode['mode']}', 'black', 200, 20, center=False)
         self.draw_text(self.match_state, 'black', 400, 20, center=False)
+        self.draw_text(self.turn_attacker, 'black', self.midScreen_pos.x - 25, board.height+70, center=False)
+
+        # core
         self.draw_board()
-        self.draw_text(self.turn_attacker,'black',self.midScreen_pos.x - 25, board.height+70,center=False)
+        if self.move_here != None:
+            self.make_moves()
+            self.check_pawn_promotion()
+        if self.finish_turn:
+            self.update_turn_objectives()
+            self.decide_check()
+            self.turn_swap()
+            self.finish_turn = False
+        
+        # menus
         if self.master.paused or self.winner or self.stalemate: # debería ser si el jugador apreto la tecla ESC.
             if not self.player_deciding_match and not self.winner and not self.stalemate:
                 self.draw_pause_menu()
