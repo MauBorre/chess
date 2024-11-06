@@ -2020,12 +2020,14 @@ class Match(Scene):
             elif self.player_deciding_match:
                 self.draw_confirm_restart_menu()
             
+    # Confirm restart (pause menu children) ----------------------------------------------------------------
     def draw_confirm_restart_menu(self,width=300,height=300):
         # frame
         pygame.draw.rect(self.screen,(100,100,100),
                         pygame.Rect(self.master.screen.get_width()-400,150,width,height))
         #leyenda
-        self.draw_text('¿Está seguro que quiere reiniciar la partida?','black',self.screen.get_width()-400,150,center=False)
+        self.draw_text('¿Está seguro que quiere reiniciar la partida?',
+            'black',self.screen.get_width()-400,150,center=False)
         self.draw_confirm_match_restart_btn()
         self.draw_cancel_restart_btn()
         
@@ -2048,7 +2050,21 @@ class Match(Scene):
             pygame.draw.rect(self.screen,(255,0,0),cancel_match_rect,width=1)
             if self.master.click:
                 self.player_deciding_match = False
+    # ------------------------------------------------------------------------------------------------------
 
+    # Pause menu ---------------------------------------------------------------------------------------------
+    def draw_pause_menu(self,width=300,height=400):
+        # frame
+        pygame.draw.rect(self.screen,(100,100,100),
+                        pygame.Rect(self.master.screen.get_width()-400,150,width,height))
+        # tooltip
+        self.draw_text('Paused','black',self.screen.get_width()-400,150,center=False)
+        # buttons
+        self.draw_continue_btn()
+        self.draw_play_again_btn()
+        self.draw_exit_to_mainMenu_btn()
+        self.draw_exit_game_btn()
+    
     def draw_continue_btn(self):
         self.draw_text('Continuar','white',self.screen.get_width()-400,190,center=False)
         continue_match_rect = pygame.Rect(self.screen.get_width()-400,190,200,50)
@@ -2058,6 +2074,15 @@ class Match(Scene):
             if self.master.click:
                 self.master.paused = False
 
+    def draw_play_again_btn(self):
+        self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400, 400, center=False)
+        play_again_rect = pygame.Rect(self.screen.get_width()-400, 400, 200, 50)
+        if play_again_rect.collidepoint((self.master.mx, self.master.my)):
+            #hover
+            pygame.draw.rect(self.screen, (255,0,0), play_again_rect, width=1)
+            if self.master.click:
+                self.player_deciding_match = True
+    
     def draw_exit_to_mainMenu_btn(self):
         self.draw_text('Salir al menú principal','white',self.screen.get_width()-400,250,center=False)
         exit_to_main_menu_rect = pygame.Rect(self.screen.get_width()-400,250,200,50)
@@ -2067,7 +2092,7 @@ class Match(Scene):
             if self.master.click:
                 self.master.paused = False
                 self.master.scene_manager = MainMenu
-
+    
     def draw_exit_game_btn(self):
         self.draw_text('Salir del juego','white',self.screen.get_width()-400,320,center=False)
         exit_game_rect = pygame.Rect(self.screen.get_width()-400,320,200,50)
@@ -2076,7 +2101,9 @@ class Match(Scene):
             pygame.draw.rect(self.screen,(255,0,0),exit_game_rect,width=1)
             if self.master.click:
                 self.master.scene_manager = 'exit'
+    # --------------------------------------------------------------------------------------------------------
 
+    # Post game menu -----------------------------------------------------------------------------------------
     def draw_post_game_menu(self,width=300,height=300):
         # frame
         pygame.draw.rect(self.screen,(100,100,100),
@@ -2089,18 +2116,6 @@ class Match(Scene):
         #opciones de cambiar reglas...
         #opciones de cambiar dificultad(IA)...
 
-    def draw_pause_menu(self,width=300,height=400):
-        # frame
-        pygame.draw.rect(self.screen,(100,100,100),
-                        pygame.Rect(self.master.screen.get_width()-400,150,width,height))
-        # tooltip
-        self.draw_text('Paused','black',self.screen.get_width()-400,150,center=False)
-        # buttons
-        self.draw_continue_btn()
-        self.draw_play_again_btn()
-        self.draw_exit_to_mainMenu_btn()
-        self.draw_exit_game_btn()
-
     def draw_postgame_again_btn(self):
         self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400,400,center=False)
         play_again_rect = pygame.Rect(self.screen.get_width()-400,400,200,50)
@@ -2111,16 +2126,9 @@ class Match(Scene):
                 self.master.pause = False
                 self.player_deciding_match = False
                 self.reset_board()
-
-    def draw_play_again_btn(self):
-        self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400, 400, center=False)
-        play_again_rect = pygame.Rect(self.screen.get_width()-400, 400, 200, 50)
-        if play_again_rect.collidepoint((self.master.mx, self.master.my)):
-            #hover
-            pygame.draw.rect(self.screen, (255,0,0), play_again_rect, width=1)
-            if self.master.click:
-                self.player_deciding_match = True
+    # --------------------------------------------------------------------------------------------------------
     
+    # Pawn promotion menu ------------------------------------------------------------------------------------
     def pawn_promotion_selection(self, width=300, height=400):
         # frame
         pygame.draw.rect(self.screen, (100,100,100),
@@ -2171,3 +2179,4 @@ class Match(Scene):
             if self.master.click:
                 # make game variable selected = 'queen'
                 ...
+    # --------------------------------------------------------------------------------------------------------
