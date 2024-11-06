@@ -1892,10 +1892,9 @@ class Match(Scene):
                 self.white_positions.update({self.move_here:_piece})
 
             # POST MOVIMIENTOS / ATAQUES ---------------------
-            # Actualizar todos los registros de posiciones 
+            self.check_pawn_promotion()
             self.update_turn_objectives() 
-            # Evaluación de posiciones 
-            self.decide_check() #<- El juego debe continuar? 
+            self.decide_check() # <- El juego debe continuar? 
 
             self.turn_swap()
             self.pieceValidMovement_posDisplay.clear()
