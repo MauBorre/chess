@@ -1897,34 +1897,6 @@ class Match(Scene):
                             if SQUARE_TYPE == "EMPTY":
                                 self.pieceValidMovement_posDisplay.clear()
 
-        # updating element's positions and game relevant state if a movement/kill was stated
-        # if self.move_here != None:
-        #     ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
-
-        #     if self.turn_defender == 'white':
-        #         _piece = self.black_positions.pop(ex_value)
-        #         if self.killing:
-        #             self.white_positions.pop(self.move_here)
-        #         self.black_positions.update({self.move_here:_piece})               
-
-        #     if self.turn_defender == 'black':
-        #         _piece = self.white_positions.pop(ex_value)
-        #         if self.killing:
-        #             self.black_positions.pop(self.move_here) 
-        #         self.white_positions.update({self.move_here:_piece})
-
-            # self.make_moves()
-            # POST MOVIMIENTOS / ATAQUES ---------------------
-            # self.check_pawn_promotion()
-            
-            # self.update_turn_objectives() 
-            # self.decide_check() # <- El juego debe continuar? 
-
-            # self.turn_swap()
-            # self.pieceValidMovement_posDisplay.clear()
-            # self.move_here = None
-            # self.killing = False
-
         # Pre-movements visual feedback
         if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0:
             for valid_mov_RECT in self.pieceValidMovement_posDisplay.values():
