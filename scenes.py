@@ -211,6 +211,7 @@ class Match(Scene):
         self.black_singleOriginDirectThreat: bool | None = None 
         self.black_directThreatTrace: list[int] = []
         self.black_singleOriginT_standpoint: int | None
+        self.black_kingBannedDirection: int | None
         
         # White
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['white']['pawn']] # no swap
@@ -220,6 +221,7 @@ class Match(Scene):
         self.white_singleOriginDirectThreat: bool | None = None 
         self.white_directThreatTrace: list[int] = [] 
         self.white_singleOriginT_standpoint: int | None
+        self.white_kingBannedDirection: int | None
 
         # Turn lookups --------------------------------------------------------------------------------
         self.turn_attacker: str = 'white'
@@ -270,6 +272,7 @@ class Match(Scene):
         self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat
         self.defender_directThreatTrace: list[int] = self.black_directThreatTrace
         self.defender_singleOriginT_standpoint: int | None
+        self.defender_kingBannedDirection: int | None 
 
         # Attacker
         self.attacker_positions: dict[int, str] = self.white_positions 
@@ -277,7 +280,8 @@ class Match(Scene):
         self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
         self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
         self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace
-        self.attacker_singleOriginT_standpoint: int | None
+        self.attacker_singleOriginT_standpoint: int | None 
+        self.attacker_kingBannedDirection: int | None 
 
     def check_pawn_promotion(self):
         # Obtener standpoints PAWN de attacker
@@ -318,7 +322,8 @@ class Match(Scene):
         attThreat_standpoint: int,
         ) -> list[int]:
         '''Caminamos desde el rey hasta la amenaza devolviendo una traza.
-        INCLUYE STANDPOINT DEL REY PERO NO DE LA AMENAZA'''
+        INCLUYE STANDPOINT DEL REY PERO NO DE LA AMENAZA.
+        Prohibe al rey -actual defensor- dirigirse en la dirección de la amenaza.'''
 
         # direcciones
         cardinal_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
@@ -341,12 +346,12 @@ class Match(Scene):
                 if 0 <= walk <= 63: # VALID SQUARE
 
                     if walk == attThreat_standpoint:
+                        self.defender_kingBannedDirection = -direction # dirección inversa
                         return walk_trace
 
                     elif walk in mixedDirections_threats:
                         walk_trace.add(walk)
-                    
-        return walk_trace
+        return walk_trace # vacía si llega a este punto.
 
     # def no_digits_name(self, piece_key_name: str) -> str:
     #     '''Utilidad para limpiar los nombre de algunas piezas
@@ -425,6 +430,8 @@ class Match(Scene):
         self.defender_singleOriginDirectThreat = None
         self.attacker_singleOriginT_standpoint = None
         self.defender_singleOriginT_standpoint = None
+        self.attacker_kingBannedDirection = None
+        self.defender_kingBannedDirection = None
 
         # Attacker ----------------------------------------------------------------------------------------
         king_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_attacker, piece="king")
@@ -476,7 +483,7 @@ class Match(Scene):
                 self.attacker_singleOriginT_standpoint = _threats_list[-1]
                 knight_walk_exception: str = self.attacker_positions[_threats_list[-1]]
                 if knight_walk_exception != 'knight':
-                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, _threats_list[-1]) 
+                    self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, _threats_list[-1])
                 else: self.attacker_directThreatTrace = []
                 break
 
@@ -559,6 +566,10 @@ class Match(Scene):
             self.white_singleOriginT_standpoint = self.attacker_singleOriginT_standpoint
             self.black_singleOriginT_standpoint = self.defender_singleOriginT_standpoint
 
+            # > kingBannedDirection
+            self.white_kingBannedDirection = self.attacker_kingBannedDirection
+            self.black_kingBannedDirection = self.defender_kingBannedDirection
+
             # Target Swap (attacker = black | defender = white ) ---------------------------
             # > positions
             self.attacker_positions = self.black_positions
@@ -583,6 +594,10 @@ class Match(Scene):
             # > SingleOriginThreat standpoint
             self.attacker_singleOriginT_standpoint = self.black_singleOriginT_standpoint
             self.defender_singleOriginT_standpoint = self.white_singleOriginT_standpoint
+
+            # > kingBannedDirection
+            self.attacker_kingBannedDirection = self.black_kingBannedDirection
+            self.defender_kingBannedDirection = self.white_kingBannedDirection
 
             return
         
@@ -616,6 +631,10 @@ class Match(Scene):
             self.white_singleOriginT_standpoint = self.defender_singleOriginT_standpoint
             self.black_singleOriginT_standpoint = self.attacker_singleOriginT_standpoint
 
+            # > kingBannedDirection
+            self.white_kingBannedDirection = self.defender_kingBannedDirection
+            self.black_kingBannedDirection = self.attacker_kingBannedDirection
+
             # Target Swap (attacker = white | defender = black) ----------------------------
             # > positions
             self.attacker_positions = self.white_positions
@@ -640,6 +659,10 @@ class Match(Scene):
             # > singleOriginThreat standpoint
             self.attacker_singleOriginT_standpoint = self.white_singleOriginT_standpoint
             self.defender_singleOriginT_standpoint = self.black_singleOriginT_standpoint
+
+            # > kingBannedDirection
+            self.attacker_kingBannedDirection = self.white_kingBannedDirection
+            self.defender_kingBannedDirection = self.black_kingBannedDirection
 
             return
     
@@ -1737,6 +1760,8 @@ class Match(Scene):
 
         if perspective == 'defender':
             for direction in king_directions:
+                if direction == self.defender_kingBannedDirection:
+                    continue
                 movement = piece_standpoint+direction
                 if direction == ESTE or direction == OESTE:
                     if movement not in row_of_(piece_standpoint):     
@@ -1759,6 +1784,9 @@ class Match(Scene):
         
         if perspective == 'attacker':
             for direction in king_directions:
+                if direction == self.attacker_kingBannedDirection:
+                    print('direccion denegada', self.attacker_kingBannedDirection)
+                    continue
                 movement = piece_standpoint+direction
                 if direction == ESTE or direction == OESTE:
                     if movement not in row_of_(piece_standpoint):
@@ -1937,7 +1965,7 @@ class Match(Scene):
         
         DRAW > Solo quedan dos reyes en juego.
         '''
-
+        self.master.click = False # evita conflictos de click con el posible menu entrante
         if self.attacker_singleOriginDirectThreat == None:
             if len(self.attacker_positions) == 1 and len(self.defender_positions) == 1:
                 # Solo pueden ser los reyes, asi que es DRAW
