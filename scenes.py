@@ -190,8 +190,11 @@ class Match(Scene):
         self.winner: bool = False
         self.stalemate: bool = False # Ahogado | draw
         self.match_state: str = '' # HUD info
-        self.player_deciding_match = False
+        self.player_deciding_match: bool = False
         self.killing: bool = False
+        # pawn promotion
+        self.player_deciding_promotion: bool = False
+        self.pawnPromotion_selection: str = ''
 
         # board feedback utilities
         self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
@@ -273,6 +276,18 @@ class Match(Scene):
         self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
         self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace
         self.attacker_singleOriginT_standpoint: int | None
+
+    def check_pawn_promotion(self):
+        # obtener standpoints PAWN de attacker
+        # revisar si esta en el límite de tablero correspondiente
+            #(northest para white | southest para black)
+        # si está: 
+            # self.master.pause = True
+            # self.player_deciding_promotion = True
+        # si pawnPromotion_selection != '':
+            # self.attacker_positions[prev_pawn_stand] = pawnPromotion_selection
+
+        ...
 
     def trace_direction_walk(
         self,
@@ -2019,6 +2034,8 @@ class Match(Scene):
                 self.draw_post_game_menu()
             elif self.player_deciding_match:
                 self.draw_confirm_restart_menu()
+        if self.player_deciding_promotion:
+            self.draw_pawnPromotion_selection_menu()
             
     # Confirm restart (pause menu children) ----------------------------------------------------------------
     def draw_confirm_restart_menu(self,width=300,height=300):
@@ -2129,7 +2146,7 @@ class Match(Scene):
     # --------------------------------------------------------------------------------------------------------
     
     # Pawn promotion menu ------------------------------------------------------------------------------------
-    def pawn_promotion_selection(self, width=300, height=400):
+    def draw_pawnPromotion_selection_menu(self, width=300, height=400):
         # frame
         pygame.draw.rect(self.screen, (100,100,100),
                         pygame.Rect(self.screen.get_width()-400, 150, width, height))
@@ -2147,8 +2164,9 @@ class Match(Scene):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
             if self.master.click:
-                # make game variable selected = 'rook'
-                ...
+                self.pawnPromotion_selection = 'rook'
+                self.player_deciding_promotion = False
+                self.master.pause = False
 
     def draw_knightOPT_btn(self): 
         self.draw_text('Knight', 'white', self.screen.get_width()-400, 300, center=False)
@@ -2157,8 +2175,9 @@ class Match(Scene):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
             if self.master.click:
-                # make game variable selected = 'knight'
-                ...
+                self.pawnPromotion_selection = 'knight'
+                self.player_deciding_promotion = False
+                self.master.pause = False
 
     def draw_bishopOPT_btn(self): 
         self.draw_text('Bishop', 'white', self.screen.get_width()-400, 400, center=False)
@@ -2167,8 +2186,9 @@ class Match(Scene):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
             if self.master.click:
-                # make game variable selected = 'bishop'
-                ...
+                self.pawnPromotion_selection = 'bishop'
+                self.player_deciding_promotion = False
+                self.master.pause = False
     
     def draw_queenOPT_btn(self): 
         self.draw_text('Queen', 'white', self.screen.get_width()-400, 500, center=False)
@@ -2177,6 +2197,7 @@ class Match(Scene):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
             if self.master.click:
-                # make game variable selected = 'queen'
-                ...
+                self.pawnPromotion_selection = 'queen'
+                self.player_deciding_promotion = False
+                self.master.pause = False
     # --------------------------------------------------------------------------------------------------------
