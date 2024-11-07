@@ -966,7 +966,6 @@ class Match(Scene):
                                         if movement+SUR in self.defender_directThreatTrace:
                                             # BLOCK saving position
                                             mov_target_positions.update({movement+SUR: self.boardRects[movement+SUR]})
-                                
 
                         # kill-movements
                         # board limits check
@@ -985,7 +984,7 @@ class Match(Scene):
 
                         return mov_target_positions, on_target_kill_positions
 
-                    elif self.attacker_singleOriginDirectThreat == None: 
+                    elif self.defender_singleOriginDirectThreat == None: 
 
                         if movement not in self.attacker_positions and movement not in self.defender_positions: # piece block
                             if not self.exposing_direction(piece_standpoint, direction=SUR, request_from="attacker"):
@@ -996,7 +995,7 @@ class Match(Scene):
                                         if movement+SUR not in self.attacker_positions and movement+SUR not in self.defender_positions: # piece block
                                             mov_target_positions.update({movement+SUR: self.boardRects[movement+SUR]}) # 2nd Movement 
                             else: pass
-                        
+
                         # kill-movements
                         # board limits check
                         if piece_standpoint+OESTE not in row_of_(piece_standpoint):
@@ -1026,7 +1025,7 @@ class Match(Scene):
                 movement = piece_standpoint+NORTE
                 if movement >= 0: # board limit
                     
-                    if self.defender_singleOriginDirectThreat: # jaque de único orígen
+                    if self.defender_singleOriginDirectThreat:
                         '''
                         Únicos movimientos posibles: bloquear o matar la amenaza.
                         > Bloquear una amenaza es movement coincidente en defender_directThreatTrace
@@ -1063,7 +1062,7 @@ class Match(Scene):
                         
                         return mov_target_positions, on_target_kill_positions
                                     
-                    elif self.attacker_singleOriginDirectThreat == None: # no jaque
+                    elif self.defender_singleOriginDirectThreat == None: # no jaque
 
                         if movement not in self.attacker_positions and movement not in self.defender_positions: # piece block
                             if not self.exposing_direction(piece_standpoint, direction=NORTE, request_from="attacker"):  
@@ -2000,12 +1999,13 @@ class Match(Scene):
                 # JAQUE
                 '''Esto requiere solo una notificación al jugador correspondiente.
                 defender_color -> notificate CHECK (highlight possible solutions)'''
-                ...
 
+                # TURN DEBUG ++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 print('**JAQUE**')
                 print('El rey defensor puede moverse en: ', self.defender_kingLegalMoves);
                 print('Las piezas aliadas del rey defensor pueden moverse: ', self.defender_legalMoves)
                 print('**JAQUE**')
+                # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 
                 if self.turn_attacker == 'black':
                     self.match_state = 'White en jaque.'
