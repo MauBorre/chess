@@ -475,6 +475,10 @@ class Match(Scene):
         # Revisión del estado de la amenaza del atacante sobre el rey defensor (jaque)
         for _threats_list in self.attacker_threatOnDefender.values():
             if _king in _threats_list:
+                '''BUG debemos volver a la deducción original de que si encontramos múltiples
+                amenazas directas singleOriginDirectThreat es FALSE y NO se llama a los
+                objectives de las piezas que NO son el rey, porque no pueden hacer nada por
+                definición.'''
                 self.attacker_singleOriginDirectThreat = True
 
                 # La posición de orígen de la amenaza estará SIEMPRE en _threats_list[-1].
