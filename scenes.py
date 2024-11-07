@@ -467,13 +467,13 @@ class Match(Scene):
         # print('------------')
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        '''En este punto se hará gran parte del mecanismo de ENROQUE(castling).
+        '''
+        En este punto se hará gran parte del mecanismo de ENROQUE(castling).
         Luego de mover, como atacantes, podemos llegar a impedir un enroque para el defensor, 
         o también remover nuestra posibilidad de hacer uno o todos los enroques (movimos alguna torre o
         movimos el rey).
         
-        Si nosotros movimos para hacer un enroque, ese mecanismo debe estar "habilitado" en una raíz
-        comprendida por:
+        Si nosotros movimos para hacer un enroque, ese mecanismo debe habilitarse en base a:
         - Las torres
         - El rey
         - Los casilleros libres de piezas y amenazas (en todo el recorrido y donde caerá el rey también)
