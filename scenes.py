@@ -475,6 +475,7 @@ class Match(Scene):
         # Revisión del estado de la amenaza del atacante sobre el rey defensor (jaque)
         for _threats_list in self.attacker_threatOnDefender.values():
             if _king in _threats_list:
+                print(f'king {_king} está en {_threats_list}') # BUG NO SE ESTA ADJUDICANDO -SI SE DESTAPó UN NUEVO THREAT-
                 '''BUG debemos volver a la deducción original de que si encontramos múltiples
                 amenazas directas singleOriginDirectThreat es FALSE y NO se llama a los
                 objectives de las piezas que NO son el rey, porque no pueden hacer nada por
@@ -485,6 +486,13 @@ class Match(Scene):
                 y siento que es mejor que se quede así, de todas formas el problema
                 estaba en como las OTRAS piezas aliadas interpretaban esto.
                 '''
+                if self.attacker_singleOriginDirectThreat == True:
+                    # entonces ya pasamos por acá y la amenaza es MULTIPLE
+                    print('++++AMENAZA MULTIPLE++++')
+                    self.attacker_singleOriginDirectThreat = False
+                    self.attacker_singleOriginT_standpoint = None
+                    self.attacker_directThreatTrace.clear()
+
                 self.attacker_singleOriginDirectThreat = True
 
                 # La posición de orígen de la amenaza estará SIEMPRE en _threats_list[-1].
@@ -496,7 +504,7 @@ class Match(Scene):
                     self.attacker_directThreatTrace = self.trace_direction_walk(_king, _threats_list, _threats_list[-1])
                 else: self.attacker_directThreatTrace = []
                 break
-
+        print(self.attacker_singleOriginDirectThreat)
         self.remove_all_attacker_standpoints() # Necesario para que el rey pueda identificar piezas como -quizás matable-.
         self.king_objectives(_king, perspective='defender') # genero/reviso defender_kingLegalMoves.
 
