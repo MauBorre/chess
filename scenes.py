@@ -478,7 +478,9 @@ class Match(Scene):
                 '''BUG debemos volver a la deducción original de que si encontramos múltiples
                 amenazas directas singleOriginDirectThreat es FALSE y NO se llama a los
                 objectives de las piezas que NO son el rey, porque no pueden hacer nada por
-                definición.'''
+                definición.
+                
+                Qué hacemos con los standpoints orígenes en este caso multiThreat?'''
                 self.attacker_singleOriginDirectThreat = True
 
                 # La posición de orígen de la amenaza estará SIEMPRE en _threats_list[-1].
@@ -494,27 +496,28 @@ class Match(Scene):
         self.remove_all_attacker_standpoints() # Necesario para que el rey pueda identificar piezas como -quizás matable-.
         self.king_objectives(_king, perspective='defender') # genero/reviso defender_kingLegalMoves.
 
-        # Defender kingSupport (Revision de movimientos legales del defensor para ver si perdió, empató, o nada de eso)
-        pawn_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='pawn')
-        for _pawn in pawn_standpoints:
-            self.pawn_objectives(_pawn, perspective='defender')
+        if self.attacker_singleOriginDirectThreat != False:
+            # Defender kingSupport (Revision de movimientos legales del defensor para ver si perdió, empató, o nada de eso)
+            pawn_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='pawn')
+            for _pawn in pawn_standpoints:
+                self.pawn_objectives(_pawn, perspective='defender')
 
-        rook_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="rook")
-        for _rook in rook_standpoints:
-            self.rook_objectives(_rook, perspective='defender')
-        
-        bishop_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='bishop')
-        for _bishop in bishop_standpoints:
-            self.bishop_objectives(_bishop, perspective='defender')
-        
-        knight_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="knight")
-        for _knight in knight_standpoints:
-            self.knight_objectives(_knight, perspective='defender')
-        
-        queen_standpoint = self.get_piece_standpoint(color=self.turn_defender, piece="queen")
-        if len(queen_standpoint) != 0:
-            _queen = queen_standpoint.pop()
-            self.queen_objectives(_queen, perspective='defender')
+            rook_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="rook")
+            for _rook in rook_standpoints:
+                self.rook_objectives(_rook, perspective='defender')
+            
+            bishop_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece='bishop')
+            for _bishop in bishop_standpoints:
+                self.bishop_objectives(_bishop, perspective='defender')
+            
+            knight_standpoints = self.get_piece_standpoint(color=self.turn_defender, piece="knight")
+            for _knight in knight_standpoints:
+                self.knight_objectives(_knight, perspective='defender')
+            
+            queen_standpoint = self.get_piece_standpoint(color=self.turn_defender, piece="queen")
+            if len(queen_standpoint) != 0:
+                _queen = queen_standpoint.pop()
+                self.queen_objectives(_queen, perspective='defender')
         # -------------------------------------------------------------------------------------------------
 
     def reset_board(self):
