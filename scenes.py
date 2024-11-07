@@ -480,7 +480,11 @@ class Match(Scene):
                 objectives de las piezas que NO son el rey, porque no pueden hacer nada por
                 definición.
                 
-                Qué hacemos con los standpoints orígenes en este caso multiThreat?'''
+                Qué hacemos con los standpoints orígenes en este caso multiThreat?
+                Creo que el rey actualmente nunca estima esta condicion de single/multi threat
+                y siento que es mejor que se quede así, de todas formas el problema
+                estaba en como las OTRAS piezas aliadas interpretaban esto.
+                '''
                 self.attacker_singleOriginDirectThreat = True
 
                 # La posición de orígen de la amenaza estará SIEMPRE en _threats_list[-1].
