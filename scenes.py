@@ -468,7 +468,7 @@ class Match(Scene):
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         '''
-        En este punto se hará gran parte del mecanismo de ENROQUE(castling).
+        En este punto se hará gran parte del mecanismo de ENROQUE(castling). -> Es realmente el enroque un objetivo de turno?
         Luego de mover, como atacantes, podemos llegar a impedir un enroque para el defensor, 
         o también remover nuestra posibilidad de hacer uno o todos los enroques (movimos alguna torre o
         movimos el rey).
@@ -477,6 +477,10 @@ class Match(Scene):
         - Las torres
         - El rey
         - Los casilleros libres de piezas y amenazas (en todo el recorrido y donde caerá el rey también)
+
+        Para deshabilitar total o parcialmente el enroque del ATACANTE, debo comparar sus actuales standpoints
+        con su contrapartida orígen (muy similar a peones con su primer movimiento, pero el rey y las torres
+        pueden regresar a estos orígenes y eso no los debe habilitar nuevamente a enrocar.)
         '''
 
         # Defender -----------------------------------------------------------------------------------------
