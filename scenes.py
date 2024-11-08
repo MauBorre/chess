@@ -482,6 +482,16 @@ class Match(Scene):
         con su contrapartida orígen (muy similar a peones con su primer movimiento, pero el rey y las torres
         pueden regresar a estos orígenes y eso no los debe habilitar nuevamente a enrocar.)
         '''
+        #white_kingCanCastle
+        #white_LRookCanCastle
+        #white_RRookCanCastle
+        #black_kingCanCastle
+        #black_LRookCanCastle
+        #black_RRookCanCastle
+        #if atacante dejó sus posiciones -en cierto lugar- -> attacker_denyDefCastle
+        #if not defender_denyAttCastle & not_jaque & kingCanCastle & L/RRookCanCastle -> puedo enrocar
+        #white_denyBlackCastle
+        #black_denyWhiteCastle
 
         # Defender -----------------------------------------------------------------------------------------
         king_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender, piece="king")
