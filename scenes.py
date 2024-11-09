@@ -40,29 +40,12 @@ class Scene:
 class MainMenu(Scene):
     '''> Escena MAIN_MENU
 
-    Comienza con una pequeña animación
-        imagen se mueve, frena repentinamente y se le pide 
-        al jugador que presione una tecla cualquiera para 
-        iniciar todo el resto.
-            Esto tiene realmente una utilidad?
-    >>Animaciones de transición de escenas<<
-
     +) contiene:
         botón nueva partida
                 j1 vs j2 | j1 vs IA
                     modos de tiempo, modos de dificultad
                     >> al clickear el último boton llamaremos a self.make_mode()
 
-        botón reglas
-                reglas del juego...?
-
-        botón opciones
-                resolución
-                    400x800
-                    600x800
-                    1280x920
-                audio
-                    Volumen
         botón salir
 
         Aguardará una señal de comenzar partida.
@@ -239,14 +222,14 @@ class Match(Scene):
 
             ANTES DE MOVER:
                 El atacante debe revisar, dentro de sus movimientos posible, si su movimiento -expone al rey-
-                por defender_threatOnAttacker.
+                al defensor.
 
             DESPUES DE MOVER:
-                El defensor debe revisar -si su movimiento expone- por threat del atacante, evaluando así
-                "con qué posibilidades de movimiento quedó" por attacker_threatOnDefender.
+                El defensor debe revisar si sus posibles movimiento exponen al rey al atacante, evaluando así
+                "con qué posibilidades de movimiento quedó".
             
             El threat puede MATARSE o BLOQUEARSE
-                A menos que haya más de un orígen de amenaza DIRECTA -> solo el rey moviendose puede escapar
+                A menos que haya más de un orígen de amenaza DIRECTA -> solo el rey moviendose puede escapar.
 
             Threat de bishop, queen y tower pueden bloquearse
             Threat de pawn y knight no pueden bloquearse
