@@ -177,7 +177,7 @@ class Match(Scene):
         # reiniciarla con alguna variación de modos/regla?
         self.match_mode: dict = self.master.game_variables 
 
-        # board config
+        # board placement on current screen display
         self.board_begin = pygame.Vector2(
             (self.midScreen_pos.x - board.width/2,
             self.midScreen_pos.y - board.height/2))
