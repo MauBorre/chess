@@ -468,7 +468,7 @@ class Match(Scene):
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         '''
-        En este punto se hará gran parte del mecanismo de ENROQUE(castling). -> Es realmente el enroque un objetivo de turno?
+        En este punto debo revisar y decidir parte del mecanismo de ENROQUE(castling).
         Luego de mover, como atacantes, podemos llegar a impedir un enroque para el defensor, 
         o también remover nuestra posibilidad de hacer uno o todos los enroques (movimos alguna torre o
         movimos el rey).
@@ -480,26 +480,26 @@ class Match(Scene):
 
         Para deshabilitar total o parcialmente el enroque del ATACANTE, debo comparar sus actuales standpoints
         con su contrapartida orígen (muy similar a peones con su primer movimiento, pero el rey y las torres
-        pueden regresar a estos orígenes y eso no los debe habilitar nuevamente a enrocar.)
+        pueden regresar a estos orígenes y eso NO LOS DEBE HABILITAR NUEVAMENTE A ENROCAR.)
         '''
 
         '''Al salir de sus posiciones de origen por primera vez, se removerán permanentemente por el resto
         de la partida estas habilitaciones.
         Necesito entonces un registro de cuales son estas posiciones de orígen y a quién
-        corresponden.'''
+        corresponden.
+        
+        Las siguientes variables, junto con las "variables de amenaza" que deduciremos aquí despues de
+        cada movimiento atacante, deben ser revisadas en los OBJETIVOS INDIVIDUALES DE CADA PIEZA.'''
         #white_castlingEnablers = {'left-rook': 56, 'king': 60, 'right-rook': 63}
         #black_castlingEnablers = {'left-rook': 0, 'king': 4, 'right-rook': 7}
 
-        #white_denyBlackCastling
-        #black_denyWhiteCastling
+        #white_denyBlackCastling | attacker_denyDefCastling
+        #black_denyWhiteCastling | defender_denyAttCastling
 
-        #attacker_denyDefCastling
-        #defender_denyAttCastling
-
+        '''Este cambio de estado SI parece muy pertinente a esta función'''
         #if atacante dejó *amenazas* -en cierto lugar- -> attacker_denyDefCastling
         #if not defender_denyAttCastling & not_jaque & kingCanCastle & L/RRookCanCastle -> puedo enrocar
-        #white_denyBlackCastle
-        #black_denyWhiteCastle
+
 
         # Defender -----------------------------------------------------------------------------------------
         king_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender, piece="king")
