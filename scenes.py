@@ -482,24 +482,22 @@ class Match(Scene):
         con su contrapartida orígen (muy similar a peones con su primer movimiento, pero el rey y las torres
         pueden regresar a estos orígenes y eso no los debe habilitar nuevamente a enrocar.)
         '''
-        
-        '''Al salir de sus posiciones de origen por primera vez, se removerán permanentemente por el resto
-        de la partida estas habilitaciones'''
-        #white_castlingEnabled = {'left-rook', 'king','right-rook'}
-        #black_castlingEnabled = {'left-rook', 'king', 'right-rook'}
 
-        '''Necesito entonces un registro de cuales son estas posiciones de orígen.'''
+        '''Al salir de sus posiciones de origen por primera vez, se removerán permanentemente por el resto
+        de la partida estas habilitaciones.
+        Necesito entonces un registro de cuales son estas posiciones de orígen y a quién
+        corresponden.'''
         #white_castlingEnablers = {'left-rook': 56, 'king': 60, 'right-rook': 63}
         #black_castlingEnablers = {'left-rook': 0, 'king': 4, 'right-rook': 7}
 
-        #white_kingCanCastle
-        #white_LRookCanCastle
-        #white_RRookCanCastle
-        #black_kingCanCastle
-        #black_LRookCanCastle
-        #black_RRookCanCastle
-        #if atacante dejó sus posiciones -en cierto lugar- -> attacker_denyDefCastle
-        #if not defender_denyAttCastle & not_jaque & kingCanCastle & L/RRookCanCastle -> puedo enrocar
+        #white_denyBlackCastling
+        #black_denyWhiteCastling
+
+        #attacker_denyDefCastling
+        #defender_denyAttCastling
+
+        #if atacante dejó *amenazas* -en cierto lugar- -> attacker_denyDefCastling
+        #if not defender_denyAttCastling & not_jaque & kingCanCastle & L/RRookCanCastle -> puedo enrocar
         #white_denyBlackCastle
         #black_denyWhiteCastle
 
