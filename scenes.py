@@ -482,6 +482,16 @@ class Match(Scene):
         con su contrapartida orígen (muy similar a peones con su primer movimiento, pero el rey y las torres
         pueden regresar a estos orígenes y eso no los debe habilitar nuevamente a enrocar.)
         '''
+        
+        '''Al salir de sus posiciones de origen por primera vez, se removerán permanentemente por el resto
+        de la partida estas habilitaciones'''
+        #white_castlingEnabled = {'left-rook', 'king','right-rook'}
+        #black_castlingEnabled = {'left-rook', 'king', 'right-rook'}
+
+        '''Necesito entonces un registro de cuales son estas posiciones de orígen.'''
+        #white_castlingEnablers = {'left-rook': 56, 'king': 60, 'right-rook': 63}
+        #black_castlingEnablers = {'left-rook': 0, 'king': 4, 'right-rook': 7}
+
         #white_kingCanCastle
         #white_LRookCanCastle
         #white_RRookCanCastle
