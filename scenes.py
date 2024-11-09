@@ -452,6 +452,7 @@ class Match(Scene):
 
         '''
         En este punto debo revisar y decidir parte del mecanismo de ENROQUE(castling).
+        
         Luego de mover, como atacantes, podemos llegar a impedir un enroque para el defensor, 
         o también remover nuestra posibilidad de hacer uno o todos los enroques (movimos alguna torre o
         movimos el rey).
