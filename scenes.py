@@ -180,6 +180,8 @@ class Match(Scene):
         self.player_deciding_promotion: bool = False
         self.pawnPromotion_selection: str = ''
         self.promoting_pawn: int | None = None
+        
+
 
         # board feedback utilities
         self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
@@ -195,6 +197,8 @@ class Match(Scene):
         self.black_directThreatTrace: list[int] = []
         self.black_singleOriginT_standpoint: int | None
         self.black_kingBannedDirection: int | None
+        # king castling
+        self.black_castlingEnablers: dict[str, int] = {'left-rook': 0, 'king': 4, 'right-rook': 7}
         
         # White
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['white']['pawn']] # no swap
@@ -205,6 +209,8 @@ class Match(Scene):
         self.white_directThreatTrace: list[int] = [] 
         self.white_singleOriginT_standpoint: int | None
         self.white_kingBannedDirection: int | None
+        # king castling
+        self.white_castlingEnablers: dict[str, int] = {'left-rook': 56, 'king': 60, 'right-rook': 63}
 
         # Turn lookups --------------------------------------------------------------------------------
         self.turn_attacker: str = 'white'
