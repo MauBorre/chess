@@ -483,11 +483,11 @@ class Match(Scene):
         #white_castlingEnablers = {'left-rook': 56, 'king': 60, 'right-rook': 63}
         #black_castlingEnablers = {'left-rook': 0, 'king': 4, 'right-rook': 7}
 
-        #white_denyBlackCastling | attacker_denyDefCastling
-        #black_denyWhiteCastling | defender_denyAttCastling
+        #white_denyBlackCastling | attacker_denyDefCastling -> BOOLS
+        #black_denyWhiteCastling | defender_denyAttCastling -> BOOLS
 
         '''Este cambio de estado SI parece muy pertinente a esta función'''
-        #if atacante dejó *amenazas* -en cierto lugar- -> attacker_denyDefCastling
+        #if atacante dejó *amenazas* -en cierto lugar- -> attacker_denyDefCastling = True
         #if not defender_denyAttCastling & not_jaque & kingCanCastle & L/RRookCanCastle -> puedo enrocar
 
 
