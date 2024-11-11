@@ -181,6 +181,11 @@ class Match(Scene):
         self.pawnPromotion_selection: str = ''
         self.promoting_pawn: int | None = None
         
+        # KING CASTLING EXPERIMENTALS
+        # king castling
+        self.black_castlingEnablers: dict[str, int] = {'left-rook': 0, 'king': 4, 'right-rook': 7}
+        # king castling
+        self.white_castlingEnablers: dict[str, int] = {'left-rook': 56, 'king': 60, 'right-rook': 63}
 
 
         # board feedback utilities
@@ -197,8 +202,7 @@ class Match(Scene):
         self.black_directThreatTrace: list[int] = []
         self.black_singleOriginT_standpoint: int | None
         self.black_kingBannedDirection: int | None
-        # king castling
-        self.black_castlingEnablers: dict[str, int] = {'left-rook': 0, 'king': 4, 'right-rook': 7}
+        
         
         # White
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['white']['pawn']] # no swap
@@ -209,8 +213,7 @@ class Match(Scene):
         self.white_directThreatTrace: list[int] = [] 
         self.white_singleOriginT_standpoint: int | None
         self.white_kingBannedDirection: int | None
-        # king castling
-        self.white_castlingEnablers: dict[str, int] = {'left-rook': 56, 'king': 60, 'right-rook': 63}
+        
 
         # Turn lookups --------------------------------------------------------------------------------
         self.turn_attacker: str = 'white'
@@ -1830,6 +1833,13 @@ class Match(Scene):
                         if movement in threat: movement = None
 
                     if movement != None:
+
+                        '''movement*2 hacia OESTE o ESTE
+                        No hay bloqueos?
+                        No hay amenazas?
+                        No hay piezas enemigas?
+                        Puedo enrocar?
+                        Puede *esa torre* enrocar?'''
 
                         if movement not in self.attacker_positions and not movement in self.defender_positions:
                             _threat_emission.append(movement)
