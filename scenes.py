@@ -1836,17 +1836,6 @@ class Match(Scene):
 
                     if movement != None:
 
-                        '''
-                        Puedo enrocar?
-                        movement*2 hacia OESTE o ESTE
-                        No hay amenazas?
-                        Puede *esa torre>dirección* enrocar?
-                        No hay bloqueos?
-                        
-                        No hay piezas enemigas?
-                        
-                        '''
-
                         if movement not in self.attacker_positions and not movement in self.defender_positions:
                             _threat_emission.append(movement)
                             self.attacker_kingLegalMoves.append(movement)
