@@ -1918,15 +1918,6 @@ class Match(Scene):
                         elif SQUARE_SUBTYPE == "valid-movement":
                             self.move_here = board_index
 
-                            '''
-                            Aquí existe una confirmación de movimiento-especial muy
-                            importante tanto para los peones como para el rey(castling).
-                            '''
-                            if board_index in self.in_base_Bpawns:
-                                self.in_base_Bpawns.remove(board_index)
-                            if board_index in self.in_base_Wpawns:
-                                self.in_base_Wpawns.remove(board_index)
-
                         else: 
                             if SQUARE_TYPE == 'pawn':
                                 self.pieceValidMovement_posDisplay.clear()
