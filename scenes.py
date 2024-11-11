@@ -1869,6 +1869,11 @@ class Match(Scene):
 
                                     # si clickeamos aquí, también la torre que acabamos de revisar debe moverse
                                     # a la -casualmente- casilla MOVEMENT normal del rey
+
+                                    # necesitamos entonces una forma de externalizar parte de lo que hacemos aquí?
+
+                                    # además debemos aún deducir dónde haremos la acción de remover habilitaciones en
+                                    # castlingEnablers, que no estoy seguro aún si conviene que sea el set planteado.
                                     mov_target_positions.update({_castling: self.boardRects[_castling]}) 
                                     ...
 
