@@ -487,14 +487,8 @@ class Match(Scene):
         cada movimiento atacante, deben ser revisadas en los OBJETIVOS INDIVIDUALES DE CADA PIEZA.'''
         #white_castlingEnablers = {'west-rook': 56, 'king': 60, 'east-rook': 63}
         #black_castlingEnablers = {'west-rook': 0, 'king': 4, 'east-rook': 7}
-
-        #white_denyBlackCastling | attacker_denyDefCastling -> BOOLS
-        #black_denyWhiteCastling | defender_denyAttCastling -> BOOLS
-
-        '''Este cambio de estado SI parece muy pertinente a esta función'''
-        #if atacante dejó *amenazas* -en cierto lugar- -> attacker_denyDefCastling = True
-        #if not defender_denyAttCastling & not_jaque & kingCanCastle & L/RRookCanCastle -> puedo enrocar
-
+        #self.attacker_castlingEnablers
+        #self.defender_castlingEnablers
 
         # Defender -----------------------------------------------------------------------------------------
         king_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender, piece="king")
@@ -1852,9 +1846,8 @@ class Match(Scene):
                                         self.attacker_kingLegalMoves.append(_castling)
 
                                         # ¡¡CUIDADO!!
-                                        # no es un movimiento normal
                                         # es correcto exponer este movimiento de forma visual, pero al clickearlo
-                                        # no sucede "un movimiento normal".
+                                        # no sucede "un movimiento *normal*".
 
                                         # si clickeamos aquí, también la torre que acabamos de revisar debe moverse
                                         # a la -casualmente- casilla MOVEMENT normal del rey
@@ -1883,7 +1876,6 @@ class Match(Scene):
 
             _threat_emission.append(piece_standpoint)
             self.attacker_threatOnDefender.update({'king': _threat_emission})
-
 
             return mov_target_positions, on_target_kill_positions
         return
