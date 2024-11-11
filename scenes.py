@@ -461,35 +461,6 @@ class Match(Scene):
         # print('------------')
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        '''
-        En este punto debo revisar y decidir parte del mecanismo de ENROQUE(castling).
-        
-        Luego de mover, como atacantes, podemos llegar a impedir un enroque para el defensor, 
-        o también remover nuestra posibilidad de hacer uno o todos los enroques (movimos alguna torre o
-        movimos el rey).
-        
-        Si nosotros movimos para hacer un enroque, ese mecanismo debe habilitarse en base a:
-        - Las torres
-        - El rey
-        - Los casilleros libres de piezas y amenazas (en todo el recorrido y donde caerá el rey también)
-
-        Para deshabilitar total o parcialmente el enroque del ATACANTE, debo comparar sus actuales standpoints
-        con su contrapartida orígen (muy similar a peones con su primer movimiento, pero el rey y las torres
-        pueden regresar a estos orígenes y eso NO LOS DEBE HABILITAR NUEVAMENTE A ENROCAR.)
-        '''
-
-        '''Al salir de sus posiciones de origen por primera vez, se removerán permanentemente por el resto
-        de la partida estas habilitaciones.
-        Necesito entonces un registro de cuales son estas posiciones de orígen y a quién
-        corresponden.
-        
-        Las siguientes variables, junto con las "variables de amenaza" que deduciremos aquí despues de
-        cada movimiento atacante, deben ser revisadas en los OBJETIVOS INDIVIDUALES DE CADA PIEZA.'''
-        #white_castlingEnablers = {'west-rook': 56, 'king': 60, 'east-rook': 63}
-        #black_castlingEnablers = {'west-rook': 0, 'king': 4, 'east-rook': 7}
-        #self.attacker_castlingEnablers
-        #self.defender_castlingEnablers
-
         # Defender -----------------------------------------------------------------------------------------
         king_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender, piece="king")
         if len(king_standpoints) != 0:
@@ -1946,6 +1917,11 @@ class Match(Scene):
 
                         elif SQUARE_SUBTYPE == "valid-movement":
                             self.move_here = board_index
+
+                            '''
+                            Aquí existe una confirmación de movimiento-especial muy
+                            importante tanto para los peones como para el rey(castling).
+                            '''
                             if board_index in self.in_base_Bpawns:
                                 self.in_base_Bpawns.remove(board_index)
                             if board_index in self.in_base_Wpawns:
