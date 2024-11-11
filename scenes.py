@@ -1817,7 +1817,7 @@ class Match(Scene):
             for direction in king_directions:
                 if direction == self.attacker_kingBannedDirection:
                     continue
-                movement = piece_standpoint+direction
+                movement: int | None = piece_standpoint+direction
                 if direction == ESTE or direction == OESTE:
                     if movement not in row_of_(piece_standpoint):
                         continue
@@ -1834,17 +1834,51 @@ class Match(Scene):
 
                     if movement != None:
 
-                        '''movement*2 hacia OESTE o ESTE
-                        No hay bloqueos?
-                        No hay amenazas?
-                        No hay piezas enemigas?
+                        '''
                         Puedo enrocar?
-                        Puede *esa torre* enrocar?'''
+                        movement*2 hacia OESTE o ESTE
+                        No hay amenazas?
+                        Puede *esa torre>dirección* enrocar?
+                        No hay bloqueos?
+                        
+                        No hay piezas enemigas?
+                        
+                        '''
 
                         if movement not in self.attacker_positions and not movement in self.defender_positions:
                             _threat_emission.append(movement)
                             self.attacker_kingLegalMoves.append(movement)
                             mov_target_positions.update({movement: self.boardRects[movement]})
+
+                            #castling
+                            # puedo enrocar?
+                            # si puedo entonces: ...
+                            if direction == OESTE:
+                                _castling: int | None = movement*2
+                                # no hay amenazas?
+                                # si no hay entonces:
+                                # puede esta torre>dirección enrocar?
+                                # si puede entonces:
+                                if _castling not in self.attacker_positions and not _castling in self.defender_positions:
+                                    self.attacker_kingLegalMoves.append(_castling)
+
+                                    # ¡¡CUIDADO!!
+                                    # no es un movimiento normal
+                                    # es correcto exponer este movimiento de forma visual, pero al clickearlo
+                                    # no sucede "un movimiento normal".
+
+                                    # si clickeamos aquí, también la torre que acabamos de revisar debe moverse
+                                    # a la -casualmente- casilla MOVEMENT normal del rey
+                                    mov_target_positions.update({_castling: self.boardRects[_castling]}) 
+                                    ...
+
+                            if direction == ESTE:
+                                _castling = movement*2
+                                if _castling not in self.attacker_positions and not _castling in self.defender_positions:
+                                    ...
+
+
+
                         elif movement in self.defender_positions:
                             _threat_emission.append(movement)
                             self.attacker_kingLegalMoves.append(movement)
@@ -1854,6 +1888,8 @@ class Match(Scene):
 
             _threat_emission.append(piece_standpoint)
             self.attacker_threatOnDefender.update({'king': _threat_emission})
+
+
             return mov_target_positions, on_target_kill_positions
         return
 
