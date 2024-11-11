@@ -1853,18 +1853,13 @@ class Match(Scene):
                             mov_target_positions.update({movement: self.boardRects[movement]})
 
                             # castling -WEST-
-                            # puedo enrocar?
-                            # si puedo entonces: ...
                             if direction == OESTE:
-                                if 'king' and 'west-rook' in self.attacker_castlingEnablers:
+                                if 'king' and 'west-rook' in self.attacker_castlingEnablers: # pueden este rey y la torre enrocar?
                                     if self.defender_singleOriginDirectThreat == None:
-                                        _castling: int | None = movement*2 if movement*2 not in self.defender_threatOnAttacker else None
-                                # no hay amenazas?
-                                # si no hay entonces:
-                                # puede esta torre>dirección enrocar?
-                                # si puede entonces:
+                                        _castling: int | None = movement*2 if movement*2 not in self.defender_threatOnAttacker else None # no hay amenazas?
+                                
                                 if _castling != None:
-                                    if _castling not in self.attacker_positions and not _castling in self.defender_positions:
+                                    if _castling not in self.attacker_positions and not _castling in self.defender_positions: # no hay bloqueos?
                                         self.attacker_kingLegalMoves.append(_castling)
 
                                         # ¡¡CUIDADO!!
@@ -1881,7 +1876,7 @@ class Match(Scene):
                                         # castlingEnablers, que no estoy seguro aún si conviene que sea el dict planteado.
                                         mov_target_positions.update({_castling: self.boardRects[_castling]}) 
                                         ...
-                                        
+
                             # castling -EAST-
                             if direction == ESTE:
                                 _castling = movement*2
