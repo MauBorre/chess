@@ -183,9 +183,11 @@ class Match(Scene):
         
         # KING CASTLING EXPERIMENTALS
         # king castling
-        self.black_castlingEnablers: dict[str, int] = {'left-rook': 0, 'king': 4, 'right-rook': 7}
+        self.black_castlingEnablers: dict[str, int] = {'west-rook': 0, 'king': 4, 'east-rook': 7}
         # king castling
-        self.white_castlingEnablers: dict[str, int] = {'left-rook': 56, 'king': 60, 'right-rook': 63}
+        self.white_castlingEnablers: dict[str, int] = {'west-rook': 56, 'king': 60, 'east-rook': 63}
+        self.attacker_castlingEnablers: dict[str, int] = self.white_castlingEnablers
+        self.defender_castlingEnablers: dict[str, int] = self.black_castlingEnablers
 
 
         # board feedback utilities
@@ -483,8 +485,8 @@ class Match(Scene):
         
         Las siguientes variables, junto con las "variables de amenaza" que deduciremos aquí despues de
         cada movimiento atacante, deben ser revisadas en los OBJETIVOS INDIVIDUALES DE CADA PIEZA.'''
-        #white_castlingEnablers = {'left-rook': 56, 'king': 60, 'right-rook': 63}
-        #black_castlingEnablers = {'left-rook': 0, 'king': 4, 'right-rook': 7}
+        #white_castlingEnablers = {'west-rook': 56, 'king': 60, 'east-rook': 63}
+        #black_castlingEnablers = {'west-rook': 0, 'king': 4, 'east-rook': 7}
 
         #white_denyBlackCastling | attacker_denyDefCastling -> BOOLS
         #black_denyWhiteCastling | defender_denyAttCastling -> BOOLS
@@ -1850,33 +1852,37 @@ class Match(Scene):
                             self.attacker_kingLegalMoves.append(movement)
                             mov_target_positions.update({movement: self.boardRects[movement]})
 
-                            #castling
+                            # castling -WEST-
                             # puedo enrocar?
                             # si puedo entonces: ...
                             if direction == OESTE:
-                                _castling: int | None = movement*2
+                                if 'king' and 'west-rook' in self.attacker_castlingEnablers:
+                                    if self.defender_singleOriginDirectThreat == None:
+                                        _castling: int | None = movement*2 if movement*2 not in self.defender_threatOnAttacker else None
                                 # no hay amenazas?
                                 # si no hay entonces:
                                 # puede esta torre>dirección enrocar?
                                 # si puede entonces:
-                                if _castling not in self.attacker_positions and not _castling in self.defender_positions:
-                                    self.attacker_kingLegalMoves.append(_castling)
+                                if _castling != None:
+                                    if _castling not in self.attacker_positions and not _castling in self.defender_positions:
+                                        self.attacker_kingLegalMoves.append(_castling)
 
-                                    # ¡¡CUIDADO!!
-                                    # no es un movimiento normal
-                                    # es correcto exponer este movimiento de forma visual, pero al clickearlo
-                                    # no sucede "un movimiento normal".
+                                        # ¡¡CUIDADO!!
+                                        # no es un movimiento normal
+                                        # es correcto exponer este movimiento de forma visual, pero al clickearlo
+                                        # no sucede "un movimiento normal".
 
-                                    # si clickeamos aquí, también la torre que acabamos de revisar debe moverse
-                                    # a la -casualmente- casilla MOVEMENT normal del rey
+                                        # si clickeamos aquí, también la torre que acabamos de revisar debe moverse
+                                        # a la -casualmente- casilla MOVEMENT normal del rey
 
-                                    # necesitamos entonces una forma de externalizar parte de lo que hacemos aquí?
+                                        # necesitamos entonces una forma de externalizar parte de lo que hacemos aquí?
 
-                                    # además debemos aún deducir dónde haremos la acción de remover habilitaciones en
-                                    # castlingEnablers, que no estoy seguro aún si conviene que sea el set planteado.
-                                    mov_target_positions.update({_castling: self.boardRects[_castling]}) 
-                                    ...
-
+                                        # además debemos aún deducir dónde haremos la acción de remover habilitaciones en
+                                        # castlingEnablers, que no estoy seguro aún si conviene que sea el dict planteado.
+                                        mov_target_positions.update({_castling: self.boardRects[_castling]}) 
+                                        ...
+                                        
+                            # castling -EAST-
                             if direction == ESTE:
                                 _castling = movement*2
                                 if _castling not in self.attacker_positions and not _castling in self.defender_positions:
