@@ -181,15 +181,16 @@ class Match(Scene):
         self.pawnPromotion_selection: str = ''
         self.promoting_pawn: int | None = None
         
+        
         # KING CASTLING EXPERIMENTALS
         self.castling: bool = False
         self.kingValidCastling_posDisplay: dict[int, pygame.Rect] = {}
         # king castling
-        self.black_castlingEnablers: dict[str, int] = {'west-rook': 0, 'king': 4, 'east-rook': 7}
+        self.black_castlingEnablers: dict[int, str] = {0: 'west-rook', 4: 'king', 7: 'east-rook'}
         # king castling
-        self.white_castlingEnablers: dict[str, int] = {'west-rook': 56, 'king': 60, 'east-rook': 63}
-        self.attacker_castlingEnablers: dict[str, int] = self.white_castlingEnablers
-        self.defender_castlingEnablers: dict[str, int] = self.black_castlingEnablers
+        self.white_castlingEnablers: dict[int, str] = {56: 'west-rook', 60: 'king', 63: 'east-rook'}
+        self.attacker_castlingEnablers: dict[int, str] = self.white_castlingEnablers
+        self.defender_castlingEnablers: dict[int, str] = self.black_castlingEnablers
 
 
         # board feedback utilities
@@ -2088,6 +2089,13 @@ class Match(Scene):
         '''
         # moving piece standpoint
         ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
+
+        # es ex_value posición del rey o de alguna de las torres?
+        if ex_value in self.attacker_castlingEnablers:
+            if self.attacker_castlingEnablers[ex_value] == 'king':
+                self.attacker_castlingEnablers = {}
+            else:
+                del self.attacker_castlingEnablers[ex_value]
 
         moving_piece = self.attacker_positions.pop(ex_value)
         if self.killing:
