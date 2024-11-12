@@ -1828,7 +1828,6 @@ class Match(Scene):
                                         # además debemos aún deducir dónde haremos la acción de remover habilitaciones en
                                         # castlingEnablers, que no estoy seguro aún si conviene que sea el dict planteado.
                                         mov_target_positions.update({_castling: self.boardRects[_castling]}) 
-                                        ...
 
                             # castling -EAST-
                             if direction == ESTE:
@@ -2072,6 +2071,8 @@ class Match(Scene):
                     self.match_state = 'Black en jaque.'
 
     def make_moves(self):
+        '''Aquí están mis movimientos *normales*, debería también aquí
+        poner mis movimientos *especiales*?'''
         # if self.move_here != None:
         ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
 
