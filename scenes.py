@@ -1817,18 +1817,6 @@ class Match(Scene):
                                 if _castling != None:
                                     if _castling not in self.attacker_positions and not _castling in self.defender_positions: # no hay bloqueos?
                                         self.attacker_kingLegalMoves.append(_castling)
-
-                                        # ¡¡CUIDADO!!
-                                        # es correcto exponer este movimiento de forma visual, pero al clickearlo
-                                        # no sucede "un movimiento *normal*".
-
-                                        # si clickeamos aquí, también la torre que acabamos de revisar debe moverse
-                                        # a la -casualmente- casilla MOVEMENT normal del rey
-
-                                        # necesitamos entonces una forma de externalizar parte de lo que hacemos aquí?
-
-                                        # además debemos aún deducir dónde haremos la acción de remover habilitaciones en
-                                        # castlingEnablers, que no estoy seguro aún si conviene que sea el dict planteado.
                                         castling_positions.update({_castling: self.boardRects[_castling]}) 
 
                             # castling -EAST-
