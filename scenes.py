@@ -1751,8 +1751,9 @@ class Match(Scene):
         '''
         
         # Visual feedback utils
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint: self.boardRects[piece_standpoint]} # standpoint is always first pos
-        on_target_kill_positions: dict[int,pygame.Rect] = {}
+        mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: self.boardRects[piece_standpoint]} # standpoint is always first pos
+        on_target_kill_positions: dict[int, pygame.Rect] = {}
+        castling_positions: dict[int, pygame.Rect] = {}
         
         # Objectives
         _threat_emission: list[int] = []
@@ -1829,7 +1830,7 @@ class Match(Scene):
 
                                         # además debemos aún deducir dónde haremos la acción de remover habilitaciones en
                                         # castlingEnablers, que no estoy seguro aún si conviene que sea el dict planteado.
-                                        mov_target_positions.update({_castling: self.boardRects[_castling]}) 
+                                        castling_positions.update({_castling: self.boardRects[_castling]}) 
 
                             # castling -EAST-
                             if direction == ESTE:
@@ -1849,7 +1850,7 @@ class Match(Scene):
             _threat_emission.append(piece_standpoint)
             self.attacker_threatOnDefender.update({'king': _threat_emission})
 
-            return mov_target_positions, on_target_kill_positions
+            return mov_target_positions, on_target_kill_positions, castling_positions
         return
 
     def draw_board(self):
@@ -1881,6 +1882,11 @@ class Match(Scene):
 
             elif board_index in self.pieceValidMovement_posDisplay.keys():
                 SQUARE_SUBTYPE = "valid-movement"
+                SQUARE_TYPE = ""
+                interacted_PColor = ""
+            
+            elif board_index in self.kingValidCastling_posDisplay.keys():
+                SQUARE_SUBTYPE = "castling-movement"
                 SQUARE_TYPE = ""
                 interacted_PColor = ""
 
@@ -1952,7 +1958,7 @@ class Match(Scene):
                             if SQUARE_TYPE == 'king':
                                 self.pieceValidMovement_posDisplay.clear()
                                 if interacted_PColor == self.turn_attacker:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.king_objectives(board_index, perspective='attacker')
+                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay, self.kingValidCastling_posDisplay = self.king_objectives(board_index, perspective='attacker')
                                 
                             if SQUARE_TYPE == "EMPTY":
                                 self.pieceValidMovement_posDisplay.clear()
