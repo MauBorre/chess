@@ -181,9 +181,10 @@ class Match(Scene):
         self.pawnPromotion_selection: str = ''
         self.promoting_pawn: int | None = None
         
-        
+
         # KING CASTLING EXPERIMENTALS
         self.castling: bool = False
+        self.castling_direction: str = ''
         self.kingValidCastling_posDisplay: dict[int, pygame.Rect] = {}
         # king castling
         self.black_castlingEnablers: dict[int, str] = {0: 'west-rook', 4: 'king', 7: 'east-rook'}
@@ -278,7 +279,7 @@ class Match(Scene):
         self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
         self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace
         self.attacker_singleOriginT_standpoint: int | None 
-        self.attacker_kingBannedDirection: int | None 
+        self.attacker_kingBannedDirection: int | None = None
 
     def check_pawn_promotion(self):
         # Obtener standpoints PAWN de attacker
@@ -1812,23 +1813,26 @@ class Match(Scene):
 
                             # castling -WEST-
                             if direction == OESTE:
-                                if 'king' and 'west-rook' in self.attacker_castlingEnablers: # pueden este rey y la torre enrocar?
+                                if 'king' and 'west-rook' in self.attacker_castlingEnablers.values(): # pueden este rey y la torre enrocar?
                                     if self.defender_singleOriginDirectThreat == None:
-                                        _castling: int | None = movement*2 if movement*2 not in self.defender_threatOnAttacker else None # no hay amenazas?
+                                        _castling: int | None = movement+direction if movement+direction not in self.defender_threatOnAttacker else None # no hay amenazas?
                                 if _castling != None:
+                                    # print(_castling)
                                     if _castling not in self.attacker_positions and not _castling in self.defender_positions: # no hay bloqueos?
                                         self.attacker_kingLegalMoves.append(_castling)
-                                        castling_positions.update({_castling: self.boardRects[_castling]}) 
+                                        castling_positions.update({_castling: self.boardRects[_castling]})
+                                        self.castling_direction = 'west'
 
                             # castling -EAST-
                             if direction == ESTE:
-                                if 'king' and 'east-rook' in self.attacker_castlingEnablers:
+                                if 'king' and 'east-rook' in self.attacker_castlingEnablers.values():
                                     if self.defender_singleOriginDirectThreat == None:
                                         _castling: int | None = movement*2 if movement*2 not in self.defender_threatOnAttacker else None
                                 if _castling != None:
                                     if _castling not in self.attacker_positions and not _castling in self.defender_positions:
                                         self.attacker_kingLegalMoves.append(_castling)
                                         castling_positions.update({_castling: self.boardRects[_castling]})
+                                        self.castling_direction = 'east'
 
                         elif movement in self.defender_positions:
                             _threat_emission.append(movement)
@@ -1953,6 +1957,7 @@ class Match(Scene):
                                 
                             if SQUARE_TYPE == "EMPTY":
                                 self.pieceValidMovement_posDisplay.clear()
+                                # self.kingValidCastling_posDisplay.clear()
                                 
         # Pre-movements visual feedback
         if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0: # avoids highlighting pieces with no movement
@@ -1961,7 +1966,7 @@ class Match(Scene):
         for valid_kill_RECT in self.pieceValidKill_posDisplay.values():
             pygame.draw.rect(self.screen, 'RED', valid_kill_RECT, width=2)
         for valid_castling_RECT in self.kingValidCastling_posDisplay.values():
-            pygame.draw.rect(self.screen, 'GREEN', valid_castling_RECT, width=2)
+            pygame.draw.rect(self.screen, 'YELLOW', valid_castling_RECT, width=2)
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''
@@ -2090,21 +2095,34 @@ class Match(Scene):
         # moving piece standpoint
         ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
 
-        # es ex_value posición del rey o de alguna de las torres?
+        # castling enablers
         if ex_value in self.attacker_castlingEnablers:
-            if self.attacker_castlingEnablers[ex_value] == 'king':
+            if self.attacker_castlingEnablers[ex_value] == 'king': # es ex_value posición de rey?
                 self.attacker_castlingEnablers = {}
-            else:
+            else:  # es ex_value posición de alguna torre?
                 del self.attacker_castlingEnablers[ex_value]
 
         moving_piece = self.attacker_positions.pop(ex_value)
         if self.killing:
             self.defender_positions.pop(self.move_here)
-        self.attacker_positions.update({self.move_here: moving_piece})
+        if self.castling:
+            self.attacker_positions.update({self.move_here: moving_piece}) # mueve al rey
+            # mueve a la torre
+            ex_rook: int = {k for k,_ in self.attacker_castlingEnablers.items() if self.attacker_castlingEnablers[k] == f'{self.castling_direction}-rook'}.pop()
+            print(ex_rook)
+            # ex_rook: int = list(self.attacker_castlingEnablers).index(f'{self.castling_direction}-rook')
+            moving_rook = self.attacker_positions.pop(ex_rook)
+            self.attacker_positions.update({moving_rook: 'rook'})
+
+        else:
+            self.attacker_positions.update({self.move_here: moving_piece})
         
         self.pieceValidMovement_posDisplay.clear()
+        self.kingValidCastling_posDisplay.clear()
         self.move_here = None
         self.killing = False
+        self.castling = False
+        self.castling_direction = ''
 
     def render(self):
         # hud
