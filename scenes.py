@@ -2075,28 +2075,16 @@ class Match(Scene):
                     self.match_state = 'Black en jaque.'
 
     def make_moves(self):
-        '''Aquí están mis movimientos *normales*, debería también aquí
-        poner mis movimientos *especiales*?
-        
-        El mov-especial del enroque vendría hasta aquí "camuflado"
-        como un mov-normal, es esto correcto?
+        '''
+        El mov-especial del enroque vendrá hasta aquí "camuflado"
+        como un mov-normal, pero SOLO si es mov de enroque, la flag castling
+        será TURE. -> CUIDADO debemos deducir si es castling-east o castling-west.
 
         Para hacer el enroque necesitamos:
         > king_standpoint
         > dir-rook_standpoint
         > dirección de enroque
 
-        Siento que deberíamos aceptar por parámetro de función algunos
-        de estos elementos. Y debemos extraerlo del _objectives()?
-
-        moves actualmente utiliza un flag de killing por ejemplo, 
-        que viene de clickear un casillero killing (es donde nace el flag.)
-        kill es un mov-especial sin dudas, así que es el verdadero
-        hermano del castling.
-
-        Entonces para hacer nuestro castling realidad, deberíamos expulsar
-        del objectives del rey un nuevo tipo de posición.
-        
         '''
         # if self.move_here != None:
         ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0] # moving piece standpoint
