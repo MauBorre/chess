@@ -176,6 +176,13 @@ class Match(Scene):
         self.player_deciding_match: bool = False
         self.killing: bool = False
         self.finish_turn: bool = False # turn halt
+
+        # turn times
+        self.time_snap: int = pygame.time.get_ticks()
+        self.current_turn_time: int = 0
+        self.black_turn_time: int = 0
+        self.white_turn_time: int = 0
+
         # pawn promotion
         self.player_deciding_promotion: bool = False
         self.pawnPromotion_selection: str = ''
@@ -2115,7 +2122,6 @@ class Match(Scene):
                     self.attacker_castlingEnablers = {} # no more castling
                 else:  # es ex_value posición de alguna torre?
                     del self.attacker_castlingEnablers[ex_value]
-                # print(self.attacker_castlingEnablers)
             
             # NORMAL MOVEMENT
             self.attacker_positions.update({self.move_here: moving_piece})
@@ -2137,12 +2143,25 @@ class Match(Scene):
         self.castling = False
         self.castling_direction = ''
 
+    def match_clock(self):
+        if pygame.time.get_ticks() - self.time_snap > 1000:
+            time_leftover = pygame.time.get_ticks() % 1000
+            self.time_snap = int(pygame.time.get_ticks() - time_leftover)
+            self.current_turn_time = int(self.time_snap/1000)
+            # print(self.time_snap)
+        
     def render(self):
+
+        self.match_clock()
+
         # hud
         self.draw_text('Match scene', 'black', 20, 20, center=False)
         self.draw_text(f'{self.match_mode['mode']}', 'black', 200, 20, center=False)
         self.draw_text(self.match_state, 'black', 400, 20, center=False)
-        self.draw_text(self.turn_attacker, 'black', self.midScreen_pos.x - 25, board.height+70, center=False)
+        self.draw_text(self.turn_attacker, 'black', self.midScreen_pos.x - 25, board.height+60, center=False)
+        self.draw_text(str(self.current_turn_time), 'black', self.midScreen_pos.x , 20, center=False)
+        self.draw_text(str(self.black_turn_time), 'black', self.midScreen_pos.x + board.width/2-15, 20, center=False)
+        self.draw_text(str(self.white_turn_time), 'black', self.midScreen_pos.x + board.width/2-15, board.height+60, center=False)
 
         # core
         self.draw_board()
