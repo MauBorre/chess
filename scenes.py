@@ -2110,12 +2110,12 @@ class Match(Scene):
 
         # castling enablers
         if not self.castling:
-            if ex_value in self.attacker_castlingEnablers:
+            if ex_value in self.attacker_castlingEnablers.keys():
                 if self.attacker_castlingEnablers[ex_value] == 'king': # es ex_value posición de rey?
                     self.attacker_castlingEnablers = {} # no more castling
                 else:  # es ex_value posición de alguna torre?
                     del self.attacker_castlingEnablers[ex_value]
-                print(self.attacker_castlingEnablers)
+                # print(self.attacker_castlingEnablers)
             
             # NORMAL MOVEMENT
             self.attacker_positions.update({self.move_here: moving_piece})
