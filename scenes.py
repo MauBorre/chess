@@ -183,6 +183,7 @@ class Match(Scene):
         
         # KING CASTLING EXPERIMENTALS
         self.castling: bool = False
+        self.kingValidCastling_posDisplay: dict[int, pygame.Rect] = {}
         # king castling
         self.black_castlingEnablers: dict[str, int] = {'west-rook': 0, 'king': 4, 'east-rook': 7}
         # king castling
@@ -1867,7 +1868,7 @@ class Match(Scene):
                            SQUARE_RECT.top + board.square_height -17,
                            center=False, font_size='medium')
             
-            # Diccionarios de posiciones -------------------------------------------------------------------------
+            # Square types/subtypes -----------------------------------------------------------------------------
             if board_index in self.black_positions.keys():
                 SQUARE_SUBTYPE = "kill-movement" if board_index in self.pieceValidKill_posDisplay.keys() else ""
                 SQUARE_TYPE =  self.black_positions[board_index]
@@ -2100,7 +2101,7 @@ class Match(Scene):
         
         '''
         # if self.move_here != None:
-        ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
+        ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0] # moving piece standpoint
 
         if self.turn_defender == 'white':
             _piece = self.black_positions.pop(ex_value)
