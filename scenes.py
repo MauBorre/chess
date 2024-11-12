@@ -2086,20 +2086,13 @@ class Match(Scene):
         > dirección de enroque
 
         '''
-        # if self.move_here != None:
-        ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0] # moving piece standpoint
+        # moving piece standpoint
+        ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
 
-        if self.turn_defender == 'white':
-            _piece = self.black_positions.pop(ex_value)
-            if self.killing:
-                self.white_positions.pop(self.move_here)
-            self.black_positions.update({self.move_here:_piece})               
-
-        if self.turn_defender == 'black':
-            _piece = self.white_positions.pop(ex_value)
-            if self.killing:
-                self.black_positions.pop(self.move_here) 
-            self.white_positions.update({self.move_here:_piece})
+        moving_piece = self.attacker_positions.pop(ex_value)
+        if self.killing:
+            self.defender_positions.pop(self.move_here)
+        self.attacker_positions.update({self.move_here: moving_piece})
         
         self.pieceValidMovement_posDisplay.clear()
         self.move_here = None
