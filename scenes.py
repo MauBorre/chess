@@ -185,11 +185,12 @@ class Match(Scene):
         # KING CASTLING EXPERIMENTALS
         self.castling: bool = False
         self.castling_direction: str = ''
+
         self.kingValidCastling_posDisplay: dict[int, pygame.Rect] = {}
         # king castling
         self.black_castlingEnablers: dict[int, str] = {0: 'west-rook', 4: 'king', 7: 'east-rook'}
-        # king castling
         self.white_castlingEnablers: dict[int, str] = {56: 'west-rook', 60: 'king', 63: 'east-rook'}
+
         self.attacker_castlingEnablers: dict[int, str] = self.white_castlingEnablers
         self.defender_castlingEnablers: dict[int, str] = self.black_castlingEnablers
 
@@ -574,6 +575,10 @@ class Match(Scene):
             self.white_kingBannedDirection = self.attacker_kingBannedDirection
             self.black_kingBannedDirection = self.defender_kingBannedDirection
 
+            # > castlingEnablers
+            self.white_castlingEnablers = self.attacker_castlingEnablers
+            self.black_castlingEnablers = self.defender_castlingEnablers
+
             # Target Swap (attacker = black | defender = white ) ---------------------------
             # > positions
             self.attacker_positions = self.black_positions
@@ -602,6 +607,10 @@ class Match(Scene):
             # > kingBannedDirection
             self.attacker_kingBannedDirection = self.black_kingBannedDirection
             self.defender_kingBannedDirection = self.white_kingBannedDirection
+
+            # > castlingEnablers
+            self.attacker_castlingEnablers = self.black_castlingEnablers
+            self.defender_castlingEnablers = self.white_castlingEnablers
 
             return
         
@@ -639,6 +648,10 @@ class Match(Scene):
             self.white_kingBannedDirection = self.defender_kingBannedDirection
             self.black_kingBannedDirection = self.attacker_kingBannedDirection
 
+            # > castlingEnablers
+            self.white_castlingEnablers = self.defender_castlingEnablers
+            self.black_castlingEnablers = self.attacker_castlingEnablers
+
             # Target Swap (attacker = white | defender = black) ----------------------------
             # > positions
             self.attacker_positions = self.white_positions
@@ -667,6 +680,10 @@ class Match(Scene):
             # > kingBannedDirection
             self.attacker_kingBannedDirection = self.white_kingBannedDirection
             self.defender_kingBannedDirection = self.black_kingBannedDirection
+
+            # > castlingEnablers
+            self.attacker_castlingEnablers = self.white_castlingEnablers
+            self.defender_castlingEnablers = self.black_castlingEnablers
 
             return
     
@@ -1759,6 +1776,7 @@ class Match(Scene):
         
         # Objectives
         _threat_emission: list[int] = []
+        _castling: int | None = None
         king_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
         if perspective == 'defender':
@@ -1793,6 +1811,7 @@ class Match(Scene):
                 if direction == ESTE or direction == OESTE:
                     if movement not in row_of_(piece_standpoint):
                         continue
+                    _castling = movement+direction
                 if direction == NOR_ESTE or direction == NOR_OESTE:
                     if movement-NORTE not in row_of_(piece_standpoint):
                         continue
@@ -1803,6 +1822,7 @@ class Match(Scene):
 
                     for threat in self.defender_threatOnAttacker.values():
                         if movement in threat: movement = None
+                        if _castling in threat: _castling = None
 
                     if movement != None:
 
@@ -1813,26 +1833,23 @@ class Match(Scene):
 
                             # castling -WEST-
                             if direction == OESTE:
-                                if 'king' and 'west-rook' in self.attacker_castlingEnablers.values(): # pueden este rey y la torre enrocar?
-                                    if self.defender_singleOriginDirectThreat == None:
-                                        _castling: int | None = movement+direction if movement+direction not in self.defender_threatOnAttacker else None # no hay amenazas?
-                                if _castling != None:
-                                    # print(_castling)
-                                    if _castling not in self.attacker_positions and not _castling in self.defender_positions: # no hay bloqueos?
-                                        self.attacker_kingLegalMoves.append(_castling)
-                                        castling_positions.update({_castling: self.boardRects[_castling]})
-                                        self.castling_direction = 'west'
+                                if 'king' and 'west-rook' in self.attacker_castlingEnablers.values():
+                                    if self.defender_singleOriginDirectThreat == None:       
+                                        if _castling != None:
+                                            if _castling not in self.attacker_positions and not _castling in self.defender_positions:
+                                                self.attacker_kingLegalMoves.append(_castling)
+                                                castling_positions.update({_castling: self.boardRects[_castling]})
+                                                self.castling_direction = 'west'
 
                             # castling -EAST-
                             if direction == ESTE:
                                 if 'king' and 'east-rook' in self.attacker_castlingEnablers.values():
                                     if self.defender_singleOriginDirectThreat == None:
-                                        _castling: int | None = movement*2 if movement*2 not in self.defender_threatOnAttacker else None
-                                if _castling != None:
-                                    if _castling not in self.attacker_positions and not _castling in self.defender_positions:
-                                        self.attacker_kingLegalMoves.append(_castling)
-                                        castling_positions.update({_castling: self.boardRects[_castling]})
-                                        self.castling_direction = 'east'
+                                        if _castling != None:
+                                            if _castling not in self.attacker_positions and not _castling in self.defender_positions:
+                                                self.attacker_kingLegalMoves.append(_castling)
+                                                castling_positions.update({_castling: self.boardRects[_castling]})
+                                                self.castling_direction = 'east'
 
                         elif movement in self.defender_positions:
                             _threat_emission.append(movement)
@@ -1966,7 +1983,7 @@ class Match(Scene):
         for valid_kill_RECT in self.pieceValidKill_posDisplay.values():
             pygame.draw.rect(self.screen, 'RED', valid_kill_RECT, width=2)
         for valid_castling_RECT in self.kingValidCastling_posDisplay.values():
-            pygame.draw.rect(self.screen, 'YELLOW', valid_castling_RECT, width=2)
+            pygame.draw.rect(self.screen, 'BLUE', valid_castling_RECT, width=2)
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''
@@ -2095,27 +2112,31 @@ class Match(Scene):
         # moving piece standpoint
         ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
 
-        # castling enablers
-        if ex_value in self.attacker_castlingEnablers:
-            if self.attacker_castlingEnablers[ex_value] == 'king': # es ex_value posición de rey?
-                self.attacker_castlingEnablers = {}
-            else:  # es ex_value posición de alguna torre?
-                del self.attacker_castlingEnablers[ex_value]
-
         moving_piece = self.attacker_positions.pop(ex_value)
         if self.killing:
             self.defender_positions.pop(self.move_here)
-        if self.castling:
+
+        # castling enablers
+        if not self.castling:
+            if ex_value in self.attacker_castlingEnablers:
+                if self.attacker_castlingEnablers[ex_value] == 'king': # es ex_value posición de rey?
+                    self.attacker_castlingEnablers = {} # no more castling
+                else:  # es ex_value posición de alguna torre?
+                    del self.attacker_castlingEnablers[ex_value]
+                print(self.attacker_castlingEnablers)
+            
+            # NORMAL MOVEMENT
+            self.attacker_positions.update({self.move_here: moving_piece})
+
+        elif self.castling:
             self.attacker_positions.update({self.move_here: moving_piece}) # mueve al rey
             # mueve a la torre
             ex_rook: int = {k for k,_ in self.attacker_castlingEnablers.items() if self.attacker_castlingEnablers[k] == f'{self.castling_direction}-rook'}.pop()
-            print(ex_rook)
-            # ex_rook: int = list(self.attacker_castlingEnablers).index(f'{self.castling_direction}-rook')
-            moving_rook = self.attacker_positions.pop(ex_rook)
-            self.attacker_positions.update({moving_rook: 'rook'})
-
-        else:
-            self.attacker_positions.update({self.move_here: moving_piece})
+            self.attacker_positions.pop(ex_rook)
+            _direction: int = ESTE if self.castling_direction == 'east' else OESTE
+            castling_rook_movement = ex_value+_direction # king_standpoint + dirección
+            self.attacker_positions.update({castling_rook_movement: 'rook'})
+            self.attacker_castlingEnablers = {} # no more castling
         
         self.pieceValidMovement_posDisplay.clear()
         self.kingValidCastling_posDisplay.clear()
