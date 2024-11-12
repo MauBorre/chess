@@ -180,24 +180,14 @@ class Match(Scene):
         self.player_deciding_promotion: bool = False
         self.pawnPromotion_selection: str = ''
         self.promoting_pawn: int | None = None
-        
-
-        # KING CASTLING EXPERIMENTALS
+        # king castling
         self.castling: bool = False
         self.castling_direction: str = ''
 
-        self.kingValidCastling_posDisplay: dict[int, pygame.Rect] = {}
-        # king castling
-        self.black_castlingEnablers: dict[int, str] = {0: 'west-rook', 4: 'king', 7: 'east-rook'}
-        self.white_castlingEnablers: dict[int, str] = {56: 'west-rook', 60: 'king', 63: 'east-rook'}
-
-        self.attacker_castlingEnablers: dict[int, str] = self.white_castlingEnablers
-        self.defender_castlingEnablers: dict[int, str] = self.black_castlingEnablers
-
-
         # board feedback utilities
         self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
-        self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {} 
+        self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {}
+        self.kingValidCastling_posDisplay: dict[int, pygame.Rect] = {}
 
         # Board defaults ---------------------------------------------------
         # Black
@@ -207,9 +197,9 @@ class Match(Scene):
         self.black_kingLegalMoves: list[int] = []
         self.black_singleOriginDirectThreat: bool | None = None 
         self.black_directThreatTrace: list[int] = []
-        self.black_singleOriginT_standpoint: int | None
-        self.black_kingBannedDirection: int | None
-        
+        self.black_singleOriginT_standpoint: int | None = None
+        self.black_kingBannedDirection: int | None = None
+        self.black_castlingEnablers: dict[int, str] = {0: 'west-rook', 4: 'king', 7: 'east-rook'}
         
         # White
         self.in_base_Wpawns: list[int] = [wpawn for wpawn in pieces.origins['white']['pawn']] # no swap
@@ -218,10 +208,10 @@ class Match(Scene):
         self.white_kingLegalMoves: list[int] = []
         self.white_singleOriginDirectThreat: bool | None = None 
         self.white_directThreatTrace: list[int] = [] 
-        self.white_singleOriginT_standpoint: int | None
-        self.white_kingBannedDirection: int | None
+        self.white_singleOriginT_standpoint: int | None = None
+        self.white_kingBannedDirection: int | None = None
+        self.white_castlingEnablers: dict[int, str] = {56: 'west-rook', 60: 'king', 63: 'east-rook'}
         
-
         # Turn lookups --------------------------------------------------------------------------------
         self.turn_attacker: str = 'white'
         self.turn_defender: str = 'black'
@@ -270,8 +260,9 @@ class Match(Scene):
         self.defender_kingLegalMoves: list[int] = self.black_kingLegalMoves
         self.defender_singleOriginDirectThreat: bool | None = self.black_singleOriginDirectThreat
         self.defender_directThreatTrace: list[int] = self.black_directThreatTrace
-        self.defender_singleOriginT_standpoint: int | None
-        self.defender_kingBannedDirection: int | None 
+        self.defender_singleOriginT_standpoint: int | None = self.black_singleOriginT_standpoint
+        self.defender_kingBannedDirection: int | None = self.black_kingBannedDirection
+        self.defender_castlingEnablers: dict[int, str] = self.black_castlingEnablers
 
         # Attacker
         self.attacker_positions: dict[int, str] = self.white_positions 
@@ -279,8 +270,9 @@ class Match(Scene):
         self.attacker_kingLegalMoves: list[int] = self.white_kingLegalMoves
         self.attacker_singleOriginDirectThreat: bool | None = self.white_singleOriginDirectThreat 
         self.attacker_directThreatTrace: list[int] = self.white_directThreatTrace
-        self.attacker_singleOriginT_standpoint: int | None 
-        self.attacker_kingBannedDirection: int | None = None
+        self.attacker_singleOriginT_standpoint: int | None = self.white_singleOriginT_standpoint
+        self.attacker_kingBannedDirection: int | None = self.white_kingBannedDirection
+        self.attacker_castlingEnablers: dict[int, str] = self.white_castlingEnablers
 
     def check_pawn_promotion(self):
         # Obtener standpoints PAWN de attacker
