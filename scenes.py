@@ -1814,7 +1814,6 @@ class Match(Scene):
                                 if 'king' and 'west-rook' in self.attacker_castlingEnablers: # pueden este rey y la torre enrocar?
                                     if self.defender_singleOriginDirectThreat == None:
                                         _castling: int | None = movement*2 if movement*2 not in self.defender_threatOnAttacker else None # no hay amenazas?
-                                
                                 if _castling != None:
                                     if _castling not in self.attacker_positions and not _castling in self.defender_positions: # no hay bloqueos?
                                         self.attacker_kingLegalMoves.append(_castling)
@@ -1834,11 +1833,13 @@ class Match(Scene):
 
                             # castling -EAST-
                             if direction == ESTE:
-                                _castling = movement*2
-                                if _castling not in self.attacker_positions and not _castling in self.defender_positions:
-                                    ...
-
-
+                                if 'king' and 'east-rook' in self.attacker_castlingEnablers:
+                                    if self.defender_singleOriginDirectThreat == None:
+                                        _castling: int | None = movement*2 if movement*2 not in self.defender_threatOnAttacker else None
+                                if _castling != None:
+                                    if _castling not in self.attacker_positions and not _castling in self.defender_positions:
+                                        self.attacker_kingLegalMoves.append(_castling)
+                                        castling_positions.update({_castling: self.boardRects[_castling]})
 
                         elif movement in self.defender_positions:
                             _threat_emission.append(movement)
