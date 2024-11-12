@@ -1953,11 +1953,13 @@ class Match(Scene):
                                 self.pieceValidMovement_posDisplay.clear()
 
         # Pre-movements visual feedback
-        if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0:
-            for valid_mov_RECT in self.pieceValidMovement_posDisplay.values():
-                pygame.draw.rect(self.screen, 'GREEN', valid_mov_RECT, width=2)
+        # if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0:
+        for valid_mov_RECT in self.pieceValidMovement_posDisplay.values():
+            pygame.draw.rect(self.screen, 'GREEN', valid_mov_RECT, width=2)
         for valid_kill_RECT in self.pieceValidKill_posDisplay.values():
             pygame.draw.rect(self.screen, 'RED', valid_kill_RECT, width=2)
+        for valid_castling_RECT in self.kingValidCastling_posDisplay.values():
+            pygame.draw.rect(self.screen, 'GREEN', valid_castling_RECT, width=2)
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''
