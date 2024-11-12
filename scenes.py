@@ -1906,6 +1906,7 @@ class Match(Scene):
                     if self.master.click:
 
                         self.pieceValidKill_posDisplay.clear()
+                        self.kingValidCastling_posDisplay.clear()
 
                         if SQUARE_SUBTYPE == "kill-movement":
                             self.killing = True
@@ -1951,11 +1952,11 @@ class Match(Scene):
                                 
                             if SQUARE_TYPE == "EMPTY":
                                 self.pieceValidMovement_posDisplay.clear()
-
+                                
         # Pre-movements visual feedback
-        # if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0:
-        for valid_mov_RECT in self.pieceValidMovement_posDisplay.values():
-            pygame.draw.rect(self.screen, 'GREEN', valid_mov_RECT, width=2)
+        if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0: # avoids highlighting pieces with no movement
+            for valid_mov_RECT in self.pieceValidMovement_posDisplay.values():
+                pygame.draw.rect(self.screen, 'GREEN', valid_mov_RECT, width=2)
         for valid_kill_RECT in self.pieceValidKill_posDisplay.values():
             pygame.draw.rect(self.screen, 'RED', valid_kill_RECT, width=2)
         for valid_castling_RECT in self.kingValidCastling_posDisplay.values():
