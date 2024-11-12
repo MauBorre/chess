@@ -182,6 +182,7 @@ class Match(Scene):
         self.promoting_pawn: int | None = None
         
         # KING CASTLING EXPERIMENTALS
+        self.castling: bool = False
         # king castling
         self.black_castlingEnablers: dict[str, int] = {'west-rook': 0, 'king': 4, 'east-rook': 7}
         # king castling
@@ -1916,6 +1917,10 @@ class Match(Scene):
 
                         elif SQUARE_SUBTYPE == "valid-movement":
                             self.move_here = board_index
+                        
+                        elif SQUARE_SUBTYPE == "castling-movement":
+                            self.castling = True
+                            self.move_here = board_index
 
                         else: 
                             if SQUARE_TYPE == 'pawn':
@@ -2072,7 +2077,28 @@ class Match(Scene):
 
     def make_moves(self):
         '''Aquí están mis movimientos *normales*, debería también aquí
-        poner mis movimientos *especiales*?'''
+        poner mis movimientos *especiales*?
+        
+        El mov-especial del enroque vendría hasta aquí "camuflado"
+        como un mov-normal, es esto correcto?
+
+        Para hacer el enroque necesitamos:
+        > king_standpoint
+        > dir-rook_standpoint
+        > dirección de enroque
+
+        Siento que deberíamos aceptar por parámetro de función algunos
+        de estos elementos. Y debemos extraerlo del _objectives()?
+
+        moves actualmente utiliza un flag de killing por ejemplo, 
+        que viene de clickear un casillero killing (es donde nace el flag.)
+        kill es un mov-especial sin dudas, así que es el verdadero
+        hermano del castling.
+
+        Entonces para hacer nuestro castling realidad, deberíamos expulsar
+        del objectives del rey un nuevo tipo de posición.
+        
+        '''
         # if self.move_here != None:
         ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
 
