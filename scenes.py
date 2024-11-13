@@ -181,11 +181,13 @@ class Match(Scene):
         self.globaltime_SNAP: int = pygame.time.get_ticks()
         self.whitetime_SNAP: int = 0
         self.blacktime_SNAP: int = 0
+        self.pausetime_SNAP: int = 0
         self.current_turn_time: int = 0
         self.black_turn_time: int = 0
         self.white_turn_time: int = 0
         self.white_time_leftover: int = 0
         self.black_time_leftover: int = 0
+        self.pause_time_leftover: int = 0
 
         # pawn promotion
         self.player_deciding_promotion: bool = False
@@ -2150,30 +2152,39 @@ class Match(Scene):
         self.castling_direction = ''
 
     def match_clock(self):
-        # global (un-used but useful for tests)
-        if pygame.time.get_ticks() - self.globaltime_SNAP > 1000: 
-            time_leftover = pygame.time.get_ticks() - self.globaltime_SNAP - 1000
-            self.globaltime_SNAP = pygame.time.get_ticks() - time_leftover
-            if not self.master.paused:
+        if not self.master.paused:
+            self.pausetime_SNAP = 0
+            # global (un-used but useful for tests)
+            self.globaltime_SNAP += self.pause_time_leftover
+            if pygame.time.get_ticks() - self.globaltime_SNAP > 1000: 
+                time_leftover = pygame.time.get_ticks() - self.globaltime_SNAP - 1000
+                self.globaltime_SNAP = pygame.time.get_ticks() - time_leftover
                 self.current_turn_time+=1
-        
-        if self.turn_attacker == 'white':
-            if pygame.time.get_ticks() - self.whitetime_SNAP > 1000:
-                self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP - 1000
-                self.whitetime_SNAP += 1000 - self.white_time_leftover
-                if not self.master.paused:
+            
+            if self.turn_attacker == 'white':
+                self.whitetime_SNAP += self.pause_time_leftover
+                if pygame.time.get_ticks() - self.whitetime_SNAP > 1000:
+                    self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP - 1000
+                    self.whitetime_SNAP += 1000 - self.white_time_leftover
                     self.white_turn_time+=1
-            else:
-                self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP
-        
-        if self.turn_attacker == 'black':
-            if pygame.time.get_ticks() - self.blacktime_SNAP > 1000: 
-                self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP - 1000
-                self.blacktime_SNAP += 1000 - self.black_time_leftover
-                if not self.master.paused:
+                else:
+                    self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP
+            
+            if self.turn_attacker == 'black':
+                self.blacktime_SNAP += self.pause_time_leftover
+                if pygame.time.get_ticks() - self.blacktime_SNAP > 1000: 
+                    self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP - 1000
+                    self.blacktime_SNAP += 1000 - self.black_time_leftover
                     self.black_turn_time+=1
+                else:
+                    self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP
+            self.pause_time_leftover = 0
+        else:
+            #pause_time++
+            if self.pausetime_SNAP == 0:
+                self.pausetime_SNAP = pygame.time.get_ticks()
             else:
-                self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP
+                self.pause_time_leftover = pygame.time.get_ticks() - self.pausetime_SNAP
 
     def render(self):
 
