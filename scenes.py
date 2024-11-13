@@ -183,8 +183,8 @@ class Match(Scene):
         self.blacktime_SNAP: int = 0
         self.pausetime_SNAP: int = 0
         self.current_turn_time: int = 0
-        self.black_turn_time: int = 0
-        self.white_turn_time: int = 0
+        self.black_turn_time: int = 0 # inicializa con variable de juego
+        self.white_turn_time: int = 0 # inicializa con variable de juego
         self.white_time_leftover: int = 0
         self.black_time_leftover: int = 0
         self.pause_time_leftover: int = 0
@@ -2166,7 +2166,7 @@ class Match(Scene):
                 if pygame.time.get_ticks() - self.whitetime_SNAP > 1000:
                     self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP - 1000
                     self.whitetime_SNAP += 1000 - self.white_time_leftover
-                    self.white_turn_time+=1
+                    self.white_turn_time+=1 # debe restar
                 else:
                     self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP
             
@@ -2175,7 +2175,7 @@ class Match(Scene):
                 if pygame.time.get_ticks() - self.blacktime_SNAP > 1000: 
                     self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP - 1000
                     self.blacktime_SNAP += 1000 - self.black_time_leftover
-                    self.black_turn_time+=1
+                    self.black_turn_time+=1 # debe restar
                 else:
                     self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP
             self.pause_time_leftover = 0
