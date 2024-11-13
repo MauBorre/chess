@@ -178,10 +178,13 @@ class Match(Scene):
         self.finish_turn: bool = False # turn halt
 
         # turn times
-        self.time_snap: int = pygame.time.get_ticks()
+        self.globaltime_snap: int = pygame.time.get_ticks()
         self.current_turn_time: int = 0
         self.black_turn_time: int = 0
         self.white_turn_time: int = 0
+        self.attacker_turn_time: int = self.white_turn_time
+        self.defender_turn_time: int = self.black_turn_time
+        self.pause_clock: int | None = 0
 
         # pawn promotion
         self.player_deciding_promotion: bool = False
@@ -2144,24 +2147,34 @@ class Match(Scene):
         self.castling_direction = ''
 
     def match_clock(self):
-        if pygame.time.get_ticks() - self.time_snap > 1000:
+
+        # paso global de segundo
+        if pygame.time.get_ticks() - self.globaltime_snap > 1000: 
             time_leftover = pygame.time.get_ticks() % 1000
-            self.time_snap = int(pygame.time.get_ticks() - time_leftover)
-            self.current_turn_time = int(self.time_snap/1000)
-            # print(self.time_snap)
+            self.globaltime_snap = int(pygame.time.get_ticks() - time_leftover)
+            if not self.master.paused:
+
+                self.current_turn_time+=1
+
+                if self.turn_attacker == 'white':
+                    self.white_turn_time+=1
+                if self.turn_attacker == 'black':
+                    self.black_turn_time+=1
         
     def render(self):
 
+        '''Este clock está funcionando OK, ahora solo debemos "individualizarlo"
+        por equipo.'''
         self.match_clock()
 
         # hud
-        self.draw_text('Match scene', 'black', 20, 20, center=False)
-        self.draw_text(f'{self.match_mode['mode']}', 'black', 200, 20, center=False)
+        # self.draw_text('Match scene', 'black', 20, 20, center=False)
+        # self.draw_text(f'{self.match_mode['mode']}', 'black', 200, 20, center=False)
         self.draw_text(self.match_state, 'black', 400, 20, center=False)
         self.draw_text(self.turn_attacker, 'black', self.midScreen_pos.x - 25, board.height+60, center=False)
-        self.draw_text(str(self.current_turn_time), 'black', self.midScreen_pos.x , 20, center=False)
-        self.draw_text(str(self.black_turn_time), 'black', self.midScreen_pos.x + board.width/2-15, 20, center=False)
-        self.draw_text(str(self.white_turn_time), 'black', self.midScreen_pos.x + board.width/2-15, board.height+60, center=False)
+        self.draw_text(str(self.current_turn_time), 'black', self.midScreen_pos.x , 20, center=True)
+        self.draw_text(str(self.black_turn_time), 'black', self.midScreen_pos.x + board.width/2-20, 20, center=False)
+        self.draw_text(str(self.white_turn_time), 'black', self.midScreen_pos.x + board.width/2-20, board.height+60, center=False)
 
         # core
         self.draw_board()
