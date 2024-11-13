@@ -178,13 +178,16 @@ class Match(Scene):
         self.finish_turn: bool = False # turn halt
 
         # turn times
-        self.globaltime_snap: int = pygame.time.get_ticks()
+        self.globaltime_SNAP: int = pygame.time.get_ticks()
+        self.whitetime_SNAP: int = 0
+        self.blacktime_SNAP: int = 0
         self.current_turn_time: int = 0
         self.black_turn_time: int = 0
         self.white_turn_time: int = 0
         self.attacker_turn_time: int = self.white_turn_time
         self.defender_turn_time: int = self.black_turn_time
         self.pause_clock: int | None = 0
+
 
         # pawn promotion
         self.player_deciding_promotion: bool = False
@@ -547,6 +550,7 @@ class Match(Scene):
 
             self.turn_attacker = 'black'
             self.turn_defender = 'white'
+            self.blacktime_SNAP = pygame.time.get_ticks() - (pygame.time.get_ticks() - self.blacktime_SNAP - 1000)
 
             # Target Transfer (white <- attacker | black <- defender) ---------------------
             # > positions
@@ -620,6 +624,8 @@ class Match(Scene):
 
             self.turn_attacker = 'white'
             self.turn_defender = 'black'
+            self.whitetime_SNAP = pygame.time.get_ticks() - (pygame.time.get_ticks() - self.whitetime_SNAP - 1000)
+            # self.attacker_turn_time = self.whitetime_SNAP
 
             # Target Transfer (white <- defender | black <- attacker) ----------------------
             # > positions
@@ -2147,25 +2153,33 @@ class Match(Scene):
         self.castling_direction = ''
 
     def match_clock(self):
-
-        # paso global de segundo
-        if pygame.time.get_ticks() - self.globaltime_snap > 1000: 
-            time_leftover = pygame.time.get_ticks() % 1000
-            self.globaltime_snap = int(pygame.time.get_ticks() - time_leftover)
+        if pygame.time.get_ticks() - self.globaltime_SNAP > 1000: 
+            time_leftover = pygame.time.get_ticks() - self.globaltime_SNAP - 1000
+            self.globaltime_SNAP = pygame.time.get_ticks() - time_leftover
             if not self.master.paused:
-
                 self.current_turn_time+=1
+    
+    def white_clock(self):
+        if pygame.time.get_ticks() - self.whitetime_SNAP > 1000:
+            time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP - 1000
+            self.whitetime_SNAP += 1000-time_leftover
+            if not self.master.paused:
+                self.white_turn_time+=1
 
-                if self.turn_attacker == 'white':
-                    self.white_turn_time+=1
-                if self.turn_attacker == 'black':
-                    self.black_turn_time+=1
-        
+    def black_clock(self):
+        if pygame.time.get_ticks() - self.blacktime_SNAP > 1000: 
+            time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP - 1000
+            self.blacktime_SNAP += 1000-time_leftover
+            if not self.master.paused:
+                self.black_turn_time+=1
+
     def render(self):
 
-        '''Este clock está funcionando OK, ahora solo debemos "individualizarlo"
-        por equipo.'''
         self.match_clock()
+        if self.turn_attacker == 'white':
+            self.white_clock()
+        if self.turn_attacker == 'black':
+            self.black_clock()
 
         # hud
         # self.draw_text('Match scene', 'black', 20, 20, center=False)
