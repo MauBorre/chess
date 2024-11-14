@@ -2156,7 +2156,7 @@ class Match(Scene):
                 if pygame.time.get_ticks() - self.whitetime_SNAP > 1000:
                     self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP - 1000
                     self.whitetime_SNAP += 1000 - self.white_time_leftover
-                    self.white_turn_time-=1
+                    self.substract_time(color='white')
                 else:
                     self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP
             
@@ -2165,7 +2165,7 @@ class Match(Scene):
                 if pygame.time.get_ticks() - self.blacktime_SNAP > 1000: 
                     self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP - 1000
                     self.blacktime_SNAP += 1000 - self.black_time_leftover
-                    self.black_turn_time-=1
+                    self.substract_time(color='black')
                 else:
                     self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP
             self.pause_time_leftover = 0
@@ -2175,6 +2175,31 @@ class Match(Scene):
                 self.pausetime_SNAP = pygame.time.get_ticks()
             else:
                 self.pause_time_leftover = pygame.time.get_ticks() - self.pausetime_SNAP
+    
+    def substract_time(self, color):
+        '''Particionamos nuestro STAMP en minutos(primeros dos dígitos) y
+        segundos(últimos dos dígitos).
+        Restamos un segundo -> si eso nos da -1 reemplazamos por 59 y restamos 1 minuto
+                               siNO, restamos normalmente.
+        Para finalizar SIEMPRE concatenaremos estas dos particiones dentro de color_turn_time.
+        '''
+        if color == 'black':
+            minutes = int(self.black_turn_time * 0.01)
+            seconds = self.black_turn_time % 100
+            if seconds-1 == -1:
+                seconds = 59
+                minutes-=1
+            else: seconds-=1
+            self.black_turn_time = int(str(minutes)+str(seconds))
+
+        if color == 'white':
+            minutes = int(self.white_turn_time * 0.01)
+            seconds = self.white_turn_time % 100
+            if seconds-1 == -1:
+                seconds = 59
+                minutes-=1
+            else: seconds-=1
+            self.white_turn_time = int(str(minutes)+str(seconds))
 
     def render(self):
 
@@ -2184,8 +2209,14 @@ class Match(Scene):
         self.draw_text(self.match_state, 'black', 400, 20, center=False)
         self.draw_text(self.turn_attacker, 'black', self.midScreen_pos.x - 25, board.height+60, center=False)
         self.draw_text(str(self.current_turn_time), 'black', self.midScreen_pos.x , 20, center=True)
+        # black team clock
         self.draw_text(str(self.black_turn_time), 'black', self.midScreen_pos.x + board.width/2-20, 20, center=False)
-        self.draw_text(str(self.white_turn_time), 'black', self.midScreen_pos.x + board.width/2-20, board.height+60, center=False)
+        # white team clock
+        # self.draw_text(str(self.white_turn_time), 'black', self.midScreen_pos.x + board.width/2-20, board.height+60, center=False)
+        '''BUG el reloj FINAL debe ser una LISTA ['1','0','2','4'] así nos olvidamos
+        de cualquier problema en la longitud de nuestro número y podemos agregar el 0 donde
+        falte/corresponda.'''
+        self.draw_text(f'{str(self.white_turn_time)[0:2]}:{str(self.white_turn_time)[2:]}', 'black', board.width-5, board.height+60, center=False)
 
         # core
         self.draw_board()
