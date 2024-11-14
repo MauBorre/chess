@@ -530,13 +530,16 @@ class Match(Scene):
 
     def turn_swap(self):
         '''
-        En todo swap computamos 6 variables
+        Intercalaremos:
         >> positions
         >> threatOn
         >> kingLegalMoves
         >> singleOriginDirectThreat
         >> directThreatTrace
         >> singleOriginThreat standpoint
+        >> kingBannedDirection
+        >> castlingEnablers
+        >> relojes
         
         Match aplicará cambios siempre sobre conjuntos generalizados bajo attacker/defender,
         entonces luego de realizados:
@@ -2010,9 +2013,8 @@ class Match(Scene):
 
     def decide_check(self):
         '''
-        Evalua "cómo quedaron las piezas en el tablero despues del último movimiento"
-        para resolver estados jaque/jaque-mate/stale-mate.
-        Al momento de checkear este objetivo que tengo revisar el king DEFENSOR en jaque.
+        Evalua "cómo quedaron las piezas en el tablero despues del último movimiento".
+        Revisando si el ATACANTE ganó.
 
         JAQUE > El rey es apuntado directamente, PUEDE escapar moviendose o siendo
             salvado por pieza aliada (matando O bloqueando amenaza) - defensa tiene movimientos legales 
@@ -2058,10 +2060,10 @@ class Match(Scene):
                 defender_color -> notificate CHECK (highlight possible solutions)'''
 
                 # TURN DEBUG ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                print('**JAQUE**')
-                print('El rey defensor puede moverse en: ', self.defender_kingLegalMoves);
-                print('Las piezas aliadas del rey defensor pueden moverse: ', self.defender_legalMoves)
-                print('**JAQUE**')
+                    # print('**JAQUE**')
+                    # print('El rey defensor puede moverse en: ', self.defender_kingLegalMoves);
+                    # print('Las piezas aliadas del rey defensor pueden moverse: ', self.defender_legalMoves)
+                    # print('**JAQUE**')
                 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 
                 if self.turn_attacker == 'black':
@@ -2105,17 +2107,6 @@ class Match(Scene):
                     self.match_state = 'Black en jaque.'
 
     def make_moves(self):
-        '''
-        El mov-especial del enroque vendrá hasta aquí "camuflado"
-        como un mov-normal, pero SOLO si es mov de enroque, la flag castling
-        será TURE. -> CUIDADO debemos deducir si es castling-east o castling-west.
-
-        Para hacer el enroque necesitamos:
-        > king_standpoint
-        > dir-rook_standpoint
-        > dirección de enroque
-
-        '''
         # moving piece standpoint
         ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
 
@@ -2136,12 +2127,11 @@ class Match(Scene):
 
         elif self.castling:
             self.attacker_positions.update({self.move_here: moving_piece}) # mueve al rey
-            # mueve a la torre
             ex_rook: int = {k for k,_ in self.attacker_castlingEnablers.items() if self.attacker_castlingEnablers[k] == f'{self.castling_direction}-rook'}.pop()
             self.attacker_positions.pop(ex_rook)
             _direction: int = ESTE if self.castling_direction == 'east' else OESTE
             castling_rook_movement = ex_value+_direction # king_standpoint + dirección
-            self.attacker_positions.update({castling_rook_movement: 'rook'})
+            self.attacker_positions.update({castling_rook_movement: 'rook'}) # mueve a la torre
             self.attacker_castlingEnablers = {} # no more castling
         
         self.pieceValidMovement_posDisplay.clear()
