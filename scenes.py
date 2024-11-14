@@ -150,7 +150,7 @@ class Match(Scene):
     '''Match es inicializado bajo instrucciones seleccionadas previamente en MainMenu:
         >> j1-VS-j2
         >> j1-VS-ia
-        >> con/sin tiempo (duraciones variables de reloj)
+        >> variables de reloj
     '''
 
     def __init__(self, master):
@@ -183,8 +183,10 @@ class Match(Scene):
         self.blacktime_SNAP: int = 0
         self.pausetime_SNAP: int = 0
         self.current_turn_time: int = 0
-        self.black_turn_time: int = 0 # inicializa con variable de juego
-        self.white_turn_time: int = 0 # inicializa con variable de juego
+
+        self.black_turn_time: int = self.match_mode['clock-limit-stamp'] # 10mins = 1000 | 15mins = 1500, etc.
+        self.white_turn_time: int = self.match_mode['clock-limit-stamp']
+
         self.white_time_leftover: int = 0
         self.black_time_leftover: int = 0
         self.pause_time_leftover: int = 0
@@ -259,13 +261,11 @@ class Match(Scene):
         >> defender_legalMoves (kingSupport):
             Actualizadas luego de que movió el atacante.
             Exhibe "si alguien puede hacer algo", mas no "dónde".
+            Inexistentes si hay amenaza de orígen múltiple.
 
             Para fabricarlas correctamente, debemos comprobar y desestimar
                 - Movimientos inv. por bloqueo.
                 - Movimientos inv.  por exposición al rey.
-            
-            Al comprobarlas, debo inspeccionar primero si hay jaque (singular o multiple)
-            ya que esto limita seriamente las posibilidades de legalMoves (kingSupport).
         '''
         # Defender
         self.defender_positions: dict[int, str] = self.black_positions 
@@ -385,7 +385,7 @@ class Match(Scene):
         un solapamiento infinito de posiciones.
         
         Primero debemos actualizar la ofensiva -siendo restringido por la defensiva-, y luego la defensiva,
-        revisando especialmente si puede salvar a su rey de ser necesario por la última jugada ofensiva.
+        revisando especialmente si puede salvar a su rey ante la última jugada ofensiva.
 
         singleOriginDirectThreat será siempre y únicamente calculado luego de evaluar la ofensiva,
         Si es NONE no hay ninguna amenaza directa, pero si es FALSE significa que HAY MULTIPLES AMENAZAS
@@ -415,12 +415,12 @@ class Match(Scene):
             >> Verificar y validar LEGAL-MOVES, si resultan ser 0 para el actual defensor, el actual atacante ganó o empató.
             
             >> Los movimientos descartados (ilegales) son aquellos que no puedan realizarse si,
-            NO ESTANDO EN JAQUE:
-                - Por bloqueo aliado
-                - Por ser expositivos-al-rey
-            ESTANDO EN JAQUE:
-                - Por bloqueo aliado
-                - Por no *salvar al rey* (matando o bloqueando la amenaza)
+                NO ESTANDO EN JAQUE:
+                    - Por bloqueo aliado
+                    - Por ser expositivos-al-rey
+                ESTANDO EN JAQUE:
+                    - Por bloqueo aliado
+                    - Por no *salvar al rey* (matando o bloqueando la amenaza)
         '''
 
         self.attacker_threatOnDefender.clear()
