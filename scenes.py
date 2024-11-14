@@ -2156,7 +2156,7 @@ class Match(Scene):
                 if pygame.time.get_ticks() - self.whitetime_SNAP > 1000:
                     self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP - 1000
                     self.whitetime_SNAP += 1000 - self.white_time_leftover
-                    self.white_turn_time+=1 # debe restar
+                    self.white_turn_time-=1
                 else:
                     self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP
             
@@ -2165,7 +2165,7 @@ class Match(Scene):
                 if pygame.time.get_ticks() - self.blacktime_SNAP > 1000: 
                     self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP - 1000
                     self.blacktime_SNAP += 1000 - self.black_time_leftover
-                    self.black_turn_time+=1 # debe restar
+                    self.black_turn_time-=1
                 else:
                     self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP
             self.pause_time_leftover = 0
