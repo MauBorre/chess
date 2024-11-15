@@ -2191,7 +2191,14 @@ class Match(Scene):
                                siNO, restamos normalmente.
         Para finalizar SIEMPRE concatenaremos estas dos particiones dentro de color_turn_time.
         '''
+        # TODO ESTO ESTA BUG
         if color == 'black':
+            '''BUG debo particionar esto con raíz en los MILISEGUNDOS TOTALES.
+            10 mins = 600.000ms, que parte de estos 600.000 son minutos y que
+            parte son segundos? Esta respuesta es la partición correcta de 
+            MINUTOS Y SEGUNDOS que deben además ser independientes totalmente
+            para su exposición por pantalla.
+            '''
             minutes = int(self.black_turn_time * 0.01)
             seconds = self.black_turn_time % 100
             if seconds-1 == -1:
