@@ -184,8 +184,8 @@ class Match(Scene):
         self.pausetime_SNAP: int = 0
         self.current_turn_time: int = 0
 
-        self.black_turn_time: int = self.match_mode['clock-limit-stamp'] # 10mins = 1000 | 15mins = 1500, etc.
-        self.white_turn_time: int = self.match_mode['clock-limit-stamp']
+        self.black_turn_time: int = self.match_mode['clock-minutes-limit'] # 10mins = 1000 | 15mins = 1500, etc.
+        self.white_turn_time: int = self.match_mode['clock-minutes-limit']
 
         self.white_time_leftover: int = 0
         self.black_time_leftover: int = 0
