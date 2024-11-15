@@ -179,8 +179,8 @@ class Match(Scene):
 
         # turn times
         self.globaltime_SNAP: int = pygame.time.get_ticks()
-        self.whitetime_SNAP: int = 0
-        self.blacktime_SNAP: int = 0
+        self.whitetime_SNAP: int = pygame.time.get_ticks()
+        self.blacktime_SNAP: int = pygame.time.get_ticks()
         self.pausetime_SNAP: int = 0
         self.current_turn_time: int = 0
 
@@ -553,7 +553,10 @@ class Match(Scene):
 
             self.turn_attacker = 'black'
             self.turn_defender = 'white'
-            self.blacktime_SNAP = pygame.time.get_ticks() - self.black_time_leftover
+            if self.black_time_leftover < 1000:
+                self.blacktime_SNAP = pygame.time.get_ticks() + self.black_time_leftover
+            else:
+                self.blacktime_SNAP = pygame.time.get_ticks() - self.black_time_leftover
 
             # Target Transfer (white <- attacker | black <- defender) ---------------------
             # > positions
@@ -627,7 +630,10 @@ class Match(Scene):
 
             self.turn_attacker = 'white'
             self.turn_defender = 'black'
-            self.whitetime_SNAP = pygame.time.get_ticks() - self.white_time_leftover
+            if self.white_time_leftover < 1000:
+                self.whitetime_SNAP = pygame.time.get_ticks() + self.white_time_leftover
+            else:
+                self.whitetime_SNAP = pygame.time.get_ticks() - self.white_time_leftover
 
             # Target Transfer (white <- defender | black <- attacker) ----------------------
             # > positions
@@ -2148,13 +2154,15 @@ class Match(Scene):
             self.globaltime_SNAP += self.pause_time_leftover
             if pygame.time.get_ticks() - self.globaltime_SNAP > 1000: 
                 time_leftover = pygame.time.get_ticks() - self.globaltime_SNAP - 1000
-                self.globaltime_SNAP = pygame.time.get_ticks() - time_leftover
+                # print('global', time_leftover)
+                self.globaltime_SNAP += 1000 - time_leftover
                 self.current_turn_time+=1
             
             if self.turn_attacker == 'white':
                 self.whitetime_SNAP += self.pause_time_leftover
                 if pygame.time.get_ticks() - self.whitetime_SNAP > 1000:
                     self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP - 1000
+                    # print('white', self.white_time_leftover)
                     self.whitetime_SNAP += 1000 - self.white_time_leftover
                     self.substract_time(color='white')
                 else:
@@ -2216,7 +2224,8 @@ class Match(Scene):
         '''BUG el reloj FINAL debe ser una LISTA ['1','0','2','4'] así nos olvidamos
         de cualquier problema en la longitud de nuestro número y podemos agregar el 0 donde
         falte/corresponda.'''
-        self.draw_text(f'{str(self.white_turn_time)[0:2]}:{str(self.white_turn_time)[2:]}', 'black', board.width-5, board.height+60, center=False)
+        # self.draw_text(f'{str(self.white_turn_time)[0:2]}:{str(self.white_turn_time)[2:]}', 'black', board.width-5, board.height+60, center=False)
+        self.draw_text(f'{str(self.white_turn_time)[0:2]}:{str(self.white_turn_time)[2:]}', 'black', self.midScreen_pos.x-100, 20, center=False)
 
         # core
         self.draw_board()
