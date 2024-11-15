@@ -28,7 +28,7 @@ class GameMaster:
         self.resolution = (800,800)
         self.screen = pygame.display.set_mode(self.resolution) # una screen por escena o una screen para todo el juego?
         pygame.display.set_caption('Chess')
-        self.clock = pygame.time.Clock()
+        self.rate_clock = pygame.time.Clock()
 
         # scene manager
         '''Por ahora las escenas consumen screen, controles y "variable de pausa"
@@ -41,7 +41,7 @@ class GameMaster:
 
         # Tenemos que pasar las variables de juego seleccionadas en la interfaz aquí
         # ya que será este manager quien instancie la escena Match
-        self.game_variables: dict = {'mode':'j1-vs-j2'} #default
+        self.game_variables: dict = {'mode': 'j1-vs-j2', 'clock-minutes-limit': 10} #default
         
         # control manager -> Consumidos por escenas
         self.mx = 0
@@ -121,10 +121,10 @@ class GameMaster:
             # Scene Render
             self.screen.fill("white")
             current_scene.render() # (variables+updates+display)
-
+            
             # Pygame Loop Closer
             pygame.display.flip()
-            self.clock.tick(60)
+            self.rate_clock.tick(60)
     
     def main_menu_loop(self): # "ok" correspondería a un manager, pero de una forma más
                                # unificada...
@@ -176,7 +176,7 @@ class GameMaster:
 
             # Pygame Loop Closer
             pygame.display.flip()
-            self.clock.tick(60)
+            self.rate_clock.tick(60)
     
     def start_manager(self,scene=None): # Es responsabilidad del manager 100%
         if scene!=None:
