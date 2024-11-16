@@ -36,7 +36,7 @@ class GameMaster:
         GameMaster controla vistas de las escenas.
         '''
         self.scene_manager_running = True
-        self.paused = False
+        self.pause = False
         self.scene_manager = MainMenu
 
         # Tenemos que pasar las variables de juego seleccionadas en la interfaz aquí
@@ -78,11 +78,11 @@ class GameMaster:
                     if event.key == pygame.K_ESCAPE:
                         # if self.pre_move_focus:
                             # not self.pre_move_focus
-                        if not self.paused: #and not self.pre_move_focus
-                            self.paused = True
+                        if not self.pause: #and not self.pre_move_focus
+                            self.pause = True
                             break
-                        if self.paused:
-                            self.paused = False
+                        if self.pause:
+                            self.pause = False
                             break
 
                     if event.key == pygame.K_w: #up
