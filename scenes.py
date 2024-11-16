@@ -184,9 +184,18 @@ class Match(Scene):
         self.pausetime_SNAP: int = 0
         self.current_turn_time: int = 0
 
-        self.black_turn_time: int = self.match_mode['clock-minutes-limit'] # 10mins = 1000 | 15mins = 1500, etc.
+        '''El tiempo nos llega en forma de "minutos totales", pero debemos transformarlo -finalmente-
+        a segundos y minutos por separado.
+        
+        '''
+        self.black_turn_time: int = self.match_mode['clock-minutes-limit'] 
+        self.black_turn_seconds: str
+        self.black_turn_minutes: str
+        
         self.white_turn_time: int = self.match_mode['clock-minutes-limit']
-
+        self.white_turn_seconds: str
+        self.white_turn_minutes: str
+        # clock + or - remnants
         self.white_time_leftover: int = 0
         self.black_time_leftover: int = 0
         self.pause_time_leftover: int = 0
@@ -2185,20 +2194,13 @@ class Match(Scene):
                 self.pause_time_leftover = pygame.time.get_ticks() - self.pausetime_SNAP
     
     def substract_time(self, color):
-        '''Particionamos nuestro STAMP en minutos(primeros dos dígitos) y
-        segundos(últimos dos dígitos).
-        Restamos un segundo -> si eso nos da -1 reemplazamos por 59 y restamos 1 minuto
-                               siNO, restamos normalmente.
-        Para finalizar SIEMPRE concatenaremos estas dos particiones dentro de color_turn_time.
+        '''Restamos un segundo en el reloj correspondiente.
+        Si eso nos da -1 reemplazamos por 59 y restamos 1 minuto
+        siNO, restamos normalmente.
         '''
         # TODO ESTO ESTA BUG
         if color == 'black':
-            '''BUG debo particionar esto con raíz en los MILISEGUNDOS TOTALES.
-            10 mins = 600.000ms, que parte de estos 600.000 son minutos y que
-            parte son segundos? Esta respuesta es la partición correcta de 
-            MINUTOS Y SEGUNDOS que deben además ser independientes totalmente
-            para su exposición por pantalla.
-            '''
+            # BUG
             minutes = int(self.black_turn_time * 0.01)
             seconds = self.black_turn_time % 100
             if seconds-1 == -1:
@@ -2207,7 +2209,7 @@ class Match(Scene):
             else: seconds-=1
             self.black_turn_time = int(str(minutes)+str(seconds))
 
-        if color == 'white':
+        if color == 'white': # BUG
             minutes = int(self.white_turn_time * 0.01)
             seconds = self.white_turn_time % 100
             if seconds-1 == -1:
@@ -2223,16 +2225,13 @@ class Match(Scene):
         # self.draw_text(f'{self.match_mode['mode']}', 'black', 200, 20, center=False)
         self.draw_text(self.match_state, 'black', 400, 20, center=False)
         self.draw_text(self.turn_attacker, 'black', self.midScreen_pos.x - 25, board.height+60, center=False)
+        
+        # clocks display
         self.draw_text(str(self.current_turn_time), 'black', self.midScreen_pos.x , 20, center=True)
         # black team clock
         self.draw_text(str(self.black_turn_time), 'black', self.midScreen_pos.x + board.width/2-20, 20, center=False)
         # white team clock
-        # self.draw_text(str(self.white_turn_time), 'black', self.midScreen_pos.x + board.width/2-20, board.height+60, center=False)
-        '''BUG el reloj FINAL debe ser una LISTA ['1','0','2','4'] así nos olvidamos
-        de cualquier problema en la longitud de nuestro número y podemos agregar el 0 donde
-        falte/corresponda.'''
-        # self.draw_text(f'{str(self.white_turn_time)[0:2]}:{str(self.white_turn_time)[2:]}', 'black', board.width-5, board.height+60, center=False)
-        self.draw_text(f'{str(self.white_turn_time)[0:2]}:{str(self.white_turn_time)[2:]}', 'black', self.midScreen_pos.x-100, 20, center=False)
+        self.draw_text(f'{self.white_turn_seconds}:{self.white_turn_minutes}', 'black', self.midScreen_pos.x-100, 20, center=False)
 
         # core
         self.draw_board()
