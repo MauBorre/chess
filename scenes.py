@@ -184,17 +184,16 @@ class Match(Scene):
         self.pausetime_SNAP: int = 0
         self.current_turn_time: int = 0
 
-        '''El tiempo nos llega en forma de "minutos totales", pero debemos transformarlo -finalmente-
-        a segundos y minutos por separado.
-        
+        '''El tiempo nos llega en forma de "minutos totales", pero debemos transformarlo
+        a segundos y minutos por separado para finalmente  y correctamente visualizarlo.
         '''
-        self.black_turn_time: int = self.match_mode['clock-minutes-limit'] 
-        self.black_turn_seconds: str
+        self.black_turn_time: int = self.match_mode['clock-minutes-limit'] * 60
         self.black_turn_minutes: str
+        self.black_turn_seconds: str
         
-        self.white_turn_time: int = self.match_mode['clock-minutes-limit']
-        self.white_turn_seconds: str
-        self.white_turn_minutes: str
+        self.white_turn_time: int = self.match_mode['clock-minutes-limit'] * 60
+        self.white_turn_minutes: str = int(self.white_turn_time/60)
+        self.white_turn_seconds: str = '00'
         # clock + or - remnants
         self.white_time_leftover: int = 0
         self.black_time_leftover: int = 0
