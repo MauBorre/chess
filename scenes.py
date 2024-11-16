@@ -1938,8 +1938,8 @@ class Match(Scene):
                                                       SQUARE_RECT.left + board.square_width/2,
                                                       SQUARE_RECT.top + board.square_height/2)
 
-            # hidden/visible elements upon paused/finished game state
-            if not self.master.paused and not self.winner and not self.stalemate and not self.player_deciding_promotion:
+            # hidden/visible elements upon pause/finished game state
+            if not self.master.pause and not self.winner and not self.stalemate and not self.player_deciding_promotion:
                 if SQUARE_RECT.collidepoint((self.master.mx, self.master.my)):
 
                     # Hover -----------------------
@@ -2156,9 +2156,10 @@ class Match(Scene):
         self.castling_direction = ''
 
     def match_clock(self):
-        if not self.master.paused:
+        if not self.master.pause:
+            print(self.master.pause)
             self.pausetime_SNAP = 0
-            # global (un-used but useful for tests)
+            # global (unused but useful for tests)
             self.globaltime_SNAP += self.pause_time_leftover
             if pygame.time.get_ticks() - self.globaltime_SNAP > 1000: 
                 time_leftover = pygame.time.get_ticks() - self.globaltime_SNAP - 1000
@@ -2173,6 +2174,12 @@ class Match(Scene):
                     self.substract_time(color='white')
                 else:
                     self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP
+                
+                # out of time - white lose
+                if self.white_turn_time == 0:
+                    self.winner = True
+                    self.match_state = 'Black gana.  -  White se ha quedado sin tiempo.'
+                    self.master.pause = True
             
             if self.turn_attacker == 'black':
                 self.blacktime_SNAP += self.pause_time_leftover
@@ -2182,6 +2189,13 @@ class Match(Scene):
                     self.substract_time(color='black')
                 else:
                     self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP
+                
+                # out of time - black lose
+                if self.black_turn_time == 0:
+                    self.winner = True
+                    self.match_state = 'White gana.  -  Black se ha quedado sin tiempo.'
+                    self.master.pause = True
+
             self.pause_time_leftover = 0
         else:
             #pause_time++
@@ -2189,6 +2203,7 @@ class Match(Scene):
                 self.pausetime_SNAP = pygame.time.get_ticks()
             else:
                 self.pause_time_leftover = pygame.time.get_ticks() - self.pausetime_SNAP
+        
     
     def substract_time(self, color):
         '''Restamos un segundo en el reloj correspondiente.
@@ -2246,7 +2261,7 @@ class Match(Scene):
             self.finish_turn = False
         
         # menus
-        if self.master.paused or self.winner or self.stalemate: # debería ser si el jugador apreto la tecla ESC.
+        if self.master.pause or self.winner or self.stalemate: # debería ser si el jugador apreto la tecla ESC.
             if not self.player_deciding_match and not self.winner and not self.stalemate:
                 self.draw_pause_menu()
             if self.winner or self.stalemate:
@@ -2276,7 +2291,7 @@ class Match(Scene):
             if self.master.click:
                 self.reset_board()
                 self.player_deciding_match = False
-                self.master.paused = False
+                self.master.pause = False
 
     def draw_cancel_restart_btn(self):
         self.draw_text('No','black',self.screen.get_width()-400,250,center=False)
@@ -2308,7 +2323,7 @@ class Match(Scene):
             #hover
             pygame.draw.rect(self.screen,(255,0,0),continue_match_rect,width=1)
             if self.master.click:
-                self.master.paused = False
+                self.master.pause = False
 
     def draw_play_again_btn(self):
         self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400, 400, center=False)
@@ -2326,7 +2341,7 @@ class Match(Scene):
             #hover
             pygame.draw.rect(self.screen,(255,0,0),exit_to_main_menu_rect,width=1)
             if self.master.click:
-                self.master.paused = False
+                self.master.pause = False
                 self.master.scene_manager = MainMenu
     
     def draw_exit_game_btn(self):
