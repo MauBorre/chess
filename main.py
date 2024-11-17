@@ -11,7 +11,7 @@ running = True
 # my = 0
 # click = False
 
-control_input: dict= {
+control_input: dict = {
     'escape': False,
     'click': False,
     'mouse-x': 0,
