@@ -1,5 +1,4 @@
 import pygame
-from screen_drawer__ import MatchDrawer
 import board
 from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE # piece directions
 from board import row_of_
@@ -37,7 +36,7 @@ class Turn:
 
 class Board: ...
 
-class Match(MatchDrawer):
+class Match():
     def __init__(self, instructions, ctrl_emitter, screen):
         super().__init__(screen)
         self._instructions = instructions
