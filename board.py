@@ -27,7 +27,7 @@ def place(mid_screen_vector):
     rects = make_rects(board_begin)
 
 def make_rects(board_origin_coordinates: pygame.Vector2) -> list[pygame.Rect]:
-    _boardRects = []
+    board_rects = []
     startx = board_origin_coordinates.x
     starty = board_origin_coordinates.y
     y = starty
@@ -35,18 +35,18 @@ def make_rects(board_origin_coordinates: pygame.Vector2) -> list[pygame.Rect]:
         x = startx
         for c in range(columns):
             rect = pygame.Rect(x,y,square_width,square_height)
-            _boardRects.append(rect)
+            board_rects.append(rect)
             x+=square_width
         y+=square_height
-    return _boardRects
+    return board_rects
 
 def make_nested_rows(row_count: int) -> list[list[int]]:
-    _rows = []
+    rows = []
     for i in range(row_count):
         start = i*row_count
         end = start+row_count
-        _rows.append(list(range(start,end)))
-    return _rows
+        rows.append(list(range(start,end)))
+    return rows
 
 nested_rows = make_nested_rows(rows) # Fijar rows ayuda a validar movimientos.
 
