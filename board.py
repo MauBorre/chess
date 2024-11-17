@@ -41,6 +41,7 @@ def make_rects(board_origin_coordinates: pygame.Vector2) -> list[pygame.Rect]:
     return board_rects
 
 def make_nested_rows(row_count: int) -> list[list[int]]:
+    # Fijar rows ayuda a validar movimientos.
     rows = []
     for i in range(row_count):
         start = i*row_count
@@ -48,7 +49,7 @@ def make_nested_rows(row_count: int) -> list[list[int]]:
         rows.append(list(range(start,end)))
     return rows
 
-nested_rows = make_nested_rows(rows) # Fijar rows ayuda a validar movimientos.
+nested_rows = make_nested_rows(rows) 
 
 def row_of_(position: int) -> list[int]:
     '''Devuelve el row al que corresponda la posición ingresada.'''
