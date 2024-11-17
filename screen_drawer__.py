@@ -6,7 +6,15 @@ class ScreenDrawer:
     def __init__(self, screen):
         self.screen = screen
 
-    def draw_text(self,text,color,x,y,center=True,font_size='large'):
+    def draw_text(
+        self,
+        text,
+        color,
+        x, y,
+        center=True,
+        font_size='large'
+        ):
+        
         _font = font.large_font if font_size=='large' else font.medium_font
         surface = self.screen
         textobj = _font.render(text,1,color)
@@ -16,8 +24,6 @@ class ScreenDrawer:
         if center: textrect.topleft = (x - text_width/2, y - text_height/2) # anchors placement at center
         else: textrect.topleft = (x,y)
         surface.blit(textobj,textrect)
-
-class MainMenuDrawer(ScreenDrawer): ...
 
 class MatchDrawer(ScreenDrawer):
     def __init__(self, screen):
