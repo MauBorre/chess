@@ -10,9 +10,9 @@ def set_variables(screen_, control_input_):
     global screen, control_input
     screen = screen_
     control_input = control_input_
-mid_screen = (screen.get_width()/2, screen.get_height()/2)
-mid_screen_Vector = pygame.Vector2(mid_screen)
-board.place(mid_screen_Vector)
+mid_screen_coordinates = (screen.get_width()/2, screen.get_height()/2)
+mid_screen = pygame.Vector2(mid_screen_coordinates)
+board.place(mid_screen)
 # ---------------------------------------------------------------
 
 # Initial content -----------------------------------------------
@@ -2101,14 +2101,14 @@ def substract_time(color):
 
 def match_state():
     draw_text(match_state, 'black', 400, 20, center=False)
-    draw_text(turn_attacker, 'black', mid_screen_Vector.x - 25, board.height+60, center=False)
+    draw_text(turn_attacker, 'black', mid_screen.x - 25, board.height+60, center=False)
 
 def clock_hud():
     # draw_text(str(current_turn_time), 'black', midScreen_pos.x , 20, center=True) # global
     # black team clock
-    draw_text(f'{black.turn_minutes}:{black.turn_seconds}', 'black', mid_screen_Vector.x + board.width/2-20, 20, center=False)
+    draw_text(f'{black.turn_minutes}:{black.turn_seconds}', 'black', mid_screen.x + board.width/2-20, 20, center=False)
     # white team clock
-    draw_text(f'{white.turn_minutes}:{white.turn_seconds}', 'black', mid_screen_Vector.x-100, 20, center=False)
+    draw_text(f'{white.turn_minutes}:{white.turn_seconds}', 'black', mid_screen.x-100, 20, center=False)
 
 def control_handler():
     if control_input['escape']: pause = not pause
