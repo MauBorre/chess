@@ -16,11 +16,7 @@ def set_variables(screen_, control_input_):
     control_input = control_input_
 mid_screen = (screen.get_width()/2, screen.get_height()/2)
 mid_screen_Vector = pygame.Vector2(mid_screen)
-# board placement on current screen display
-board_begin = pygame.Vector2(
-    (mid_screen_Vector.x - board.width/2,
-    mid_screen_Vector.y - board.height/2))
-boardRects: list[pygame.Rect] = board.make_rects(board_begin)
+board.place(mid_screen_Vector)
 # ---------------------------------------------------------------
 
 attacker = Turn.attacker()
@@ -718,7 +714,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
     '''
 
     # Visual feedback utils
-    mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: boardRects[piece_standpoint]} # standpoint is always first pos 
+    mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: board.rects[piece_standpoint]} # standpoint is always first pos 
     on_target_kill_positions: dict[int, pygame.Rect] = {}
     
     # Objectives
@@ -875,14 +871,14 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                         if not exposing_direction(piece_standpoint, direction=SUR, request_from="attacker"):
                             if movement in defender.directThreatTrace:
                                 # BLOCK saving position
-                                mov_target_positions.update({movement: boardRects[movement]})
+                                mov_target_positions.update({movement: board.rects[movement]})
 
                             #probamos con el 2do mov
                             if piece_standpoint in black.pawns_in_origin:
                                 if movement+SUR not in attacker.positions and movement+SUR not in defender.positions: # piece block
                                     if movement+SUR in defender.directThreatTrace:
                                         # BLOCK saving position
-                                        mov_target_positions.update({movement+SUR: boardRects[movement+SUR]})
+                                        mov_target_positions.update({movement+SUR: board.rects[movement+SUR]})
 
                     # kill-movements
                     # board limits check
@@ -897,7 +893,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                         if kp not in attacker.positions and kp == defender.singleOriginT_standpoint: 
                             if not exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
                                 # KILL saving position
-                                on_target_kill_positions.update({kp: boardRects[kp]})
+                                on_target_kill_positions.update({kp: board.rects[kp]})
 
                     return mov_target_positions, on_target_kill_positions
 
@@ -905,12 +901,12 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
 
                     if movement not in attacker.positions and movement not in defender.positions: # piece block
                         if not exposing_direction(piece_standpoint, direction=SUR, request_from="attacker"):
-                            mov_target_positions.update({movement: boardRects[movement]}) # 1st Movement
+                            mov_target_positions.update({movement: board.rects[movement]}) # 1st Movement
 
                             if piece_standpoint in black.pawns_in_origin:
                                 if movement+SUR <= 63: # board limit check
                                     if movement+SUR not in attacker.positions and movement+SUR not in defender.positions: # piece block
-                                        mov_target_positions.update({movement+SUR: boardRects[movement+SUR]}) # 2nd Movement 
+                                        mov_target_positions.update({movement+SUR: board.rects[movement+SUR]}) # 2nd Movement 
                         else: pass
 
                     # kill-movements
@@ -928,7 +924,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                         if kp not in attacker.positions:
                             if kp in defender.positions:
                                 if not exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
-                                    on_target_kill_positions.update({kp: boardRects[kp]})
+                                    on_target_kill_positions.update({kp: board.rects[kp]})
                             
                     # Threat on defender ------------------------
                     kill_positions.append(piece_standpoint)
@@ -953,14 +949,14 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                         if not exposing_direction(piece_standpoint, direction=NORTE, request_from="attacker"):
                             if movement in defender.directThreatTrace:
                                 # BLOCK saving position
-                                mov_target_positions.update({movement: boardRects[movement]})
+                                mov_target_positions.update({movement: board.rects[movement]})
 
                             #probamos con el 2do mov
                             if piece_standpoint in white.pawns_in_origin:
                                 if movement+NORTE not in attacker.positions and movement+NORTE not in defender.positions:# piece block
                                     if movement+NORTE in defender.directThreatTrace:
                                         # BLOCK saving position
-                                        mov_target_positions.update({movement+NORTE: boardRects[movement+NORTE]})
+                                        mov_target_positions.update({movement+NORTE: board.rects[movement+NORTE]})
 
                     # kill-movements
                     # board limits check
@@ -975,7 +971,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                         if kp not in attacker.positions and kp == defender.singleOriginT_standpoint:
                             if not exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
                                 # KILL saving position
-                                on_target_kill_positions.update({kp: boardRects[kp]})
+                                on_target_kill_positions.update({kp: board.rects[kp]})
                     
                     return mov_target_positions, on_target_kill_positions
                                 
@@ -983,12 +979,12 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
 
                     if movement not in attacker.positions and movement not in defender.positions: # piece block
                         if not exposing_direction(piece_standpoint, direction=NORTE, request_from="attacker"):  
-                            mov_target_positions.update({movement:boardRects[movement]}) # 1st Movement
+                            mov_target_positions.update({movement:board.rects[movement]}) # 1st Movement
 
                             if piece_standpoint in white.pawns_in_origin:
                                 if movement+NORTE >= 0: # board limit check
                                     if movement+NORTE not in black.positions and movement+NORTE not in white.positions: # piece block
-                                        mov_target_positions.update({movement+NORTE:boardRects[movement+NORTE]}) # 2nd Movement
+                                        mov_target_positions.update({movement+NORTE:board.rects[movement+NORTE]}) # 2nd Movement
                         else: pass
                 
                     # kill-movements
@@ -1006,7 +1002,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                         if kp not in attacker.positions:
                             if kp in defender.positions:
                                 if not exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
-                                    on_target_kill_positions.update({kp:boardRects[kp]})
+                                    on_target_kill_positions.update({kp:board.rects[kp]})
 
                     # Threat on defender ------------------------
                     kill_positions.append(piece_standpoint)
@@ -1030,7 +1026,7 @@ def rook_objectives(
     '''
 
     # Visual feedback utils
-    mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: boardRects[piece_standpoint]} # standpoint is always first pos
+    mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: board.rects[piece_standpoint]} # standpoint is always first pos
     on_target_kill_positions: dict[int, pygame.Rect] = {}
     
     # Objectives
@@ -1133,14 +1129,14 @@ def rook_objectives(
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                 if movement in defender.directThreatTrace:
                                     # BLOCK saving position.
-                                    mov_target_positions.update({movement: boardRects[movement]})
+                                    mov_target_positions.update({movement: board.rects[movement]})
                                     break
                             else: break
                                 
                         elif movement == defender.singleOriginT_standpoint:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                 # KILL saving position.
-                                on_target_kill_positions.update({movement: boardRects[movement]})
+                                on_target_kill_positions.update({movement: board.rects[movement]})
                                 break
                             else: break
                         else: break # chocamos contra un bloqueo - romper el mult
@@ -1159,14 +1155,14 @@ def rook_objectives(
                         if movement not in attacker.positions and movement not in defender.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                 _threat_emission.append(movement)
-                                mov_target_positions.update({movement: boardRects[movement]})
+                                mov_target_positions.update({movement: board.rects[movement]})
                             else: break # rompe hasta la siguiente dirección.  
                             
                         # Kill-movement
                         elif movement in defender.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                 _threat_emission.append(movement)
-                                on_target_kill_positions.update({movement: boardRects[movement]})
+                                on_target_kill_positions.update({movement: board.rects[movement]})
                                 attacker.threatOnDefender.update({f'rook{piece_standpoint}': _threat_emission})
                                 break
                             else: break
@@ -1193,7 +1189,7 @@ def knight_objectives(piece_standpoint: int, perspective: str) -> dict[int,pygam
     '''
     
     # Visual feedback utils
-    mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:boardRects[piece_standpoint]} # standpoint is always first pos
+    mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:board.rects[piece_standpoint]} # standpoint is always first pos
     on_target_kill_positions: dict[int,pygame.Rect] = {}
 
     # Objectives
@@ -1252,11 +1248,11 @@ def knight_objectives(piece_standpoint: int, perspective: str) -> dict[int,pygam
                         if not exposing_direction(piece_standpoint, direction=movement, request_from='attacker'):
                             if movement in defender.directThreatTrace:
                                 # BLOCK saving position.
-                                mov_target_positions.update({movement: boardRects[movement]})
+                                mov_target_positions.update({movement: board.rects[movement]})
                     elif movement == defender.singleOriginT_standpoint:
                         if not exposing_direction(piece_standpoint, direction=movement, request_from='attacker'):
                             # KILL saving position.
-                            on_target_kill_positions.update({movement: boardRects[movement]}) 
+                            on_target_kill_positions.update({movement: board.rects[movement]}) 
                     else: continue
             return mov_target_positions, on_target_kill_positions
         
@@ -1271,12 +1267,12 @@ def knight_objectives(piece_standpoint: int, perspective: str) -> dict[int,pygam
                             # Movement
                             if movement not in defender.positions:
                                 _threat_emission.append(movement)
-                                mov_target_positions.update({movement: boardRects[movement]})
+                                mov_target_positions.update({movement: board.rects[movement]})
                             
                             # Kill-movement
                             elif movement in defender.positions:
                                 _threat_emission.append(movement)
-                                on_target_kill_positions.update({movement:boardRects[movement]})
+                                on_target_kill_positions.update({movement:board.rects[movement]})
                         else: return {}, {}
                     else:  _threat_emission.append(movement)
             _threat_emission.append(piece_standpoint)
@@ -1298,7 +1294,7 @@ def bishop_objectives(
     '''
     
     # Visual feedback utils <- deberíamos desacoplar esto de aquí
-    mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:boardRects[piece_standpoint]} # standpoint is always first pos
+    mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:board.rects[piece_standpoint]} # standpoint is always first pos
     on_target_kill_positions: dict[int,pygame.Rect] = {}
     
     # Objectives
@@ -1415,10 +1411,10 @@ def bishop_objectives(
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                 if movement in defender.directThreatTrace:
                                     # BLOCK saving position.
-                                        mov_target_positions.update({movement: boardRects[movement]})
+                                        mov_target_positions.update({movement: board.rects[movement]})
                                 elif movement == defender.singleOriginT_standpoint:
                                     # KILL saving position.
-                                    on_target_kill_positions.update({movement: boardRects[movement]})
+                                    on_target_kill_positions.update({movement: board.rects[movement]})
                                 else: continue
                             else: break
                         else: break
@@ -1440,14 +1436,14 @@ def bishop_objectives(
                         if movement not in attacker.positions and movement not in defender.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                 _threat_emission.append(movement)
-                                mov_target_positions.update({movement: boardRects[movement]})
+                                mov_target_positions.update({movement: board.rects[movement]})
                             else: break # rompe hasta la siguiente dirección.
 
                         # Kill-movement
                         elif movement in defender.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                 _threat_emission.append(movement)
-                                on_target_kill_positions.update({movement:boardRects[movement]})
+                                on_target_kill_positions.update({movement:board.rects[movement]})
                                 break
                             else: break
                         else:
@@ -1475,7 +1471,7 @@ def queen_objectives(
     '''
 
     # Visual feedback utils
-    mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: boardRects[piece_standpoint]} # standpoint is always first pos
+    mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: board.rects[piece_standpoint]} # standpoint is always first pos
     on_target_kill_positions: dict[int, pygame.Rect] = {}
 
     # Objectives
@@ -1606,14 +1602,14 @@ def queen_objectives(
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                 if movement in defender.directThreatTrace:
                                     # BLOCK saving position.
-                                    mov_target_positions.update({movement: boardRects[movement]})
+                                    mov_target_positions.update({movement: board.rects[movement]})
                                     break
                             else: break
                                     
                         elif movement == defender.singleOriginT_standpoint:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                 # KILL saving position.
-                                on_target_kill_positions.update({movement: boardRects[movement]})
+                                on_target_kill_positions.update({movement: board.rects[movement]})
                                 break      
                             else: break
                         else: break # chocamos contra un bloqueo - romper el mult
@@ -1638,14 +1634,14 @@ def queen_objectives(
                         if movement not in attacker.positions and movement not in defender.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                 _threat_emission.append(movement)
-                                mov_target_positions.update({movement: boardRects[movement]}) 
+                                mov_target_positions.update({movement: board.rects[movement]}) 
                             else: break
 
                         # Kill-movement
                         elif movement in defender.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from="attacker"):
                                 _threat_emission.append(movement) 
-                                on_target_kill_positions.update({movement: boardRects[movement]})
+                                on_target_kill_positions.update({movement: board.rects[movement]})
                                 break
                             else: break
                         else: 
@@ -1669,7 +1665,7 @@ def king_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
     '''
     
     # Visual feedback utils
-    mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: boardRects[piece_standpoint]} # standpoint is always first pos
+    mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: board.rects[piece_standpoint]} # standpoint is always first pos
     on_target_kill_positions: dict[int, pygame.Rect] = {}
     castling_positions: dict[int, pygame.Rect] = {}
     
@@ -1728,7 +1724,7 @@ def king_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                     if movement not in attacker.positions and not movement in defender.positions:
                         _threat_emission.append(movement)
                         attacker.kingLegalMoves.append(movement)
-                        mov_target_positions.update({movement: boardRects[movement]})
+                        mov_target_positions.update({movement: board.rects[movement]})
 
                         # castling -WEST-
                         if direction == OESTE:
@@ -1737,7 +1733,7 @@ def king_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                                     if _castling != None:
                                         if _castling not in attacker.positions and not _castling in defender.positions:
                                             attacker.kingLegalMoves.append(_castling)
-                                            castling_positions.update({_castling: boardRects[_castling]})
+                                            castling_positions.update({_castling: board.rects[_castling]})
                                             castling_direction = 'west'
 
                         # castling -EAST-
@@ -1747,13 +1743,13 @@ def king_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                                     if _castling != None:
                                         if _castling not in attacker.positions and not _castling in defender.positions:
                                             attacker.kingLegalMoves.append(_castling)
-                                            castling_positions.update({_castling: boardRects[_castling]})
+                                            castling_positions.update({_castling: board.rects[_castling]})
                                             castling_direction = 'east'
 
                     elif movement in defender.positions:
                         _threat_emission.append(movement)
                         attacker.kingLegalMoves.append(movement)
-                        on_target_kill_positions.update({movement: boardRects[movement]})
+                        on_target_kill_positions.update({movement: board.rects[movement]})
                     else:
                         _threat_emission.append(movement)
 
@@ -1770,7 +1766,7 @@ def draw_board():
                 pygame.Rect(board_begin.x,board_begin.y,
                             board.width,board.height),width=3)
 
-    for board_index, SQUARE_RECT in enumerate(boardRects): #celdas que sirven por posición, índice y medida.
+    for board_index, SQUARE_RECT in enumerate(board.rects): #celdas que sirven por posición, índice y medida.
 
         # individual grid frame
         pygame.draw.rect(screen, (200,200,200), SQUARE_RECT, width=1)
