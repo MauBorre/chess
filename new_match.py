@@ -4,27 +4,38 @@ import board
 import pieces
 from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE # piece directions
 from board import row_of_
-# import master, defender, attacker, black, white, turn
-# import master, defender, black, white, turn
-import master, black, white, turn
+import black, white, turn
 import Turn
+
+# Configurations -----------------------------------------------
+screen: pygame.Surface
+control_input: dict
+def set_variables(screen_, control_input_):
+    global screen, control_input
+    screen = screen_
+    control_input = control_input_
+mid_screen = (screen.get_width()/2, screen.get_height()/2)
+mid_screen_Vector = pygame.Vector2(mid_screen)
+# board placement on current screen display
+board_begin = pygame.Vector2(
+    (mid_screen_Vector.x - board.width/2,
+    mid_screen_Vector.y - board.height/2))
+boardRects: list[pygame.Rect] = board.make_rects(board_begin)
+# ---------------------------------------------------------------
 
 attacker = Turn.attacker()
 defender = Turn.defender()
-match_mode: dict = master.game_variables 
-screen = pygame.display.set_mode((800,800))
-midScreen = (screen.get_width()/2, screen.get_height()/2)
-midScreen_pos = pygame.Vector2(midScreen)
-# board placement on current screen display
-board_begin = pygame.Vector2(
-    (midScreen_pos.x - board.width/2,
-    midScreen_pos.y - board.height/2))
-boardRects: list[pygame.Rect] = board.make_rects(board_begin)
-make_content()
+gameClock_minutesLimit: int = 10 # init content
+pause = False # init content
+winner = False # init content
+stalemate = False # init content
+player_deciding_promotion = False # init content
+
+# init_content()
 
 def draw_text(text, color, x, y, center=True, font_size='large'):
         _font = font.large_font if font_size=='large' else font.medium_font
-        surface = master.screen
+        surface = screen
         textobj = _font.render(text,1,color)
         text_width = textobj.get_width()
         text_height = textobj.get_height()
@@ -32,8 +43,10 @@ def draw_text(text, color, x, y, center=True, font_size='large'):
         if center: textrect.topleft = (x - text_width/2, y - text_height/2) # anchors placement at center
         else: textrect.topleft = (x,y)
         surface.blit(textobj,textrect)
-    
-def make_content(): # instanciación de actores?
+
+move_here = None
+
+def init_content(): # instanciación de actores?
     # in-game variables
     move_here: int | None = None
     winner: bool = False
@@ -53,11 +66,11 @@ def make_content(): # instanciación de actores?
     '''El tiempo nos llega en forma de "minutos totales", pero debemos transformarlo
     a segundos y minutos por separado para finalmente  y correctamente visualizarlo.
     '''
-    black.turn_time: int = match_mode['clock-minutes-limit'] * 60
+    black.turn_time: int = gameClock_minutesLimit * 60
     black.turn_minutes: str = str(int(black.turn_time/60))
     black.turn_seconds: str = '00'
     
-    white.turn_time: int = match_mode['clock-minutes-limit'] * 60
+    white.turn_time: int = gameClock_minutesLimit * 60
     white.turn_minutes: str = str(int(white.turn_time/60))
     white.turn_seconds: str = '00'
     # clock + or - remnants
@@ -170,7 +183,7 @@ def check_pawn_promotion():
         for _pawn in pawn_standpoints:
             if _pawn in row_of_(0): # NORTHMOST ROW
                 promoting_pawn = _pawn
-                master.pause = True
+                pause = True
                 player_deciding_promotion = True
                 finish_turn = False
     
@@ -179,7 +192,7 @@ def check_pawn_promotion():
         for _pawn in pawn_standpoints:
             if _pawn in row_of_(63): # SOUTHMOST ROW
                 promoting_pawn = _pawn
-                master.pause = True
+                pause = True
                 player_deciding_promotion = True
                 finish_turn = False
     
@@ -399,7 +412,7 @@ def update_turn_objectives():
 def reset_board():
     '''Puede que haya casos en los que el contenido del match varíe en su reinicio
     por eso debo tener cuidado *dónde* lo hago.'''
-    make_content()
+    init_content()
 
 def turn_swap():
     '''
@@ -1801,8 +1814,8 @@ def draw_board():
                                                     SQUARE_RECT.top + board.square_height/2)
 
         # hidden/visible elements upon pause/finished game state
-        if not master.pause and not winner and not stalemate and not player_deciding_promotion:
-            if SQUARE_RECT.collidepoint((master.mx, master.my)):
+        if not pause and not winner and not stalemate and not player_deciding_promotion:
+            if SQUARE_RECT.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
 
                 # Hover -----------------------
                 if interacted_PColor == turn.attacker:
@@ -1811,7 +1824,7 @@ def draw_board():
                     pygame.draw.rect(screen, (150,150,150), SQUARE_RECT, width=2) # EMPTY hover
                 # Hover -----------------------
             
-                if master.click:
+                if control_input['click']:
 
                     pieceValidKill_posDisplay.clear()
                     kingValidCastling_posDisplay.clear()
@@ -1903,13 +1916,13 @@ def decide_check():
     
     DRAW > Solo quedan dos reyes en juego.
     '''
-    master.click = False # evita conflictos de click con el posible menu entrante
+    control_input['click'] = False # evita conflictos de click con el posible menu entrante
     if attacker.direct_threat == 'none':
         if len(attacker.positions) == 1 and len(defender.positions) == 1:
             # Solo pueden ser los reyes, asi que es DRAW
             match_state = 'Draw'
             stalemate = True
-            master.pause = True
+            pause = True
 
         if len(defender.kingLegalMoves) == 0 and len(defender.legalMoves) == 0:
 
@@ -1918,12 +1931,12 @@ def decide_check():
             if turn.attacker == 'black':
                 stalemate = True # repercute en render() - termina la partida
                 match_state = 'Rey White ahogado.  -  Empate.'
-                master.pause = True
+                pause = True
 
             if turn.attacker == 'white':
                 stalemate = True # repercute en render() - termina la partida
                 match_state = 'Rey Black ahogado.  -  Empate.'
-                master.pause = True
+                pause = True
 
         else:
             match_state = ''
@@ -1954,11 +1967,11 @@ def decide_check():
             if turn.attacker == 'black':
                 winner = True # automaticamente repercutirá draw() 
                 match_state = 'Black gana.  -  White en jaque-mate.'
-                master.pause = True
+                pause = True
             if turn.attacker == 'white':
                 winner = True # automaticamente repercutirá draw()
                 match_state = 'White gana  -  Black en jaque-mate.'
-                master.pause = True
+                pause = True
 
     if attacker.direct_threat == 'multiple': # múltiple origen de amenaza.
         if len(defender.kingLegalMoves) == 0:
@@ -1967,12 +1980,12 @@ def decide_check():
             if turn.attacker == 'black':
                 winner = True # repercute en render() - termina la partida
                 match_state = 'Black gana.  -  White en jaque-mate.'
-                master.pause = True
+                pause = True
 
             if turn.attacker == 'white':
                 winner = True # repercute en render() - termina la partida
                 match_state = 'White gana  -  Black en jaque-mate.'
-                master.pause = True
+                pause = True
         else:
             # JAQUE
             '''Notificar al jugador correspondiente.'''
@@ -2018,8 +2031,8 @@ def make_moves():
     castling_direction = ''
 
 def match_clock():
-    if not master.pause:
-        print(master.pause)
+    if not pause:
+        print(pause)
         pausetime_SNAP = 0
         # global (unused but useful for tests)
         globaltime_SNAP += pause_time_leftover
@@ -2041,7 +2054,7 @@ def match_clock():
             if white.turn_time == 0:
                 winner = True
                 match_state = 'Black gana.  -  White se ha quedado sin tiempo.'
-                master.pause = True
+                pause = True
         
         if turn.attacker == 'black':
             blacktime_SNAP += pause_time_leftover
@@ -2056,7 +2069,7 @@ def match_clock():
             if black.turn_time == 0:
                 winner = True
                 match_state = 'White gana.  -  Black se ha quedado sin tiempo.'
-                master.pause = True
+                pause = True
 
         pause_time_leftover = 0
     else:
@@ -2097,16 +2110,21 @@ def substract_time(color):
 
 def match_state():
     draw_text(match_state, 'black', 400, 20, center=False)
-    draw_text(turn.attacker, 'black', midScreen_pos.x - 25, board.height+60, center=False)
+    draw_text(turn.attacker, 'black', mid_screen_Vector.x - 25, board.height+60, center=False)
 
 def clock_hud():
     # draw_text(str(current_turn_time), 'black', midScreen_pos.x , 20, center=True) # global
     # black team clock
-    draw_text(f'{black.turn_minutes}:{black.turn_seconds}', 'black', midScreen_pos.x + board.width/2-20, 20, center=False)
+    draw_text(f'{black.turn_minutes}:{black.turn_seconds}', 'black', mid_screen_Vector.x + board.width/2-20, 20, center=False)
     # white team clock
-    draw_text(f'{white.turn_minutes}:{white.turn_seconds}', 'black', midScreen_pos.x-100, 20, center=False)
+    draw_text(f'{white.turn_minutes}:{white.turn_seconds}', 'black', mid_screen_Vector.x-100, 20, center=False)
+
+def control_handler():
+    if control_input['escape']: pause = not pause
 
 def render():
+
+    control_handler()
 
     # hud
     match_state()
@@ -2125,7 +2143,7 @@ def render():
         finish_turn = False
     
     # menus
-    if master.pause or winner or stalemate: # debería ser si el jugador apreto la tecla ESC.
+    if pause or winner or stalemate: # debería ser si el jugador apreto la tecla ESC.
         if not player_deciding_match and not winner and not stalemate:
             draw_pause_menu()
         if winner or stalemate:
@@ -2139,7 +2157,7 @@ def render():
 def draw_confirm_restart_menu(width=300,height=300):
     # frame
     pygame.draw.rect(screen,(100,100,100),
-                    pygame.Rect(master.screen.get_width()-400,150,width,height))
+                    pygame.Rect(screen.get_width()-400,150,width,height))
     #leyenda
     draw_text('¿Está seguro que quiere reiniciar la partida?',
         'black',screen.get_width()-400,150,center=False)
@@ -2149,21 +2167,21 @@ def draw_confirm_restart_menu(width=300,height=300):
 def draw_confirm_match_restart_btn():
     draw_text('Si','black',screen.get_width()-400,190,center=False)
     confirm_match_rect = pygame.Rect(screen.get_width()-400,190,200,50)
-    if confirm_match_rect.collidepoint((master.mx,master.my)):
+    if confirm_match_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
         #hover
         pygame.draw.rect(screen,(255,0,0),confirm_match_rect,width=1)
-        if master.click:
+        if control_input['click']:
             reset_board()
             player_deciding_match = False
-            master.pause = False
+            pause = False
 
 def draw_cancel_restart_btn():
     draw_text('No','black',screen.get_width()-400,250,center=False)
     cancel_match_rect = pygame.Rect(screen.get_width()-400,250,200,50)
-    if cancel_match_rect.collidepoint((master.mx,master.my)):
+    if cancel_match_rect.collidepoint((control_input['mouse-x'],control_input['mouse-y'])):
         #hover
         pygame.draw.rect(screen,(255,0,0),cancel_match_rect,width=1)
-        if master.click:
+        if control_input['click']:
             player_deciding_match = False
 # ------------------------------------------------------------------------------------------------------
 
@@ -2171,7 +2189,7 @@ def draw_cancel_restart_btn():
 def draw_pause_menu(width=300,height=400):
     # frame
     pygame.draw.rect(screen,(100,100,100),
-                    pygame.Rect(master.screen.get_width()-400,150,width,height))
+                    pygame.Rect(screen.get_width()-400,150,width,height))
     # tooltip
     draw_text('Paused','black',screen.get_width()-400,150,center=False)
     # buttons
@@ -2183,46 +2201,36 @@ def draw_pause_menu(width=300,height=400):
 def draw_continue_btn():
     draw_text('Continuar','white',screen.get_width()-400,190,center=False)
     continue_match_rect = pygame.Rect(screen.get_width()-400,190,200,50)
-    if continue_match_rect.collidepoint((master.mx,master.my)):
+    if continue_match_rect.collidepoint((control_input['mouse-x'],control_input['mouse-y'])):
         #hover
         pygame.draw.rect(screen,(255,0,0),continue_match_rect,width=1)
-        if master.click:
-            master.pause = False
+        if control_input['click']:
+            pause = False
 
 def draw_play_again_btn():
     draw_text('Jugar de nuevo', 'white', screen.get_width()-400, 400, center=False)
     play_again_rect = pygame.Rect(screen.get_width()-400, 400, 200, 50)
-    if play_again_rect.collidepoint((master.mx, master.my)):
+    if play_again_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
         #hover
         pygame.draw.rect(screen, (255,0,0), play_again_rect, width=1)
-        if master.click:
+        if control_input['click']:
             player_deciding_match = True
-
-def draw_exit_to_mainMenu_btn():
-    draw_text('Salir al menú principal','white',screen.get_width()-400,250,center=False)
-    exit_to_main_menu_rect = pygame.Rect(screen.get_width()-400,250,200,50)
-    if exit_to_main_menu_rect.collidepoint((master.mx,master.my)):
-        #hover
-        pygame.draw.rect(screen,(255,0,0),exit_to_main_menu_rect,width=1)
-        if master.click:
-            master.pause = False
-            master.scene_manager = MainMenu
 
 def draw_exit_game_btn():
     draw_text('Salir del juego','white',screen.get_width()-400,320,center=False)
     exit_game_rect = pygame.Rect(screen.get_width()-400,320,200,50)
-    if exit_game_rect.collidepoint((master.mx,master.my)):
+    if exit_game_rect.collidepoint((control_input['mouse-x'],control_input['mouse-y'])):
         #hover
         pygame.draw.rect(screen,(255,0,0),exit_game_rect,width=1)
-        if master.click:
-            master.scene_manager = 'exit'
+        if control_input['click']:
+            pygame.event.Event(pygame.QUIT)
 # --------------------------------------------------------------------------------------------------------
 
 # Post game menu -----------------------------------------------------------------------------------------
 def draw_post_game_menu(width=300,height=300):
     # frame
     pygame.draw.rect(screen,(100,100,100),
-                    pygame.Rect(master.screen.get_width()-400,150,width,height))
+                    pygame.Rect(screen.get_width()-400,150,width,height))
     # tooltip
     draw_text('La partida ha finalizado.', 'black', screen.get_width()-400, 150, center=False)
     draw_postgame_again_btn()
@@ -2234,11 +2242,11 @@ def draw_post_game_menu(width=300,height=300):
 def draw_postgame_again_btn():
     draw_text('Jugar de nuevo', 'white', screen.get_width()-400,400,center=False)
     play_again_rect = pygame.Rect(screen.get_width()-400,400,200,50)
-    if play_again_rect.collidepoint((master.mx, master.my)):
+    if play_again_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
         #hover
         pygame.draw.rect(screen,(255,0,0),play_again_rect,width=1)
-        if master.click:
-            master.pause = False
+        if control_input['click']:
+            pause = False
             player_deciding_match = False
             reset_board()
 # --------------------------------------------------------------------------------------------------------
@@ -2258,48 +2266,48 @@ def draw_pawnPromotion_selection_menu(width=300, height=400):
 def draw_rookOPT_btn(): 
     draw_text('Rook', 'white', screen.get_width()-400, 200, center=False)
     selection_rect = pygame.Rect(screen.get_width()-400, 200, 200, 50)
-    if selection_rect.collidepoint((master.mx, master.my)):
+    if selection_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
         #hover
         pygame.draw.rect(screen, (255,0,0), selection_rect, width=1)
-        if master.click:
+        if control_input['click']:
             pawnPromotion_selection = 'rook'
             player_deciding_promotion = False
-            master.pause = False
+            pause = False
             make_promotion()
 
 def draw_knightOPT_btn(): 
     draw_text('Knight', 'white', screen.get_width()-400, 300, center=False)
     selection_rect = pygame.Rect(screen.get_width()-400, 300, 300, 50)
-    if selection_rect.collidepoint((master.mx, master.my)):
+    if selection_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
         #hover
         pygame.draw.rect(screen, (255,0,0), selection_rect, width=1)
-        if master.click:
+        if control_input['click']:
             pawnPromotion_selection = 'knight'
             player_deciding_promotion = False
-            master.pause = False
+            pause = False
             make_promotion()
 
 def draw_bishopOPT_btn(): 
     draw_text('Bishop', 'white', screen.get_width()-400, 400, center=False)
     selection_rect = pygame.Rect(screen.get_width()-400, 400, 300, 50)
-    if selection_rect.collidepoint((master.mx, master.my)):
+    if selection_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
         #hover
         pygame.draw.rect(screen, (255,0,0), selection_rect, width=1)
-        if master.click:
+        if control_input['click']:
             pawnPromotion_selection = 'bishop'
             player_deciding_promotion = False
-            master.pause = False
+            pause = False
             make_promotion()
 
 def draw_queenOPT_btn(): 
     draw_text('Queen', 'white', screen.get_width()-400, 500, center=False)
     selection_rect = pygame.Rect(screen.get_width()-400, 500, 300, 50)
-    if selection_rect.collidepoint((master.mx, master.my)):
+    if selection_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
         #hover
         pygame.draw.rect(screen, (255,0,0), selection_rect, width=1)
-        if master.click:
+        if control_input['click']:
             pawnPromotion_selection = 'queen'
             player_deciding_promotion = False
-            master.pause = False
+            pause = False
             make_promotion()
 # --------------------------------------------------------------------------------------------------------
