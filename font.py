@@ -1,7 +1,5 @@
 import pygame
 pygame.font.init()
-'''Utilizaremos dos fuentes en total para el juego'''
-#fonts path...
 
 # Medium font
 m_font_size = 22
