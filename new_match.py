@@ -11,18 +11,6 @@ import Turn
 
 attacker = Turn.attacker()
 defender = Turn.defender()
-# class Match(Scene):
-#     '''Match es inicializado bajo instrucciones seleccionadas previamente en MainMenu:
-#         >> j1-VS-j2
-#         >> j1-VS-ia
-#         >> variables de reloj
-#     '''
-
-    # def __init__(, master):
-    # super().__init__(master)
-
-    # debería formar parte del init? qué pasa si despues de la partida queremos
-    # reiniciarla con alguna variación de modos/regla?
 match_mode: dict = master.game_variables 
 screen = pygame.display.set_mode((800,800))
 midScreen = (screen.get_width()/2, screen.get_height()/2)
