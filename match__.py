@@ -11,7 +11,7 @@ class Black:
     in_base_pawns: list[int] = [bpawn for bpawn in pieces.origins['black']['pawn']]
     threat_on_enemy: dict[str, int] = {piece:[] for piece in pieces.origins['black']}
     king_legal_moves: list[int] = []
-    threat_origin = 'single' or 'mult' or 'none'
+    threat_origin = 'single' or 'multiple' or 'none'
     # singleOrigin_directThreat: bool | None = None
     direct_threat_trace: list[int] = []
     
@@ -21,7 +21,7 @@ class White:
     in_base_panws: list[int] = [wpawn for wpawn in pieces.origins['white']['pawn']]
     threat_on_enemy: dict[str, int] = {piece:[] for piece in pieces.origins['white']}
     king_legal_moves: list[int] = []
-    threat_origin = 'single' or 'mult' or 'none'
+    threat_origin = 'single' or 'multiple' or 'none'
     # singleOrigin_directThreat: bool | None = None
     direct_threat_trace: list[int] = []
 
