@@ -4,6 +4,7 @@ import board
 import pieces
 from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE # piece directions
 from board import row_of_
+
 import black, white, turn
 import Turn
 
@@ -30,15 +31,15 @@ player_deciding_promotion = False # init content
 # init_content()
 
 def draw_text(text, color, x, y, center=True, font_size='large'):
-        _font = font.large_font if font_size=='large' else font.medium_font
-        surface = screen
-        textobj = _font.render(text,1,color)
-        text_width = textobj.get_width()
-        text_height = textobj.get_height()
-        textrect = textobj.get_rect()
-        if center: textrect.topleft = (x - text_width/2, y - text_height/2) # anchors placement at center
-        else: textrect.topleft = (x,y)
-        surface.blit(textobj,textrect)
+    _font = font.large_font if font_size=='large' else font.medium_font
+    surface = screen
+    textobj = _font.render(text,1,color)
+    text_width = textobj.get_width()
+    text_height = textobj.get_height()
+    textrect = textobj.get_rect()
+    if center: textrect.topleft = (x - text_width/2, y - text_height/2) # anchors placement at center
+    else: textrect.topleft = (x,y)
+    surface.blit(textobj,textrect)
 
 move_here = None
 
@@ -405,7 +406,7 @@ def update_turn_objectives():
             queen_objectives(_queen, perspective='defender')
     # -------------------------------------------------------------------------------------------------
 
-def reset_board():
+def reset_match():
     '''Puede que haya casos en los que el contenido del match varíe en su reinicio
     por eso debo tener cuidado *dónde* lo hago.'''
     init_content()
@@ -2167,7 +2168,7 @@ def draw_confirm_match_restart_btn():
         #hover
         pygame.draw.rect(screen,(255,0,0),confirm_match_rect,width=1)
         if control_input['click']:
-            reset_board()
+            reset_match()
             player_deciding_match = False
             pause = False
 
@@ -2244,7 +2245,7 @@ def draw_postgame_again_btn():
         if control_input['click']:
             pause = False
             player_deciding_match = False
-            reset_board()
+            reset_match()
 # --------------------------------------------------------------------------------------------------------
 
 # Pawn promotion menu ------------------------------------------------------------------------------------
