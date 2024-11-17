@@ -1,7 +1,5 @@
 import pygame
-import font
-import board
-import pieces
+import font, board, pieces
 from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE # piece directions
 from board import row_of_
 
@@ -20,15 +18,18 @@ mid_screen_Vector = pygame.Vector2(mid_screen)
 board.place(mid_screen_Vector)
 # ---------------------------------------------------------------
 
+# Initial content -----------------------------------------------
 attacker = Turn.attacker()
 defender = Turn.defender()
-gameClock_minutesLimit: int = 10 # init content
-pause = False # init content
-winner = False # init content
-stalemate = False # init content
-player_deciding_promotion = False # init content
+turn = Turn(attacker, defender)
+gameClock_minutesLimit: int = 10
+pause = False 
+winner = False 
+stalemate = False 
+player_deciding_promotion = False 
+move_here = None
+# ---------------------------------------------------------------
 
-# init_content()
 
 def draw_text(text, color, x, y, center=True, font_size='large'):
     _font = font.large_font if font_size=='large' else font.medium_font
@@ -40,8 +41,6 @@ def draw_text(text, color, x, y, center=True, font_size='large'):
     if center: textrect.topleft = (x - text_width/2, y - text_height/2) # anchors placement at center
     else: textrect.topleft = (x,y)
     surface.blit(textobj,textrect)
-
-move_here = None
 
 def init_content(): # instanciación de actores?
     # in-game variables
@@ -240,11 +239,6 @@ def trace_direction_walk(
                     walk_trace.add(walk)
     return walk_trace # vacía si llega a este punto.
 
-# def no_digits_name(, piece_key_name: str) -> str:
-#     '''Utilidad para limpiar los nombre de algunas piezas
-#     que acarrean una identificación numérica'''
-#     return ''.join([c for c in piece_key_name if not c.isdigit()])
-
 def update_turn_objectives():
     '''Llama a todas las funciones _objectives() con sus correctas perspectivas-de-turno.
     En este punto de la ejecución, el atacante ya hizo su acción.
@@ -306,6 +300,8 @@ def update_turn_objectives():
                 - Por no *salvar al rey* (matando o bloqueando la amenaza)
     '''
 
+    #attacker.clear()
+    #defender.clear()
     attacker.threatOnDefender.clear()
     defender.threatOnAttacker.clear()
     attacker.kingLegalMoves.clear()
@@ -2076,7 +2072,6 @@ def match_clock():
         else:
             pause_time_leftover = pygame.time.get_ticks() - pausetime_SNAP
     
-
 def substract_time(color):
     '''Restamos un segundo en el reloj correspondiente.
     Al ser llamada esta función ya detectamos el paso de un segundo,
