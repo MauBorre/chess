@@ -25,6 +25,9 @@ class White:
     # singleOrigin_directThreat: bool | None = None
     direct_threat_trace: list[int] = []
 
+class Attacker: ...
+class Defender: ...
+
 class Turn:
     attacker = Black()
     defender = White()
