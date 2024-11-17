@@ -1,6 +1,6 @@
 import pygame
 from scenes import Match
-from match import driver
+from match import render
 
 pygame.init()
 resolution = (800,800)
