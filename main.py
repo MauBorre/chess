@@ -1,68 +1,62 @@
 import pygame
 from scenes import Match
 
-class GameMaster:
-    def __init__(self):
-        pygame.init()
+pygame.init()
+resolution = (800,800)
+screen = pygame.display.set_mode(resolution) # una screen por escena o una screen para todo el juego?
+pygame.display.set_caption('Chess')
+frame_rate_clock = pygame.time.Clock()
+scene_manager_running = True
+pause = False
+game_variables: dict = {'clock-minutes-limit': 10} # default
+# mx = 0
+# my = 0
+# click = False
 
-        # default values - config
-        self.resolution = (800,800)
-        self.screen = pygame.display.set_mode(self.resolution) # una screen por escena o una screen para todo el juego?
-        pygame.display.set_caption('Chess')
-        self.frame_rate_clock = pygame.time.Clock()
-        self.scene_manager_running = True
-        self.pause = False
-        self.scene_manager = Match
-        self.game_variables: dict = {'clock-minutes-limit': 10} # default
-        self.mx = 0
-        self.my = 0
-        self.click = False
+control_input: dict[str, bool] = {
+    'escape': False,
+    'click': False,
+    'mouse-x': 0,
+    'mouse-y': 0,
+}
 
-        self.control_input: dict[str, bool] = {
-            'escape': False,
-            'click': False,
-        }
+def update_mouse(coordinates):
+    control_input['mouse-x'] = coordinates[0]
+    control_input['mouse-y'] = coordinates[1]
 
-    def update_mouse(self,coordinates):
-        self.mx = coordinates[0]
-        self.my = coordinates[1]
-    
-    def match_event_handler(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.scene_manager = 'exit'
+def event_handler():
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            scene = 'exit'
 
-                # Keyboard Controls
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
+            # Keyboard
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
 
-                        # if not self.pause:
-                        #     self.pause = True
-                        #     break
-                        # if self.pause:
-                        #     self.pause = False
-                        #     break
+                    # if not pause:
+                    #     pause = True
+                    #     break
+                    # if pause:
+                    #     pause = False
+                    #     break
 
-                        self.control_input['excape'] = True
+                    control_input['escape'] = True
 
-                # Mouse
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        # self.click = True
-                        self.control_input['click'] = True
+            # Mouse
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    control_input['click'] = True
 
-    def match_loop(self):
-        current_scene = Match(master=self)
-        while self.scene_manager == Match:
-            self.click = False
-            self.match_event_handler()
-            self.update_mouse(pygame.mouse.get_pos())
-            self.screen.fill("white")
-            current_scene.render() # (variables+updates+display)
-            pygame.display.flip()
-            self.frame_rate_clock.tick(60)
-        pygame.quit()
+def match_loop():
+    scene = Match(screen, control_input)
+    while scene == Match:
+        control_input['click'] = False
+        event_handler()
+        update_mouse(pygame.mouse.get_pos())
+        screen.fill("white")
+        scene.render() # (variables+updates+display)
+        pygame.display.flip()
+        frame_rate_clock.tick(60)
+    pygame.quit()
         
-if __name__ == '__main__':
-    gm = GameMaster()
-    gm.match_loop()
+match_loop()
