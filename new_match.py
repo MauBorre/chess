@@ -20,11 +20,11 @@ board_begin = pygame.Vector2(
     (midScreen_pos.x - board.width/2,
     midScreen_pos.y - board.height/2))
 boardRects: list[pygame.Rect] = board.make_rects(board_begin)
-make_match_content()
+make_content()
 
-def draw_text(self,text,color,x,y,center=True,font_size='large'):
+def draw_text(text, color, x, y, center=True, font_size='large'):
         _font = font.large_font if font_size=='large' else font.medium_font
-        surface = self.master.screen
+        surface = master.screen
         textobj = _font.render(text,1,color)
         text_width = textobj.get_width()
         text_height = textobj.get_height()
@@ -33,7 +33,7 @@ def draw_text(self,text,color,x,y,center=True,font_size='large'):
         else: textrect.topleft = (x,y)
         surface.blit(textobj,textrect)
     
-def make_match_content(): # instanciación de actores?
+def make_content(): # instanciación de actores?
     # in-game variables
     move_here: int | None = None
     winner: bool = False
@@ -399,7 +399,7 @@ def update_turn_objectives():
 def reset_board():
     '''Puede que haya casos en los que el contenido del match varíe en su reinicio
     por eso debo tener cuidado *dónde* lo hago.'''
-    make_match_content()
+    make_content()
 
 def turn_swap():
     '''
@@ -2095,22 +2095,24 @@ def substract_time(color):
             white.turn_seconds = '59'
         else: white.turn_seconds = str(seconds) if len(str(seconds)) > 1 else '0'+str(seconds)
 
-def render():
-
-    # hud
-    # draw_text('Match scene', 'black', 20, 20, center=False)
-    # draw_text(f'{match_mode['mode']}', 'black', 200, 20, center=False)
+def match_state():
     draw_text(match_state, 'black', 400, 20, center=False)
     draw_text(turn.attacker, 'black', midScreen_pos.x - 25, board.height+60, center=False)
-    
-    # clocks display
-    draw_text(str(current_turn_time), 'black', midScreen_pos.x , 20, center=True)
+
+def clock_hud():
+    # draw_text(str(current_turn_time), 'black', midScreen_pos.x , 20, center=True) # global
     # black team clock
     draw_text(f'{black.turn_minutes}:{black.turn_seconds}', 'black', midScreen_pos.x + board.width/2-20, 20, center=False)
     # white team clock
     draw_text(f'{white.turn_minutes}:{white.turn_seconds}', 'black', midScreen_pos.x-100, 20, center=False)
 
-    # core
+def render():
+
+    # hud
+    match_state()
+    clock_hud()
+
+    # core logic
     draw_board()
     match_clock()
     if move_here != None:
