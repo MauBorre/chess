@@ -26,7 +26,7 @@ class GameManager:
 
     @classmethod
     def exit_game(cls):
-        cls.running = False
+        cls.match.running = False
 
     @classmethod
     def event_handler(cls):
