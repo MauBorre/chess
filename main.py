@@ -2,19 +2,22 @@ import pygame
 from match import Match
 
 class GameManager:
-    pygame.init()
-    resolution = (800,800)
-    screen = pygame.display.set_mode(resolution)
-    pygame.display.set_caption('Chess')
-    frame_rate_clock = pygame.time.Clock()
-    running = True
 
-    control_input = {
-        'escape': False,
-        'click': False,
-        'mouse-x': 0,
-        'mouse-y': 0,
-    }
+    def __new__(cls):
+        pygame.init()
+        cls.resolution = (800,800)
+        cls.screen = pygame.display.set_mode(cls.resolution)
+        pygame.display.set_caption('Chess')
+        cls.frame_rate_clock = pygame.time.Clock()
+        cls.running = True
+        cls.control_input = {
+            'escape': False,
+            'click': False,
+            'mouse-x': 0,
+            'mouse-y': 0,
+        }
+        cls.match = Match(cls.screen, cls.control_input)
+        cls.run_game()
 
     @classmethod
     def update_mouse(cls, coordinates):
@@ -31,40 +34,35 @@ class GameManager:
             if event.type == pygame.QUIT:
                 cls.exit_game()
 
-                # Keyboard
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        cls.control_input['escape'] = True
-                        break
+            # Keyboard
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    cls.control_input['escape'] = True
+                    break
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_ESCAPE:
+                    cls.control_input['escape'] = False
+                    break
 
-                # Mouse
-                if event.type == pygame.MOUSEBUTTONUP:
-                    if event.button == 1:
-                        cls.control_input['click'] = False
-                        break
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        cls.control_input['click'] = True
-                        break
-
-    '''Escapar a dividir screen y control_input parece realmente
-    inútil, siempre se nos adhiere junto a la lógica del juego de
-    algúna manera.
-    No debemos instanciar a un "Match" con estos valores, pero sí
-    siento que en algún aspecto conviene inicializar ALGO-IMPORANTE
-    por razones de reiniciar partida por ejemplo (que encima podría
-    incluir cambios en las reglas de juego...).'''
+            # Mouse
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    cls.control_input['click'] = True
+                    break
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    cls.control_input['click'] = False
+                    break
 
     @classmethod
-    def run_match(cls):
-        Match(cls.screen, cls.control_input)
-        while cls.running:
+    def run_game(cls):
+        while cls.match.running:
             cls.event_handler()
             cls.update_mouse(pygame.mouse.get_pos())
             cls.screen.fill("white")
-            Match.render()
+            cls.match.render()
             pygame.display.flip()
             cls.frame_rate_clock.tick(60)
         pygame.quit()
         
-GameManager.run_match()
+GameManager()
