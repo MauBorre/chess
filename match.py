@@ -4,6 +4,39 @@ from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OE
 from board import row_of_
 from dataclasses import dataclass, field
 
+'''Anotaciones lógica núcleo
+
+>> ThreatOn attacker/defender
+    kill-movement's *del enemigo* que caen en casillero rey TARGET o adyacencias legales.
+    Puede ser DIRECTO (jaque) o INDIRECTO (restringe king_legal_moves).
+
+    ANTES DE MOVER:
+        El atacante debe revisar, dentro de sus movimientos posible, si su movimiento -expone al rey-
+        al defensor.
+
+    DESPUES DE MOVER:
+        El defensor debe revisar si sus posibles movimiento exponen al rey al atacante, evaluando así
+        "con qué posibilidades de movimiento quedó".
+    
+    El threat puede MATARSE o BLOQUEARSE
+        A menos que haya más de un orígen de amenaza DIRECTA -> solo el rey moviendose puede escapar.
+
+    Threat de bishop, queen y tower pueden bloquearse
+    Threat de pawn y knight no pueden bloquearse
+
+>> Color-King-legalMovements
+    Posición actual + posibles movimientos (bloqueos aliados / casilleros threat).
+
+>> defender.legalMoves (kingSupport):
+    Actualizadas luego de que movió el atacante.
+    Exhibe "si alguien puede hacer algo", mas no "dónde".
+    Inexistentes si hay amenaza de orígen múltiple.
+
+    Para fabricarlas correctamente, debemos comprobar y desestimar
+        - Movimientos inv. por bloqueo.
+        - Movimientos inv.  por exposición al rey.
+'''
+
 @dataclass
 class PlayerTeamUnit:
     name: str
@@ -13,10 +46,19 @@ class PlayerTeamUnit:
     pawns_in_origin: list[int] = field(default_factory=list)
     threat_on_enemy: dict[str, int] = field(default_factory=dict)
     king_legal_moves: list[int] = field(default_factory=list)
+    castling_enablers: dict[int, str] = field(default_factory=dict)
+    single_threat_standpoint: int | None
+    king_banned_direction: int | None
+    legal_moves: set[str] 
 
-    def clear(cls):
-        # cls.direct_threat_trace.clear()
-        ...
+    def clear(self):
+        self.threat_on_enemy.clear()
+        self.king_legal_moves.clear()
+        self.direct_threat_trace.clear()
+        self.direct_threat_origin = 'none'
+        self.single_threat_standpoint = None
+        self.king_banned_direction = None
+        self.legal_moves.clear()        
     
     def __str__(cls):
         return cls.name
@@ -42,26 +84,72 @@ black = PlayerTeamUnit(
     pawns_in_origin = [bpawn for bpawn in pieces.origins['black']['pawn']],
     threat_on_enemy = {piece:[] for piece in pieces.origins['black']},
     king_legal_moves = [],
+    castling_enablers = {0: 'west-rook', 4: 'king', 7: 'east-rook'},
+    single_threat_standpoint = None,
+    king_banned_direction = None,
+    legal_moves = set()
 )
 white = PlayerTeamUnit(
     name = 'white',
-    direct_threat_origin='none', # or 'multiple' or 'single'
-    direct_threat_trace=[],
-    positions=pieces.white_positions.copy(),
-    pawns_in_origin=[wpawn for wpawn in pieces.origins['white']['pawn']],
-    threat_on_enemy={piece:[] for piece in pieces.origins['white']},
-    king_legal_moves=[],
+    direct_threat_origin = 'none', # or 'multiple' or 'single'
+    direct_threat_trace = [],
+    positions = pieces.white_positions.copy(),
+    pawns_in_origin = [wpawn for wpawn in pieces.origins['white']['pawn']],
+    threat_on_enemy = {piece:[] for piece in pieces.origins['white']},
+    king_legal_moves = [],
+    castling_enablers = {56: 'west-rook', 60: 'king', 63: 'east-rook'},
+    single_threat_standpoint = None,
+    king_banned_direction = None,
+    legal_moves = set(),
 )
-turn_attacker = black or white #apunta a un conjunto
-turn_defender = black or white
 
+# core game variables
 gameClock_minutesLimit: int = 10
+pause = False
+move_here: int | None = None
+winner: bool = False
+stalemate: bool = False # Ahogado | draw
+match_state: str = '' # HUD info
+player_deciding_match: bool = False
+killing: bool = False
+finish_turn: bool = False # turn halt utility
+# pawn promotion
+player_deciding_promotion: bool = False
+pawnPromotion_selection: str = ''
+promoting_pawn: int | None = None
+# king castling
+castling: bool = False
+castling_direction: str = ''
+turn_attacker = white
+turn_defender = black
 
-pause = False 
-winner = False 
-stalemate = False 
-player_deciding_promotion = False 
-move_here = None
+# turn_defender.legal_moves: set[str] = set() # NO se considera en SWAP
+
+# board feedback utilities
+pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
+pieceValidKill_posDisplay: dict[int, pygame.Rect] = {}
+kingValidCastling_posDisplay: dict[int, pygame.Rect] = {}
+
+# turn times
+globaltime_SNAP: int = pygame.time.get_ticks()
+whitetime_SNAP: int = pygame.time.get_ticks()
+blacktime_SNAP: int = pygame.time.get_ticks()
+pausetime_SNAP: int = 0
+current_turn_time: int = 0
+'''El tiempo nos llega en forma de "minutos totales", pero debemos transformarlo
+a segundos y minutos por separado para finalmente  y correctamente visualizarlo.
+'''
+black_turn_time: int = gameClock_minutesLimit * 60
+black_turn_minutes: str = str(int(black_turn_time/60))
+black_turn_seconds: str = '00'
+
+white_turn_time: int = gameClock_minutesLimit * 60
+white_turn_minutes: str = str(int(white_turn_time/60))
+white_turn_seconds: str = '00'
+# clock + or - remnants
+white_time_leftover: int = 0
+black_time_leftover: int = 0
+pause_time_leftover: int = 0
 # ---------------------------------------------------------------
 
 def draw_text(text, color, x, y, center=True, font_size='large'):
@@ -75,134 +163,10 @@ def draw_text(text, color, x, y, center=True, font_size='large'):
     else: textrect.topleft = (x,y)
     surface.blit(textobj,textrect)
 
-def init_content(): # instanciación de actores?
-    # in-game variables
-    move_here: int | None = None
-    winner: bool = False
-    stalemate: bool = False # Ahogado | draw
-    match_state: str = '' # HUD info
-    player_deciding_match: bool = False
-    killing: bool = False
-    finish_turn: bool = False # turn halt
-    # pawn promotion
-    player_deciding_promotion: bool = False
-    pawnPromotion_selection: str = ''
-    promoting_pawn: int | None = None
-    # king castling
-    castling: bool = False
-    castling_direction: str = ''
-
-    # board feedback utilities
-    pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
-    pieceValidKill_posDisplay: dict[int, pygame.Rect] = {}
-    kingValidCastling_posDisplay: dict[int, pygame.Rect] = {}
-
-    # turn times
-    globaltime_SNAP: int = pygame.time.get_ticks()
-    whitetime_SNAP: int = pygame.time.get_ticks()
-    blacktime_SNAP: int = pygame.time.get_ticks()
-    pausetime_SNAP: int = 0
-    current_turn_time: int = 0
-
-    '''El tiempo nos llega en forma de "minutos totales", pero debemos transformarlo
-    a segundos y minutos por separado para finalmente  y correctamente visualizarlo.
-    '''
-    black.turn_time: int = gameClock_minutesLimit * 60
-    black.turn_minutes: str = str(int(black.turn_time/60))
-    black.turn_seconds: str = '00'
-    
-    white.turn_time: int = gameClock_minutesLimit * 60
-    white.turn_minutes: str = str(int(white.turn_time/60))
-    white.turn_seconds: str = '00'
-    # clock + or - remnants
-    white.time_leftover: int = 0
-    black.time_leftover: int = 0
-    pause_time_leftover: int = 0
-
-    # Board defaults ---------------------------------------------------
-    # Black
-    black.pawns_in_origin: list[int] = [bpawn for bpawn in pieces.origins['black']['pawn']] # no swap
-    black.positions: dict[int, str] = pieces.black.positions.copy()
-    black.threatOnWhite: dict[str, int] = {piece:[] for piece in pieces.origins['black']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
-    black.kingLegalMoves: list[int] = []
-    black.direct_threat_origin: bool | None = None 
-    black.directThreatTrace: list[int] = []
-    black.singleOriginT_standpoint: int | None = None
-    black.kingBannedDirection: int | None = None
-    black.castlingEnablers: dict[int, str] = {0: 'west-rook', 4: 'king', 7: 'east-rook'}
-    
-    # White
-    white.pawns_in_origin: list[int] = [wpawn for wpawn in pieces.origins['white']['pawn']] # no swap
-    white.positions: dict[int, str] = pieces.white.positions.copy()
-    white.threatOnBlack: dict[str, int] = {piece:[] for piece in pieces.origins['white']} # {'peon': [1,2,3], 'alfil': [4,5,6]}
-    white.kingLegalMoves: list[int] = []
-    white.direct_threat_origin: bool | None = None 
-    white.directThreatTrace: list[int] = [] 
-    white.singleOriginT_standpoint: int | None = None
-    white.kingBannedDirection: int | None = None
-    white.castlingEnablers: dict[int, str] = {56: 'west-rook', 60: 'king', 63: 'east-rook'}
-    
-    # Turn lookups --------------------------------------------------------------------------------
-    turn_attacker: str = 'white' #__repr__
-    turn_defender: str = 'black' #__repr__
-
-    # Si existe múltiple orígen de amenaza NUNCA habrá legalMoves por parte.
-    # de las piezas defensoras.
-    turn_defender.legalMoves: set[str] = set() # NO se considera en SWAP
-
-    '''Registro de AMENAZAS, MOVIMIENTOS LEGALES DEL REY, POSICIONES DE RESCATE: 
-
-    >> ThreatOn attacker/defender
-        kill-movement's *del enemigo* que caen en casillero rey TARGET o adyacencias legales.
-        Puede ser DIRECTO (jaque) o INDIRECTO (restringe kingLegalMoves).
-
-        ANTES DE MOVER:
-            El atacante debe revisar, dentro de sus movimientos posible, si su movimiento -expone al rey-
-            al defensor.
-
-        DESPUES DE MOVER:
-            El defensor debe revisar si sus posibles movimiento exponen al rey al atacante, evaluando así
-            "con qué posibilidades de movimiento quedó".
-        
-        El threat puede MATARSE o BLOQUEARSE
-            A menos que haya más de un orígen de amenaza DIRECTA -> solo el rey moviendose puede escapar.
-
-        Threat de bishop, queen y tower pueden bloquearse
-        Threat de pawn y knight no pueden bloquearse
-
-    >> Color-King-legalMovements
-        Posición actual + posibles movimientos (bloqueos aliados / casilleros threat).
-
-    >> defender.legalMoves (kingSupport):
-        Actualizadas luego de que movió el atacante.
-        Exhibe "si alguien puede hacer algo", mas no "dónde".
-        Inexistentes si hay amenaza de orígen múltiple.
-
-        Para fabricarlas correctamente, debemos comprobar y desestimar
-            - Movimientos inv. por bloqueo.
-            - Movimientos inv.  por exposición al rey.
-    '''
-    # Defender
-    turn_defender.positions: dict[int, str] = black.positions 
-    turn_defender.threatOnAttacker: dict[str, list[int]] = black.threatOnWhite  # será siempre resultado de SWAP, contiene *posible jaque* actual.
-    turn_defender.kingLegalMoves: list[int] = black.kingLegalMoves
-    turn_defender.direct_threat_origin: bool | None = black.direct_threat_origin
-    turn_defender.directThreatTrace: list[int] = black.directThreatTrace
-    turn_defender.singleOriginT_standpoint: int | None = black.singleOriginT_standpoint
-    turn_defender.kingBannedDirection: int | None = black.kingBannedDirection
-    turn_defender.castlingEnablers: dict[int, str] = black.castlingEnablers
-
-    # Attacker
-    turn_attacker.positions: dict[int, str] = white.positions 
-    turn_attacker.threatOnDefender: dict[str, list[int]] = white.threatOnBlack
-    turn_attacker.kingLegalMoves: list[int] = white.kingLegalMoves
-    turn_attacker.direct_threat_origin: bool | None = white.direct_threat_origin 
-    turn_attacker.directThreatTrace: list[int] = white.directThreatTrace
-    turn_attacker.singleOriginT_standpoint: int | None = white.singleOriginT_standpoint
-    turn_attacker.kingBannedDirection: int | None = white.kingBannedDirection
-    turn_attacker.castlingEnablers: dict[int, str] = white.castlingEnablers
+def init_content(): ...
 
 def check_pawn_promotion():
+    global pause, player_deciding_promotion, finish_turn
     # Obtener standpoints PAWN de attacker
     pawn_standpoints: list[int] = get_piece_standpoint(color=turn_attacker,piece="pawn")
     
@@ -264,7 +228,7 @@ def trace_direction_walk(
             if 0 <= walk <= 63: # VALID SQUARE
 
                 if walk == attThreat_standpoint:
-                    turn_defender.kingBannedDirection = -direction # dirección inversa
+                    turn_defender.king_banned_direction = -direction # dirección inversa
                     return walk_trace
 
                 elif walk in mixedDirections_threats:
@@ -277,19 +241,19 @@ def update_turn_objectives():
 
     Internamente se revisará:
 
-        >> attacker.threatOnDefender
-        >> attacker.kingLegalMoves
+        >> attacker.threat_on_enemy
+        >> attacker.king_legal_moves
         >> attacker.direct_threat_origin
-        >> attacker.singleOriginT_standpoint
-        >> attacker.directThreatTrace
-        >> defender.directThreatTrace
-        >> defender.threatOnAttacker
-        >> defender.kingLegalMoves
+        >> attacker.single_threat_standpoint
+        >> attacker.direct_threat_trace
+        >> defender.direct_threat_trace
+        >> defender.threat_on_enemy
+        >> defender.king_legal_moves
         >> defender.direct_threat_origin
-        >> defender.singleOriginT_standpoint
+        >> defender.single_threat_standpoint
         >> defender.legalMoves
     
-    Antes de ser utilizadas, estas variables (excepto defender.threatOnAttacker que puede contener
+    Antes de ser utilizadas, estas variables (excepto defender.threat_on_enemy que puede contener
     información del *jaque actual* y es resultado de transferencia/SWAP ) deben limpiarse para evitar
     un solapamiento infinito de posiciones.
     
@@ -300,7 +264,7 @@ def update_turn_objectives():
     Si es NONE no hay ninguna amenaza directa, pero si es FALSE significa que HAY MULTIPLES AMENAZAS
     DIRECTAS, por lo tanto el rey depende de su propio movimiento (o será jaque-mate).
 
-    DEBO revisar defender.threatOnAttacker y defender.direct_threat_origin en perspectivas
+    DEBO revisar defender.threat_on_enemy y defender.direct_threat_origin en perspectivas
     ofensivas de turno. Si direct_threat_origin es TRUE, DEBO revisar defender.DIRECT_THREATS .
     
     Al terminar estos cálculos, la funcion decide_check() establecerá si la partida debe continuar o
@@ -316,7 +280,7 @@ def update_turn_objectives():
             expone a mi rey a un jaque.
             -> exposing_movement(standpoint, direction, request_from)
 
-        >> Actualizaremos attacker.threatOnDefender
+        >> Actualizaremos attacker.threat_on_enemy
             -> kill-movements aún no hechos pero que "amenazan" CASILLEROS VACÍOS/CASILLEROS CON ALIADOS EN EL.
     
     Desde perspectiva = 'defender' es importante:
@@ -332,21 +296,8 @@ def update_turn_objectives():
                 - Por no *salvar al rey* (matando o bloqueando la amenaza)
     '''
 
-    #attacker.clear()
-    #defender.clear()
-    turn_attacker.threatOnDefender.clear()
-    turn_defender.threatOnAttacker.clear()
-    turn_attacker.kingLegalMoves.clear()
-    turn_defender.kingLegalMoves.clear()
-    turn_attacker.directThreatTrace.clear()
-    turn_defender.directThreatTrace.clear() 
-    turn_defender.legalMoves.clear()
-    turn_attacker.direct_threat_origin = 'none'
-    turn_defender.direct_threat_origin = 'none'
-    turn_attacker.singleOriginT_standpoint = None
-    turn_defender.singleOriginT_standpoint = None
-    turn_attacker.kingBannedDirection = None
-    turn_defender.kingBannedDirection = None
+    turn_attacker.clear()
+    turn_defender.clear()
 
     # Attacker ----------------------------------------------------------------------------------------
     king_standpoints: list[int] = get_piece_standpoint(color=turn_attacker, piece="king")
@@ -378,7 +329,7 @@ def update_turn_objectives():
 
     # TURN DEBUG ++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # print(f'El jugador {attacker} dejó estas amenazas:')
-    # for at, d in attacker.threatOnDefender.items(): print(at, d)
+    # for at, d in attacker.threat_on_enemy.items(): print(at, d)
     # print('------------')
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -388,27 +339,27 @@ def update_turn_objectives():
         _king = king_standpoints.pop()
 
     # Revisión del estado de la amenaza del atacante sobre el rey defensor (jaque)
-    for _threats_list in turn_attacker.threatOnDefender.values():
+    for _threats_list in turn_attacker.threat_on_enemy.values():
         if _king in _threats_list:
             if turn_attacker.direct_threat_origin == 'single': # caso amenaza múltiple
                 turn_attacker.direct_threat_origin = False
-                turn_attacker.singleOriginT_standpoint = None
-                turn_attacker.directThreatTrace.clear()
+                turn_attacker.single_threat_standpoint = None
+                turn_attacker.direct_threat_trace.clear()
                 break
 
             # amenaza directa simple
             turn_attacker.direct_threat_origin = True
             # La posición de orígen de la amenaza estará SIEMPRE en _threats_list[-1].
-            # attacker.directThreatTrace NO INCLUYE STANDPOINT DE LA AMENAZA.
+            # attacker.direct_threat_trace NO INCLUYE STANDPOINT DE LA AMENAZA.
             # Si la pieza amenazante es el caballo NO llamar a trace_direction_walk.
-            turn_attacker.singleOriginT_standpoint = _threats_list[-1]
+            turn_attacker.single_threat_standpoint = _threats_list[-1]
             knight_walk_exception: str = turn_attacker.positions[_threats_list[-1]]
             if knight_walk_exception != 'knight':
-                turn_attacker.directThreatTrace = trace_direction_walk(_king, _threats_list, _threats_list[-1])
-            else: turn_attacker.directThreatTrace = []
+                turn_attacker.direct_threat_trace = trace_direction_walk(_king, _threats_list, _threats_list[-1])
+            else: turn_attacker.direct_threat_trace = []
 
     remove_all_attacker_standpoints() # Necesario para que el rey pueda identificar piezas como -quizás matable-.
-    king_objectives(_king, perspective='defender') # genero/reviso defender.kingLegalMoves.
+    king_objectives(_king, perspective='defender') # genero/reviso defender.king_legal_moves.
 
     if turn_attacker.direct_threat_origin != False:
         # Defender kingSupport (Revision de movimientos legales del defensor para ver si perdió, empató, o nada de eso)
@@ -443,20 +394,19 @@ def turn_swap():
     '''
     Intercalaremos:
     >> positions
-    >> threatOn
-    >> kingLegalMoves
+    >> threat_on_enemy
+    >> king_legal_moves
     >> direct_threat_origin
-    >> directThreatTrace
-    >> singleOriginThreat standpoint
-    >> kingBannedDirection
-    >> castlingEnablers
+    >> direct_threat_trace
+    >> single_threat_standpoint
+    >> king_banned_direction
+    >> castling_enablers
     >> relojes
     
     Match aplicará cambios siempre sobre conjuntos generalizados bajo attacker/defender,
     entonces luego de realizados:
 
     PRIMERO los volveremos a adjudicar a su variable de color-origen. "COMO ERAN"
-
     LUEGO los intercambiamos por el color-equipo que corresponde. "COMO RESULTAN AHORA"
     '''
 
@@ -464,10 +414,10 @@ def turn_swap():
 
         attacker = 'black'
         defender = 'white'
-        if black.time_leftover < 1000:
-            blacktime_SNAP = pygame.time.get_ticks() - black.time_leftover
+        if black_time_leftover < 1000:
+            blacktime_SNAP = pygame.time.get_ticks() - black_time_leftover
         else:
-            blacktime_SNAP = pygame.time.get_ticks() + black.time_leftover
+            blacktime_SNAP = pygame.time.get_ticks() + black_time_leftover
 
         # Target Transfer (white <- attacker | black <- defender) ---------------------
         # > positions
@@ -475,32 +425,32 @@ def turn_swap():
         black.positions = defender.positions
 
         # > threatOn
-        white.threatOnBlack = attacker.threatOnDefender
-        black.threatOnWhite = defender.threatOnAttacker
+        white.threat_on_enemy = attacker.threat_on_enemy
+        black.threat_on_enemy = defender.threat_on_enemy
 
-        # > kingLegalMoves
-        white.kingLegalMoves = attacker.kingLegalMoves
-        black.kingLegalMoves = defender.kingLegalMoves
+        # > king_legal_moves
+        white.king_legal_moves = attacker.king_legal_moves
+        black.king_legal_moves = defender.king_legal_moves
 
         # > direct_threat_origin
         white.direct_threat_origin = attacker.direct_threat_origin
         black.direct_threat_origin = defender.direct_threat_origin
 
-        # > directThreatTrace
-        white.directThreatTrace = attacker.directThreatTrace
-        black.directThreatTrace = defender.directThreatTrace
+        # > direct_threat_trace
+        white.direct_threat_trace = attacker.direct_threat_trace
+        black.direct_threat_trace = defender.direct_threat_trace
 
         # > singleOriginThreat standpoint
-        white.singleOriginT_standpoint = attacker.singleOriginT_standpoint
-        black.singleOriginT_standpoint = defender.singleOriginT_standpoint
+        white.single_threat_standpoint = attacker.single_threat_standpoint
+        black.single_threat_standpoint = defender.single_threat_standpoint
 
-        # > kingBannedDirection
-        white.kingBannedDirection = attacker.kingBannedDirection
-        black.kingBannedDirection = defender.kingBannedDirection
+        # > king_banned_direction
+        white.king_banned_direction = attacker.king_banned_direction
+        black.king_banned_direction = defender.king_banned_direction
 
-        # > castlingEnablers
-        white.castlingEnablers = attacker.castlingEnablers
-        black.castlingEnablers = defender.castlingEnablers
+        # > castling_enablers
+        white.castling_enablers = attacker.castling_enablers
+        black.castling_enablers = defender.castling_enablers
 
         # Target Swap (attacker = black | defender = white ) ---------------------------
         # > positions
@@ -508,32 +458,32 @@ def turn_swap():
         defender.positions = white.positions
 
         # > threatOn
-        attacker.threatOnDefender = black.threatOnWhite
-        defender.threatOnAttacker = white.threatOnBlack
+        attacker.threat_on_enemy = black.threat_on_enemy
+        defender.threat_on_enemy = white.threat_on_enemy
 
-        # > kingLegalMoves
-        attacker.kingLegalMoves = black.kingLegalMoves
-        defender.kingLegalMoves = white.kingLegalMoves
+        # > king_legal_moves
+        attacker.king_legal_moves = black.king_legal_moves
+        defender.king_legal_moves = white.king_legal_moves
 
         # > direct_threat_origin
         attacker.direct_threat_origin = black.direct_threat_origin
         defender.direct_threat_origin = white.direct_threat_origin
 
-        # > directThreatTrace
-        attacker.directThreatTrace = black.directThreatTrace
-        defender.directThreatTrace = white.directThreatTrace
+        # > direct_threat_trace
+        attacker.direct_threat_trace = black.direct_threat_trace
+        defender.direct_threat_trace = white.direct_threat_trace
 
         # > SingleOriginThreat standpoint
-        attacker.singleOriginT_standpoint = black.singleOriginT_standpoint
-        defender.singleOriginT_standpoint = white.singleOriginT_standpoint
+        attacker.single_threat_standpoint = black.single_threat_standpoint
+        defender.single_threat_standpoint = white.single_threat_standpoint
 
-        # > kingBannedDirection
-        attacker.kingBannedDirection = black.kingBannedDirection
-        defender.kingBannedDirection = white.kingBannedDirection
+        # > king_banned_direction
+        attacker.king_banned_direction = black.king_banned_direction
+        defender.king_banned_direction = white.king_banned_direction
 
-        # > castlingEnablers
-        attacker.castlingEnablers = black.castlingEnablers
-        defender.castlingEnablers = white.castlingEnablers
+        # > castling_enablers
+        attacker.castling_enablers = black.castling_enablers
+        defender.castling_enablers = white.castling_enablers
 
         return
     
@@ -541,10 +491,10 @@ def turn_swap():
 
         attacker = 'white'
         defender = 'black'
-        if white.time_leftover < 1000:
-            whitetime_SNAP = pygame.time.get_ticks() - white.time_leftover
+        if white_time_leftover < 1000:
+            whitetime_SNAP = pygame.time.get_ticks() - white_time_leftover
         else:
-            whitetime_SNAP = pygame.time.get_ticks() + white.time_leftover
+            whitetime_SNAP = pygame.time.get_ticks() + white_time_leftover
 
         # Target Transfer (white <- defender | black <- attacker) ----------------------
         # > positions
@@ -552,32 +502,32 @@ def turn_swap():
         black.positions = attacker.positions
 
         # > threatOn
-        white.threatOnBlack = defender.threatOnAttacker
-        black.threatOnWhite = attacker.threatOnDefender
+        white.threat_on_enemy = defender.threat_on_enemy
+        black.threat_on_enemy = attacker.threat_on_enemy
 
-        # > kingLegalMoves
-        white.kingLegalMoves = defender.kingLegalMoves
-        black.kingLegalMoves = attacker.kingLegalMoves
+        # > king_legal_moves
+        white.king_legal_moves = defender.king_legal_moves
+        black.king_legal_moves = attacker.king_legal_moves
 
         # > direct_threat_origin
         white.direct_threat_origin = defender.direct_threat_origin
         black.direct_threat_origin = attacker.direct_threat_origin
 
-        # > directThreatTrace
-        white.directThreatTrace = defender.directThreatTrace
-        black.directThreatTrace = attacker.directThreatTrace
+        # > direct_threat_trace
+        white.direct_threat_trace = defender.direct_threat_trace
+        black.direct_threat_trace = attacker.direct_threat_trace
 
         # > singleOriginThreat standpoint
-        white.singleOriginT_standpoint = defender.singleOriginT_standpoint
-        black.singleOriginT_standpoint = attacker.singleOriginT_standpoint
+        white.single_threat_standpoint = defender.single_threat_standpoint
+        black.single_threat_standpoint = attacker.single_threat_standpoint
 
-        # > kingBannedDirection
-        white.kingBannedDirection = defender.kingBannedDirection
-        black.kingBannedDirection = attacker.kingBannedDirection
+        # > king_banned_direction
+        white.king_banned_direction = defender.king_banned_direction
+        black.king_banned_direction = attacker.king_banned_direction
 
-        # > castlingEnablers
-        white.castlingEnablers = defender.castlingEnablers
-        black.castlingEnablers = attacker.castlingEnablers
+        # > castling_enablers
+        white.castling_enablers = defender.castling_enablers
+        black.castling_enablers = attacker.castling_enablers
 
         # Target Swap (attacker = white | defender = black) ----------------------------
         # > positions
@@ -585,44 +535,44 @@ def turn_swap():
         defender.positions = black.positions
 
         # > threatOn
-        attacker.threatOnDefender = white.threatOnBlack
-        defender.threatOnAttacker = black.threatOnWhite
+        attacker.threat_on_enemy = white.threat_on_enemy
+        defender.threat_on_enemy = black.threat_on_enemy
 
-        # > kingLegalMoves
-        attacker.kingLegalMoves = white.kingLegalMoves
-        defender.kingLegalMoves = black.kingLegalMoves
+        # > king_legal_moves
+        attacker.king_legal_moves = white.king_legal_moves
+        defender.king_legal_moves = black.king_legal_moves
 
         # > direct_threat_origin
         attacker.direct_threat_origin = white.direct_threat_origin
         defender.direct_threat_origin = black.direct_threat_origin
 
-        # > directThreatTrace
-        attacker.directThreatTrace = white.directThreatTrace
-        defender.directThreatTrace = black.directThreatTrace
+        # > direct_threat_trace
+        attacker.direct_threat_trace = white.direct_threat_trace
+        defender.direct_threat_trace = black.direct_threat_trace
 
         # > singleOriginThreat standpoint
-        attacker.singleOriginT_standpoint = white.singleOriginT_standpoint
-        defender.singleOriginT_standpoint = black.singleOriginT_standpoint
+        attacker.single_threat_standpoint = white.single_threat_standpoint
+        defender.single_threat_standpoint = black.single_threat_standpoint
 
-        # > kingBannedDirection
-        attacker.kingBannedDirection = white.kingBannedDirection
-        defender.kingBannedDirection = black.kingBannedDirection
+        # > king_banned_direction
+        attacker.king_banned_direction = white.king_banned_direction
+        defender.king_banned_direction = black.king_banned_direction
 
-        # > castlingEnablers
-        attacker.castlingEnablers = white.castlingEnablers
-        defender.castlingEnablers = black.castlingEnablers
+        # > castling_enablers
+        attacker.castling_enablers = white.castling_enablers
+        defender.castling_enablers = black.castling_enablers
 
         return
 
 def remove_all_attacker_standpoints():
     '''
-    Quita TODOS los standpoints de attacker.threatOndefender
+    Quita TODOS los standpoints de attacker.threat_on_enemy
     (y por consecuente su vuelta como def_threatOnAtt).
     Los standpoints coinciden SIEMPRE en el último item de la lista de amenazas.
     De esta forma aclaramos la visión al rey correspondiente en cuanto a amenazas
     matables y no-matables.
     '''
-    for _threats in turn_attacker.threatOnDefender.values():
+    for _threats in turn_attacker.threat_on_enemy.values():
         _threats.pop()
 
 def exposing_direction(standpoint: int, direction: int, request_from: str) -> bool:
@@ -664,7 +614,7 @@ def exposing_direction(standpoint: int, direction: int, request_from: str) -> bo
 
         if turn_defender.direct_threat_origin:
             # nombre de la pieza que NO debemos considerar
-            rejected_piece: str = turn_defender.positions[turn_defender.singleOriginT_standpoint]
+            rejected_piece: str = turn_defender.positions[turn_defender.single_threat_standpoint]
 
             if rejected_piece != 'rook':
                 rook_standpoints: list[int] = get_piece_standpoint(color=turn_defender,piece="rook")
@@ -762,16 +712,16 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                         if not exposing_direction(piece_standpoint, direction=SUR, request_from="defender"):
                             
                             # 1st Movement -BLOCK saving position-
-                            if movement in turn_attacker.directThreatTrace:
-                                turn_defender.legalMoves.add(f'pawn{piece_standpoint}')
+                            if movement in turn_attacker.direct_threat_trace:
+                                turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
 
                             # 2nd Movement
                             if piece_standpoint in black.pawns_in_origin:
                                 if movement+SUR not in turn_defender.positions:
 
                                     # 2nd Movement -BLOCK saving position-
-                                    if movement+SUR in turn_attacker.directThreatTrace:
-                                        turn_defender.legalMoves.add(f'pawn{piece_standpoint}')    
+                                    if movement+SUR in turn_attacker.direct_threat_trace:
+                                        turn_defender.legal_moves.add(f'pawn{piece_standpoint}')    
                         else: pass
                     
                     # kill saving positions
@@ -788,14 +738,14 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                     for kp in kill_positions:
                         if kp in turn_attacker.positions:
                             if not exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
-                                if kp == turn_attacker.singleOriginT_standpoint:
-                                    turn_defender.legalMoves.add(f'pawn{piece_standpoint}')
+                                if kp == turn_attacker.single_threat_standpoint:
+                                    turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
                     return
                         
                 elif turn_attacker.direct_threat_origin == 'none': 
                     if movement not in turn_defender.positions or movement not in turn_attacker.positions:
                         if not exposing_direction(piece_standpoint, direction=SUR, request_from="defender"):
-                            turn_defender.legalMoves.add(f'pawn{piece_standpoint}')
+                            turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
                         else: pass
                     
                     # kill positions
@@ -812,7 +762,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                     for kp in kill_positions:
                         if kp in turn_attacker.positions:
                             if not exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
-                                turn_defender.legalMoves.add(f'pawn{piece_standpoint}')
+                                turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
                     return
             return
 
@@ -827,16 +777,16 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                         if not exposing_direction(piece_standpoint, direction=NORTE, request_from="defender"):
 
                             # 1st Movement -BLOCK saving position-
-                            if movement in turn_attacker.directThreatTrace:
-                                turn_defender.legalMoves.add(f'pawn{piece_standpoint}')
+                            if movement in turn_attacker.direct_threat_trace:
+                                turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
                             
                             # 2nd Movement
                             if piece_standpoint in white.pawns_in_origin:
                                 if movement+NORTE not in turn_defender.positions:
                                     
                                     # 2nd Movement -BLOCK saving position-
-                                    if movement+NORTE in turn_attacker.directThreatTrace:
-                                        turn_defender.legalMoves.add(f'pawn{piece_standpoint}')
+                                    if movement+NORTE in turn_attacker.direct_threat_trace:
+                                        turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
                         else: pass
                 
                     # kill saving positions
@@ -853,14 +803,14 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                     for kp in kill_positions:
                         if kp in turn_attacker.positions:
                             if not exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
-                                if kp == turn_attacker.singleOriginT_standpoint:
-                                    turn_defender.legalMoves.add(f'pawn{piece_standpoint}')
+                                if kp == turn_attacker.single_threat_standpoint:
+                                    turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
                     return
                                     
                 elif turn_attacker.direct_threat_origin == 'none':
                     if movement not in turn_defender.positions or movement not in turn_attacker.positions:
                         if not exposing_direction(piece_standpoint, direction=NORTE, request_from="defender"):
-                            turn_defender.legalMoves.add(f'pawn{piece_standpoint}')
+                            turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
                         else: pass
                     
                     # kill saving positions
@@ -877,7 +827,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                     for kp in kill_positions:
                         if kp in turn_attacker.positions:
                             if not exposing_direction(piece_standpoint, direction=kp, request_from="defender"):
-                                turn_defender.legalMoves.add(f'pawn{piece_standpoint}')
+                                turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
                     return
             return
         return
@@ -892,20 +842,20 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                 if turn_defender.direct_threat_origin:
                     '''
                     Únicos movimientos posibles: bloquear o matar la amenaza.
-                    > Bloquear una amenaza es movement coincidente en defender.directThreatTrace
-                    > Matar la amenaza es kill-movement coincidente en defender.singleOriginT_standpoint
+                    > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
+                    > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
                     NO verificar exposing-movements.
                     '''
                     if movement not in turn_attacker.positions and movement not in turn_defender.positions: # piece block
                         if not exposing_direction(piece_standpoint, direction=SUR, request_from="attacker"):
-                            if movement in turn_defender.directThreatTrace:
+                            if movement in turn_defender.direct_threat_trace:
                                 # BLOCK saving position
                                 mov_target_positions.update({movement: board.rects[movement]})
 
                             #probamos con el 2do mov
                             if piece_standpoint in black.pawns_in_origin:
                                 if movement+SUR not in turn_attacker.positions and movement+SUR not in turn_defender.positions: # piece block
-                                    if movement+SUR in turn_defender.directThreatTrace:
+                                    if movement+SUR in turn_defender.direct_threat_trace:
                                         # BLOCK saving position
                                         mov_target_positions.update({movement+SUR: board.rects[movement+SUR]})
 
@@ -919,7 +869,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                         kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
                     
                     for kp in kill_positions:
-                        if kp not in turn_attacker.positions and kp == turn_defender.singleOriginT_standpoint: 
+                        if kp not in turn_attacker.positions and kp == turn_defender.single_threat_standpoint: 
                             if not exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
                                 # KILL saving position
                                 on_target_kill_positions.update({kp: board.rects[kp]})
@@ -957,7 +907,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                             
                     # Threat on defender ------------------------
                     kill_positions.append(piece_standpoint)
-                    turn_attacker.threatOnDefender.update({f'pawn{piece_standpoint}': kill_positions})
+                    turn_attacker.threat_on_enemy.update({f'pawn{piece_standpoint}': kill_positions})
 
                     return mov_target_positions, on_target_kill_positions
 
@@ -970,20 +920,20 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                 if turn_defender.direct_threat_origin:
                     '''
                     Únicos movimientos posibles: bloquear o matar la amenaza.
-                    > Bloquear una amenaza es movement coincidente en defender.directThreatTrace
-                    > Matar la amenaza es kill-movement coincidente en defender.singleOriginT_standpoint
+                    > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
+                    > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
                     NO verificar exposing-movements.
                     '''
                     if movement not in turn_attacker.positions and movement not in turn_defender.positions: # piece block
                         if not exposing_direction(piece_standpoint, direction=NORTE, request_from="attacker"):
-                            if movement in turn_defender.directThreatTrace:
+                            if movement in turn_defender.direct_threat_trace:
                                 # BLOCK saving position
                                 mov_target_positions.update({movement: board.rects[movement]})
 
                             #probamos con el 2do mov
                             if piece_standpoint in white.pawns_in_origin:
                                 if movement+NORTE not in turn_attacker.positions and movement+NORTE not in turn_defender.positions:# piece block
-                                    if movement+NORTE in turn_defender.directThreatTrace:
+                                    if movement+NORTE in turn_defender.direct_threat_trace:
                                         # BLOCK saving position
                                         mov_target_positions.update({movement+NORTE: board.rects[movement+NORTE]})
 
@@ -997,7 +947,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                         kill_positions.extend([piece_standpoint+NOR_OESTE, piece_standpoint+NOR_ESTE])
                                 
                     for kp in kill_positions:
-                        if kp not in turn_attacker.positions and kp == turn_defender.singleOriginT_standpoint:
+                        if kp not in turn_attacker.positions and kp == turn_defender.single_threat_standpoint:
                             if not exposing_direction(piece_standpoint, direction=kp, request_from="attacker"):
                                 # KILL saving position
                                 on_target_kill_positions.update({kp: board.rects[kp]})
@@ -1035,7 +985,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
 
                     # Threat on defender ------------------------
                     kill_positions.append(piece_standpoint)
-                    turn_attacker.threatOnDefender.update({f'pawn{piece_standpoint}': kill_positions})
+                    turn_attacker.threat_on_enemy.update({f'pawn{piece_standpoint}': kill_positions})
 
                     return mov_target_positions, on_target_kill_positions
             
@@ -1113,12 +1063,12 @@ def rook_objectives(
                         if movement in turn_defender.positions:
                             break
                         if not exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
-                            if movement in turn_attacker.directThreatTrace:
+                            if movement in turn_attacker.direct_threat_trace:
                                 # block saving position
-                                turn_defender.legalMoves.add(f'rook{piece_standpoint}') 
-                            if movement == turn_attacker.singleOriginT_standpoint:
+                                turn_defender.legal_moves.add(f'rook{piece_standpoint}') 
+                            if movement == turn_attacker.single_threat_standpoint:
                                 # kill saving position
-                                turn_defender.legalMoves.add(f'rook{piece_standpoint}')
+                                turn_defender.legal_moves.add(f'rook{piece_standpoint}')
                         else: continue
             return
         elif turn_attacker.direct_threat_origin == 'none':
@@ -1133,7 +1083,7 @@ def rook_objectives(
                         if movement not in turn_defender.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
                                 # Puede que esté matando o bloqueando pero ambas opciones nos bastan.
-                                turn_defender.legalMoves.add(f'rook{piece_standpoint}')
+                                turn_defender.legal_moves.add(f'rook{piece_standpoint}')
                     # else: break
             return
         return
@@ -1142,8 +1092,8 @@ def rook_objectives(
         if turn_defender.direct_threat_origin:
             '''
             Únicos movimientos posibles: bloquear o matar la amenaza.
-            > Bloquear una amenaza es movement coincidente en defender.directThreatTrace
-            > Matar la amenaza es kill-movement coincidente en defender.singleOriginT_standpoint
+            > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
+            > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
             NO verificar exposing-movements.
             '''
             for direction in rook_directions:
@@ -1156,13 +1106,13 @@ def rook_objectives(
 
                         if movement not in turn_attacker.positions and movement not in turn_defender.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
-                                if movement in turn_defender.directThreatTrace:
+                                if movement in turn_defender.direct_threat_trace:
                                     # BLOCK saving position.
                                     mov_target_positions.update({movement: board.rects[movement]})
                                     break
                             else: break
                                 
-                        elif movement == turn_defender.singleOriginT_standpoint:
+                        elif movement == turn_defender.single_threat_standpoint:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                 # KILL saving position.
                                 on_target_kill_positions.update({movement: board.rects[movement]})
@@ -1192,14 +1142,14 @@ def rook_objectives(
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                 _threat_emission.append(movement)
                                 on_target_kill_positions.update({movement: board.rects[movement]})
-                                turn_attacker.threatOnDefender.update({f'rook{piece_standpoint}': _threat_emission})
+                                turn_attacker.threat_on_enemy.update({f'rook{piece_standpoint}': _threat_emission})
                                 break
                             else: break
                         else: 
                             _threat_emission.append(movement)
                             break # chocamos contra un bloqueo - romper el mult
             _threat_emission.append(piece_standpoint)
-            turn_attacker.threatOnDefender.update({f'rook{piece_standpoint}': _threat_emission})
+            turn_attacker.threat_on_enemy.update({f'rook{piece_standpoint}': _threat_emission})
             return mov_target_positions, on_target_kill_positions
         return mov_target_positions, on_target_kill_positions
     return
@@ -1246,10 +1196,10 @@ def knight_objectives(piece_standpoint: int, perspective: str) -> dict[int,pygam
                     
                     if movement not in turn_defender.positions:
                         if not exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
-                            if movement in turn_attacker.directThreatTrace:
-                                turn_defender.legalMoves.add(f'knight{piece_standpoint}')
-                            if movement == turn_attacker.singleOriginT_standpoint:
-                                turn_defender.legalMoves.add(f'knight{piece_standpoint}')
+                            if movement in turn_attacker.direct_threat_trace:
+                                turn_defender.legal_moves.add(f'knight{piece_standpoint}')
+                            if movement == turn_attacker.single_threat_standpoint:
+                                turn_defender.legal_moves.add(f'knight{piece_standpoint}')
                     else: continue 
             return
 
@@ -1258,7 +1208,7 @@ def knight_objectives(piece_standpoint: int, perspective: str) -> dict[int,pygam
                 if 0 <= movement <= 63: # NORTE/SUR LIMIT
                     if movement not in turn_defender.positions:
                         if not exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
-                            turn_defender.legalMoves.add(f'knight{piece_standpoint}')
+                            turn_defender.legal_moves.add(f'knight{piece_standpoint}')
             return
         return
 
@@ -1266,8 +1216,8 @@ def knight_objectives(piece_standpoint: int, perspective: str) -> dict[int,pygam
         if turn_defender.direct_threat_origin:
             '''
             Únicos movimientos posibles: bloquear o matar la amenaza.
-            > Bloquear una amenaza es movement coincidente en defender.directThreatTrace
-            > Matar la amenaza es kill-movement coincidente en defender.singleOriginT_standpoint
+            > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
+            > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
             NO verificar exposing-movements.
             '''
             for movement in knight_movements:
@@ -1275,10 +1225,10 @@ def knight_objectives(piece_standpoint: int, perspective: str) -> dict[int,pygam
 
                     if movement not in turn_attacker.positions and movement not in turn_defender.positions:
                         if not exposing_direction(piece_standpoint, direction=movement, request_from='attacker'):
-                            if movement in turn_defender.directThreatTrace:
+                            if movement in turn_defender.direct_threat_trace:
                                 # BLOCK saving position.
                                 mov_target_positions.update({movement: board.rects[movement]})
-                    elif movement == turn_defender.singleOriginT_standpoint:
+                    elif movement == turn_defender.single_threat_standpoint:
                         if not exposing_direction(piece_standpoint, direction=movement, request_from='attacker'):
                             # KILL saving position.
                             on_target_kill_positions.update({movement: board.rects[movement]}) 
@@ -1305,7 +1255,7 @@ def knight_objectives(piece_standpoint: int, perspective: str) -> dict[int,pygam
                         else: return {}, {}
                     else:  _threat_emission.append(movement)
             _threat_emission.append(piece_standpoint)
-            turn_attacker.threatOnDefender.update({f'knight{piece_standpoint}': _threat_emission})
+            turn_attacker.threat_on_enemy.update({f'knight{piece_standpoint}': _threat_emission})
             return mov_target_positions, on_target_kill_positions
         return mov_target_positions, on_target_kill_positions
     return
@@ -1390,12 +1340,12 @@ def bishop_objectives(
                         if movement in turn_defender.positions:
                             break
                         if not exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
-                            if movement in turn_attacker.directThreatTrace:
+                            if movement in turn_attacker.direct_threat_trace:
                                 # block saving position
-                                turn_defender.legalMoves.add(f'bishop{piece_standpoint}')
-                            if movement == turn_attacker.singleOriginT_standpoint:
+                                turn_defender.legal_moves.add(f'bishop{piece_standpoint}')
+                            if movement == turn_attacker.single_threat_standpoint:
                                 # kill saving position
-                                turn_defender.legalMoves.add(f'bishop{piece_standpoint}')
+                                turn_defender.legal_moves.add(f'bishop{piece_standpoint}')
                         else: continue
             return
         elif turn_attacker.direct_threat_origin == 'none':
@@ -1412,7 +1362,7 @@ def bishop_objectives(
 
                         if movement not in turn_defender.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
-                                turn_defender.legalMoves.add(f'bishop{piece_standpoint}')
+                                turn_defender.legal_moves.add(f'bishop{piece_standpoint}')
                         else: break
             return
         return
@@ -1421,8 +1371,8 @@ def bishop_objectives(
         if turn_defender.direct_threat_origin:
             '''
             Únicos movimientos posibles: bloquear o matar la amenaza.
-            > Bloquear una amenaza es movement coincidente en defender.directThreatTrace
-            > Matar la amenaza es kill-movement coincidente en defender.singleOriginT_standpoint
+            > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
+            > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
             NO verificar exposing-movements.
             '''
             for direction in bishop_directions:
@@ -1438,10 +1388,10 @@ def bishop_objectives(
 
                         if movement not in turn_attacker.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
-                                if movement in turn_defender.directThreatTrace:
+                                if movement in turn_defender.direct_threat_trace:
                                     # BLOCK saving position.
                                         mov_target_positions.update({movement: board.rects[movement]})
-                                elif movement == turn_defender.singleOriginT_standpoint:
+                                elif movement == turn_defender.single_threat_standpoint:
                                     # KILL saving position.
                                     on_target_kill_positions.update({movement: board.rects[movement]})
                                 else: continue
@@ -1479,7 +1429,7 @@ def bishop_objectives(
                             _threat_emission.append(movement)
                             break # chocamos contra un bloqueo - romper el mult
             _threat_emission.append(piece_standpoint)
-            turn_attacker.threatOnDefender.update({f'bishop{piece_standpoint}': _threat_emission})
+            turn_attacker.threat_on_enemy.update({f'bishop{piece_standpoint}': _threat_emission})
             return mov_target_positions, on_target_kill_positions
         return mov_target_positions, on_target_kill_positions
 
@@ -1576,12 +1526,12 @@ def queen_objectives(
                         if movement in turn_defender.positions:
                             break
                         if not exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
-                            if movement in turn_attacker.directThreatTrace:
+                            if movement in turn_attacker.direct_threat_trace:
                                 # block saving position
-                                turn_defender.legalMoves.add(f'queen{piece_standpoint}')
-                            if movement == turn_attacker.singleOriginT_standpoint:
+                                turn_defender.legal_moves.add(f'queen{piece_standpoint}')
+                            if movement == turn_attacker.single_threat_standpoint:
                                 # kill saving position
-                                turn_defender.legalMoves.add(f'queen{piece_standpoint}')
+                                turn_defender.legal_moves.add(f'queen{piece_standpoint}')
                         else: continue
             return
         elif turn_attacker.direct_threat_origin == 'none':
@@ -1601,7 +1551,7 @@ def queen_objectives(
 
                         if movement not in turn_defender.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
-                                turn_defender.legalMoves.add(f'queen{piece_standpoint}')
+                                turn_defender.legal_moves.add(f'queen{piece_standpoint}')
             return
         return                      
     
@@ -1609,8 +1559,8 @@ def queen_objectives(
         if turn_defender.direct_threat_origin:
             '''
             Únicos movimientos posibles: bloquear o matar la amenaza.
-            > Bloquear una amenaza es movement coincidente en defender.directThreatTrace
-            > Matar la amenaza es kill-movement coincidente en defender.singleOriginT_standpoint
+            > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
+            > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
             NO verificar exposing-movements.
             '''
             for direction in queen_directions:
@@ -1629,13 +1579,13 @@ def queen_objectives(
 
                         if movement not in turn_attacker.positions and movement not in turn_defender.positions:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
-                                if movement in turn_defender.directThreatTrace:
+                                if movement in turn_defender.direct_threat_trace:
                                     # BLOCK saving position.
                                     mov_target_positions.update({movement: board.rects[movement]})
                                     break
                             else: break
                                     
-                        elif movement == turn_defender.singleOriginT_standpoint:
+                        elif movement == turn_defender.single_threat_standpoint:
                             if not exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                 # KILL saving position.
                                 on_target_kill_positions.update({movement: board.rects[movement]})
@@ -1677,7 +1627,7 @@ def queen_objectives(
                             _threat_emission.append(movement)
                             break # chocamos contra un bloqueo - romper el mult
             _threat_emission.append(piece_standpoint)
-            turn_attacker.threatOnDefender.update({'queen': _threat_emission})
+            turn_attacker.threat_on_enemy.update({'queen': _threat_emission})
             return mov_target_positions, on_target_kill_positions
         return mov_target_positions, on_target_kill_positions
 
@@ -1705,7 +1655,7 @@ def king_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
 
     if perspective == 'defender':
         for direction in king_directions:
-            if direction == turn_defender.kingBannedDirection:
+            if direction == turn_defender.king_banned_direction:
                 continue
             movement = piece_standpoint+direction
             if direction == ESTE or direction == OESTE:
@@ -1719,17 +1669,17 @@ def king_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                     continue
             if 0 <= movement <= 63: # VALID SQUARE
 
-                for threat in turn_attacker.threatOnDefender.values():
+                for threat in turn_attacker.threat_on_enemy.values():
                     if movement in threat: movement = None
 
                 if movement != None:
                     if movement not in turn_defender.positions: # ally block
-                        turn_defender.kingLegalMoves.append(movement)
+                        turn_defender.king_legal_moves.append(movement)
         return
     
     if perspective == 'attacker':
         for direction in king_directions:
-            if direction == turn_attacker.kingBannedDirection:
+            if direction == turn_attacker.king_banned_direction:
                 continue
             movement: int | None = piece_standpoint+direction
             if direction == ESTE or direction == OESTE:
@@ -1744,7 +1694,7 @@ def king_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
                     continue
             if 0 <= movement <= 63: # VALID SQUARE
 
-                for threat in turn_defender.threatOnAttacker.values():
+                for threat in turn_defender.threat_on_enemy.values():
                     if movement in threat: movement = None
                     if _castling in threat: _castling = None
 
@@ -1752,38 +1702,38 @@ def king_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
 
                     if movement not in turn_attacker.positions and not movement in turn_defender.positions:
                         _threat_emission.append(movement)
-                        turn_attacker.kingLegalMoves.append(movement)
+                        turn_attacker.king_legal_moves.append(movement)
                         mov_target_positions.update({movement: board.rects[movement]})
 
                         # castling -WEST-
                         if direction == OESTE:
-                            if 'king' and 'west-rook' in turn_attacker.castlingEnablers.values():
+                            if 'king' and 'west-rook' in turn_attacker.castling_enablers.values():
                                 if turn_defender.direct_threat_origin == 'none':       
                                     if _castling != None:
                                         if _castling not in turn_attacker.positions and not _castling in turn_defender.positions:
-                                            turn_attacker.kingLegalMoves.append(_castling)
+                                            turn_attacker.king_legal_moves.append(_castling)
                                             castling_positions.update({_castling: board.rects[_castling]})
                                             castling_direction = 'west'
 
                         # castling -EAST-
                         if direction == ESTE:
-                            if 'king' and 'east-rook' in turn_attacker.castlingEnablers.values():
+                            if 'king' and 'east-rook' in turn_attacker.castling_enablers.values():
                                 if turn_defender.direct_threat_origin == 'none':
                                     if _castling != None:
                                         if _castling not in turn_attacker.positions and not _castling in turn_defender.positions:
-                                            turn_attacker.kingLegalMoves.append(_castling)
+                                            turn_attacker.king_legal_moves.append(_castling)
                                             castling_positions.update({_castling: board.rects[_castling]})
                                             castling_direction = 'east'
 
                     elif movement in turn_defender.positions:
                         _threat_emission.append(movement)
-                        turn_attacker.kingLegalMoves.append(movement)
+                        turn_attacker.king_legal_moves.append(movement)
                         on_target_kill_positions.update({movement: board.rects[movement]})
                     else:
                         _threat_emission.append(movement)
 
         _threat_emission.append(piece_standpoint)
-        turn_attacker.threatOnDefender.update({'king': _threat_emission})
+        turn_attacker.threat_on_enemy.update({'king': _threat_emission})
 
         return mov_target_positions, on_target_kill_positions, castling_positions
     return
@@ -1791,9 +1741,16 @@ def king_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
 def draw_board():
 
     # main board frame
-    pygame.draw.rect(screen, (200,200,200),
-                pygame.Rect(board_begin.x,board_begin.y,
-                            board.width,board.height),width=3)
+    pygame.draw.rect(
+        screen,
+        (200,200,200),
+        pygame.Rect(
+            board.x,
+            board.y,
+            board.width,board.height
+        ),
+        width=3
+    )
 
     for board_index, SQUARE_RECT in enumerate(board.rects): #celdas que sirven por posición, índice y medida.
 
@@ -1949,7 +1906,7 @@ def decide_check():
             stalemate = True
             pause = True
 
-        if len(turn_defender.kingLegalMoves) == 0 and len(turn_defender.legalMoves) == 0:
+        if len(turn_defender.king_legal_moves) == 0 and len(turn_defender.legal_moves) == 0:
 
             #STALE-MATE
             '''Termina el juego en empate.'''
@@ -1968,14 +1925,14 @@ def decide_check():
             return # La partida continúa con normalidad.
 
     if turn_attacker.direct_threat_origin:
-        if len(turn_defender.kingLegalMoves) > 0 or len(turn_defender.legalMoves) > 0:
+        if len(turn_defender.king_legal_moves) > 0 or len(turn_defender.legal_moves) > 0:
             # JAQUE
             '''Esto requiere solo una notificación al jugador correspondiente.
             defender.color -> notificate CHECK (highlight possible solutions)'''
 
             # TURN DEBUG ++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # print('**JAQUE**')
-                # print('El rey defensor puede moverse en: ', defender.kingLegalMoves);
+                # print('El rey defensor puede moverse en: ', defender.king_legal_moves);
                 # print('Las piezas aliadas del rey defensor pueden moverse: ', defender.legalMoves)
                 # print('**JAQUE**')
             # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1986,7 +1943,7 @@ def decide_check():
             if turn_attacker == 'white':
                 match_state = 'Black en jaque.'
 
-        elif len(turn_defender.kingLegalMoves) == 0 and len(turn_defender.legalMoves) == 0:
+        elif len(turn_defender.king_legal_moves) == 0 and len(turn_defender.legal_moves) == 0:
             #JAQUE-MATE
             '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
             if turn_attacker == 'black':
@@ -1999,7 +1956,7 @@ def decide_check():
                 pause = True
 
     if turn_attacker.direct_threat_origin == 'multiple': # múltiple origen de amenaza.
-        if len(turn_defender.kingLegalMoves) == 0:
+        if len(turn_defender.king_legal_moves) == 0:
             #JAQUE-MATE
             '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
             if turn_attacker == 'black':
@@ -2030,23 +1987,23 @@ def make_moves():
 
     # castling enablers
     if not castling:
-        if ex_value in turn_attacker.castlingEnablers.keys():
-            if turn_attacker.castlingEnablers[ex_value] == 'king': # es ex_value posición de rey?
-                turn_attacker.castlingEnablers = {} # no more castling
+        if ex_value in turn_attacker.castling_enablers.keys():
+            if turn_attacker.castling_enablers[ex_value] == 'king': # es ex_value posición de rey?
+                turn_attacker.castling_enablers = {} # no more castling
             else:  # es ex_value posición de alguna torre?
-                del turn_attacker.castlingEnablers[ex_value]
+                del turn_attacker.castling_enablers[ex_value]
         
         # NORMAL MOVEMENT
         turn_attacker.positions.update({move_here: moving_piece})
 
     elif castling:
         turn_attacker.positions.update({move_here: moving_piece}) # mueve al rey
-        ex_rook: int = {k for k,_ in turn_attacker.castlingEnablers.items() if turn_attacker.castlingEnablers[k] == f'{castling_direction}-rook'}.pop()
+        ex_rook: int = {k for k,_ in turn_attacker.castling_enablers.items() if turn_attacker.castling_enablers[k] == f'{castling_direction}-rook'}.pop()
         turn_attacker.positions.pop(ex_rook)
         _direction: int = ESTE if castling_direction == 'east' else OESTE
         castling_rook_movement = ex_value+_direction # king_standpoint + dirección
         turn_attacker.positions.update({castling_rook_movement: 'rook'}) # mueve a la torre
-        turn_attacker.castlingEnablers = {} # no more castling
+        turn_attacker.castling_enablers = {} # no more castling
     
     pieceValidMovement_posDisplay.clear()
     kingValidCastling_posDisplay.clear()
@@ -2069,14 +2026,14 @@ def match_clock():
         if turn_attacker == 'white':
             whitetime_SNAP += pause_time_leftover
             if pygame.time.get_ticks() - whitetime_SNAP > 1000:
-                white.time_leftover = pygame.time.get_ticks() - whitetime_SNAP - 1000
-                whitetime_SNAP += 1000 - white.time_leftover
+                white_time_leftover = pygame.time.get_ticks() - whitetime_SNAP - 1000
+                whitetime_SNAP += 1000 - white_time_leftover
                 substract_time(color='white')
             else:
-                white.time_leftover = pygame.time.get_ticks() - whitetime_SNAP
+                white_time_leftover = pygame.time.get_ticks() - whitetime_SNAP
             
             # out of time - white lose
-            if white.turn_time == 0:
+            if white_turn_time == 0:
                 winner = True
                 match_state = 'Black gana.  -  White se ha quedado sin tiempo.'
                 pause = True
@@ -2084,14 +2041,14 @@ def match_clock():
         if turn_attacker == 'black':
             blacktime_SNAP += pause_time_leftover
             if pygame.time.get_ticks() - blacktime_SNAP > 1000: 
-                black.time_leftover = pygame.time.get_ticks() - blacktime_SNAP - 1000
-                blacktime_SNAP += 1000 - black.time_leftover
+                black_time_leftover = pygame.time.get_ticks() - blacktime_SNAP - 1000
+                blacktime_SNAP += 1000 - black_time_leftover
                 substract_time(color='black')
             else:
-                black.time_leftover = pygame.time.get_ticks() - blacktime_SNAP
+                black_time_leftover = pygame.time.get_ticks() - blacktime_SNAP
             
             # out of time - black lose
-            if black.turn_time == 0:
+            if black_turn_time == 0:
                 winner = True
                 match_state = 'White gana.  -  Black se ha quedado sin tiempo.'
                 pause = True
@@ -2115,22 +2072,22 @@ def substract_time(color):
     Tanto seconds como minutes SON STRINGS FINALMENTE.
     '''
     if color == 'black':
-        black.turn_time-=1
-        minutes = int(black.turn_time/60)
-        black.turn_minutes = str(minutes) if len(str(minutes)) > 1 else ' '+str(minutes)
-        seconds = int(black.turn_seconds) - 1
+        black_turn_time-=1
+        minutes = int(black_turn_time/60)
+        black_turn_minutes = str(minutes) if len(str(minutes)) > 1 else ' '+str(minutes)
+        seconds = int(black_turn_seconds) - 1
         if seconds == -1:
-            black.turn_seconds = '59'
-        else: black.turn_seconds = str(seconds) if len(str(seconds)) > 1 else '0'+str(seconds)
+            black_turn_seconds = '59'
+        else: black_turn_seconds = str(seconds) if len(str(seconds)) > 1 else '0'+str(seconds)
 
     if color == 'white':
-        white.turn_time-=1
-        minutes = int(white.turn_time/60)
-        white.turn_minutes = str(minutes) if len(str(minutes)) > 1 else ' '+str(minutes)
-        seconds = int(white.turn_seconds) - 1
+        white_turn_time-=1
+        minutes = int(white_turn_time/60)
+        white_turn_minutes = str(minutes) if len(str(minutes)) > 1 else ' '+str(minutes)
+        seconds = int(white_turn_seconds) - 1
         if seconds == -1:
-            white.turn_seconds = '59'
-        else: white.turn_seconds = str(seconds) if len(str(seconds)) > 1 else '0'+str(seconds)
+            white_turn_seconds = '59'
+        else: white_turn_seconds = str(seconds) if len(str(seconds)) > 1 else '0'+str(seconds)
 
 def match_state():
     draw_text(match_state, 'black', 400, 20, center=False)
@@ -2139,9 +2096,9 @@ def match_state():
 def clock_hud():
     # draw_text(str(current_turn_time), 'black', midScreen_pos.x , 20, center=True) # global
     # black team clock
-    draw_text(f'{black.turn_minutes}:{black.turn_seconds}', 'black', mid_screen.x + board.width/2-20, 20, center=False)
+    draw_text(f'{black_turn_minutes}:{black_turn_seconds}', 'black', mid_screen.x + board.width/2-20, 20, center=False)
     # white team clock
-    draw_text(f'{white.turn_minutes}:{white.turn_seconds}', 'black', mid_screen.x-100, 20, center=False)
+    draw_text(f'{white_turn_minutes}:{white_turn_seconds}', 'black', mid_screen.x-100, 20, center=False)
 
 def control_handler():
     if control_input['escape']: pause = not pause
@@ -2219,7 +2176,6 @@ def draw_pause_menu(width=300,height=400):
     # buttons
     draw_continue_btn()
     draw_play_again_btn()
-    draw_exit_to_mainMenu_btn()
     draw_exit_game_btn()
 
 def draw_continue_btn():
@@ -2258,10 +2214,7 @@ def draw_post_game_menu(width=300,height=300):
     # tooltip
     draw_text('La partida ha finalizado.', 'black', screen.get_width()-400, 150, center=False)
     draw_postgame_again_btn()
-    draw_exit_to_mainMenu_btn()
-    #opciones de cambiar equipo...
     #opciones de cambiar reglas...
-    #opciones de cambiar dificultad(IA)...
 
 def draw_postgame_again_btn():
     draw_text('Jugar de nuevo', 'white', screen.get_width()-400,400,center=False)
