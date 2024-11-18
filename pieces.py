@@ -31,7 +31,7 @@ def reverse_expand_origins(
     dict_list: list[dict[int, str]] = []
     for color in pieces_legible_origins.keys():
         key_val_reverse = []
-        aux_d={}
+        aux_d = {}
         for piece in pieces_legible_origins[color].keys():
             key_val_reverse.append({num:piece for num in pieces_legible_origins[color][piece]})
         for d in key_val_reverse:
