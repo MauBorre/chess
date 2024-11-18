@@ -11,7 +11,7 @@ running = True
 # my = 0
 # click = False
 
-control_input: dict = {
+control_input = {
     'escape': False,
     'click': False,
     'mouse-x': 0,
@@ -49,7 +49,7 @@ def event_handler():
 
 def run_match():
     match.set_variables(screen, control_input)
-    match.init_content()
+    # match.init_content()
     while running:
         event_handler()
         update_mouse(pygame.mouse.get_pos())
