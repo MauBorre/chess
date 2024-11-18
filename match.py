@@ -35,6 +35,12 @@ from dataclasses import dataclass, field
     Para fabricarlas correctamente, debemos comprobar y desestimar
         - Movimientos inv. por bloqueo.
         - Movimientos inv.  por exposición al rey.
+
+Cuando existe origen de amenaza directa 'single':
+    Únicos movimientos posibles: bloquear o matar la amenaza.
+    > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
+    > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
+    NO verificar exposing-movements.
 '''
 
 @dataclass
@@ -120,8 +126,8 @@ promoting_pawn: int | None = None
 # king castling
 castling: bool = False
 castling_direction: str = ''
-turn_attacker = white
-turn_defender = black
+turn_attacker: PlayerTeamUnit = white
+turn_defender: PlayerTeamUnit = black
 
 # turn_defender.legal_moves: set[str] = set() # NO se considera en SWAP
 
@@ -391,6 +397,7 @@ def reset_match():
     init_content()
 
 def turn_swap():
+    global whitetime_SNAP, blacktime_SNAP
     '''
     Intercalaremos:
     >> positions
@@ -839,13 +846,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
             movement = piece_standpoint+SUR
             if movement <= 63: # board limit
 
-                if turn_defender.direct_threat_origin:
-                    '''
-                    Únicos movimientos posibles: bloquear o matar la amenaza.
-                    > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
-                    > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
-                    NO verificar exposing-movements.
-                    '''
+                if turn_defender.direct_threat_origin == 'single':
                     if movement not in turn_attacker.positions and movement not in turn_defender.positions: # piece block
                         if not exposing_direction(piece_standpoint, direction=SUR, request_from="attacker"):
                             if movement in turn_defender.direct_threat_trace:
@@ -917,13 +918,7 @@ def pawn_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
             movement = piece_standpoint+NORTE
             if movement >= 0: # board limit
                 
-                if turn_defender.direct_threat_origin:
-                    '''
-                    Únicos movimientos posibles: bloquear o matar la amenaza.
-                    > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
-                    > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
-                    NO verificar exposing-movements.
-                    '''
+                if turn_defender.direct_threat_origin == 'single':
                     if movement not in turn_attacker.positions and movement not in turn_defender.positions: # piece block
                         if not exposing_direction(piece_standpoint, direction=NORTE, request_from="attacker"):
                             if movement in turn_defender.direct_threat_trace:
@@ -1089,13 +1084,7 @@ def rook_objectives(
         return
 
     if perspective == 'attacker': 
-        if turn_defender.direct_threat_origin:
-            '''
-            Únicos movimientos posibles: bloquear o matar la amenaza.
-            > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
-            > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
-            NO verificar exposing-movements.
-            '''
+        if turn_defender.direct_threat_origin == 'single':
             for direction in rook_directions:
                 for mult in range(1,8): # 1 to board_size
                     movement = piece_standpoint+direction*mult
@@ -1122,7 +1111,6 @@ def rook_objectives(
             return mov_target_positions, on_target_kill_positions
             
         elif turn_defender.direct_threat_origin == 'none':
-            
             for direction in rook_directions:
                 for mult in range(1,8): # 1 to board_size
                     movement = piece_standpoint+direction*mult
@@ -1213,13 +1201,7 @@ def knight_objectives(piece_standpoint: int, perspective: str) -> dict[int,pygam
         return
 
     if perspective == 'attacker':
-        if turn_defender.direct_threat_origin:
-            '''
-            Únicos movimientos posibles: bloquear o matar la amenaza.
-            > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
-            > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
-            NO verificar exposing-movements.
-            '''
+        if turn_defender.direct_threat_origin == 'single':
             for movement in knight_movements:
                 if 0 <= movement <= 63: # NORTE/SUR LIMIT 
 
@@ -1368,13 +1350,7 @@ def bishop_objectives(
         return
 
     if perspective == 'attacker':
-        if turn_defender.direct_threat_origin:
-            '''
-            Únicos movimientos posibles: bloquear o matar la amenaza.
-            > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
-            > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
-            NO verificar exposing-movements.
-            '''
+        if turn_defender.direct_threat_origin == 'single':
             for direction in bishop_directions:
                 for mult in range(1,8):
                     movement = piece_standpoint+direction*mult
@@ -1556,13 +1532,7 @@ def queen_objectives(
         return                      
     
     if perspective == 'attacker':
-        if turn_defender.direct_threat_origin:
-            '''
-            Únicos movimientos posibles: bloquear o matar la amenaza.
-            > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
-            > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
-            NO verificar exposing-movements.
-            '''
+        if turn_defender.direct_threat_origin == 'single':
             for direction in queen_directions:
                 for mult in range(1,8):
                     movement = piece_standpoint+direction*mult
@@ -1739,7 +1709,7 @@ def king_objectives(piece_standpoint: int, perspective: str) -> dict[int, pygame
     return
 
 def draw_board():
-
+    global killing, castling, move_here
     # main board frame
     pygame.draw.rect(
         screen,
@@ -1883,6 +1853,7 @@ def get_piece_standpoint(color:str, piece:str) -> list[int]:
     return _actual_standpoints
 
 def decide_check():
+    global match_state, stalemate, pause, winner
     '''
     Evalua "cómo quedaron las piezas en el tablero despues del último movimiento".
     Revisando si el ATACANTE ganó.
@@ -2013,6 +1984,9 @@ def make_moves():
     castling_direction = ''
 
 def match_clock():
+    global winner, match_state, current_turn_time
+    global globaltime_SNAP, whitetime_SNAP, blacktime_SNAP
+
     if not pause:
         print(pause)
         pausetime_SNAP = 0
@@ -2062,6 +2036,8 @@ def match_clock():
             pause_time_leftover = pygame.time.get_ticks() - pausetime_SNAP
     
 def substract_time(color):
+    global black_turn_minutes, white_turn_minutes
+    global black_turn_time, white_turn_time
     '''Restamos un segundo en el reloj correspondiente.
     Al ser llamada esta función ya detectamos el paso de un segundo,
     debemos entonces disminuir en 1 tanto turn_time como turn_seconds.
@@ -2094,7 +2070,8 @@ def match_state():
     draw_text(turn_attacker, 'black', mid_screen.x - 25, board.height+60, center=False)
 
 def clock_hud():
-    # draw_text(str(current_turn_time), 'black', midScreen_pos.x , 20, center=True) # global
+     # global
+    # draw_text(str(current_turn_time), 'black', midScreen_pos.x , 20, center=True)
     # black team clock
     draw_text(f'{black_turn_minutes}:{black_turn_seconds}', 'black', mid_screen.x + board.width/2-20, 20, center=False)
     # white team clock
@@ -2146,6 +2123,8 @@ def draw_confirm_restart_menu(width=300,height=300):
     draw_cancel_restart_btn()
     
 def draw_confirm_match_restart_btn():
+    global player_deciding_match, pause
+
     draw_text('Si','black',screen.get_width()-400,190,center=False)
     confirm_match_rect = pygame.Rect(screen.get_width()-400,190,200,50)
     if confirm_match_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
@@ -2157,6 +2136,8 @@ def draw_confirm_match_restart_btn():
             pause = False
 
 def draw_cancel_restart_btn():
+    global player_deciding_match
+
     draw_text('No','black',screen.get_width()-400,250,center=False)
     cancel_match_rect = pygame.Rect(screen.get_width()-400,250,200,50)
     if cancel_match_rect.collidepoint((control_input['mouse-x'],control_input['mouse-y'])):
@@ -2179,6 +2160,8 @@ def draw_pause_menu(width=300,height=400):
     draw_exit_game_btn()
 
 def draw_continue_btn():
+    global pause
+
     draw_text('Continuar','white',screen.get_width()-400,190,center=False)
     continue_match_rect = pygame.Rect(screen.get_width()-400,190,200,50)
     if continue_match_rect.collidepoint((control_input['mouse-x'],control_input['mouse-y'])):
@@ -2188,6 +2171,8 @@ def draw_continue_btn():
             pause = False
 
 def draw_play_again_btn():
+    global player_deciding_match
+
     draw_text('Jugar de nuevo', 'white', screen.get_width()-400, 400, center=False)
     play_again_rect = pygame.Rect(screen.get_width()-400, 400, 200, 50)
     if play_again_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
@@ -2217,6 +2202,8 @@ def draw_post_game_menu(width=300,height=300):
     #opciones de cambiar reglas...
 
 def draw_postgame_again_btn():
+    global pause, player_deciding_match
+
     draw_text('Jugar de nuevo', 'white', screen.get_width()-400,400,center=False)
     play_again_rect = pygame.Rect(screen.get_width()-400,400,200,50)
     if play_again_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
@@ -2240,7 +2227,10 @@ def draw_pawnPromotion_selection_menu(width=300, height=400):
     draw_queenOPT_btn()
     draw_bishopOPT_btn()
 
-def draw_rookOPT_btn(): 
+def draw_rookOPT_btn():
+    global pawnPromotion_selection, player_deciding_promotion
+    global pause
+
     draw_text('Rook', 'white', screen.get_width()-400, 200, center=False)
     selection_rect = pygame.Rect(screen.get_width()-400, 200, 200, 50)
     if selection_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
@@ -2252,7 +2242,10 @@ def draw_rookOPT_btn():
             pause = False
             make_promotion()
 
-def draw_knightOPT_btn(): 
+def draw_knightOPT_btn():
+    global pawnPromotion_selection, player_deciding_promotion
+    global pause
+
     draw_text('Knight', 'white', screen.get_width()-400, 300, center=False)
     selection_rect = pygame.Rect(screen.get_width()-400, 300, 300, 50)
     if selection_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
@@ -2264,7 +2257,10 @@ def draw_knightOPT_btn():
             pause = False
             make_promotion()
 
-def draw_bishopOPT_btn(): 
+def draw_bishopOPT_btn():
+    global pawnPromotion_selection, player_deciding_promotion
+    global pause
+
     draw_text('Bishop', 'white', screen.get_width()-400, 400, center=False)
     selection_rect = pygame.Rect(screen.get_width()-400, 400, 300, 50)
     if selection_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
@@ -2277,6 +2273,9 @@ def draw_bishopOPT_btn():
             make_promotion()
 
 def draw_queenOPT_btn(): 
+    global pawnPromotion_selection, player_deciding_promotion
+    global pause
+    
     draw_text('Queen', 'white', screen.get_width()-400, 500, center=False)
     selection_rect = pygame.Rect(screen.get_width()-400, 500, 300, 50)
     if selection_rect.collidepoint((control_input['mouse-x'], control_input['mouse-y'])):
