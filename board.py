@@ -17,8 +17,10 @@ columns = rows
 width = square_width * rows
 height = width
 rects: list[pygame.Rect]
+board_begin: pygame.Rect
 
 def place(mid_screen_vector):
+    global board_begin
     # board placement on current screen display
     board_begin = pygame.Vector2(
     (mid_screen_vector.x - width/2,
