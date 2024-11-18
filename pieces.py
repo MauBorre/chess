@@ -1,4 +1,5 @@
-origins: dict[str,dict[str,list[int]]] = { #Legible pero no ideal para render
+# Legible pero no ideal para render
+origins: dict[str,dict[str,list[int]]] = { 
     'black': {
         'rook':[0,7],
         'knight':[1,6],
