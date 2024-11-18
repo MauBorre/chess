@@ -2,6 +2,24 @@ import pygame
 import font, board, pieces
 from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE # piece directions
 from board import row_of_
+from dataclasses import dataclass, field
+
+@dataclass
+class PlayerTeamUnit:
+    name: str
+    direct_threat_origin: str
+    direct_threat_trace: list[int] = field(default_factory=list)
+    positions: dict[int, str] = field(default_factory=dict)
+    pawns_in_origin: list[int] = field(default_factory=list)
+    threat_on_enemy: dict[str, int] = field(default_factory=dict)
+    king_legal_moves: list[int] = field(default_factory=list)
+
+    def clear(cls):
+        # cls.direct_threat_trace.clear()
+        ...
+    
+    def __str__(cls):
+        return cls.name
 
 # Configurations -----------------------------------------------
 screen: pygame.Surface
@@ -16,8 +34,24 @@ board.place(mid_screen)
 # ---------------------------------------------------------------
 
 # Initial content -----------------------------------------------
-black = ... #tipo de conjunto
-white = ...
+black = PlayerTeamUnit(
+    name = 'black',
+    direct_threat_origin = 'none', # or 'multiple' or 'single'
+    direct_threat_trace = [],
+    positions = pieces.black_positions.copy(),
+    pawns_in_origin = [bpawn for bpawn in pieces.origins['black']['pawn']],
+    threat_on_enemy = {piece:[] for piece in pieces.origins['black']},
+    king_legal_moves = [],
+)
+white = PlayerTeamUnit(
+    name = 'white',
+    direct_threat_origin='none', # or 'multiple' or 'single'
+    direct_threat_trace=[],
+    positions=pieces.white_positions.copy(),
+    pawns_in_origin=[wpawn for wpawn in pieces.origins['white']['pawn']],
+    threat_on_enemy={piece:[] for piece in pieces.origins['white']},
+    king_legal_moves=[],
+)
 turn_attacker = black or white #apunta a un conjunto
 turn_defender = black or white
 
