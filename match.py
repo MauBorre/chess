@@ -79,6 +79,9 @@ class Match:
         cls.mid_screen_coordinates = (Match.screen.get_width()/2, Match.screen.get_height()/2)
         cls.mid_screen = pygame.Vector2(cls.mid_screen_coordinates)
         board.place(cls.mid_screen)
+        cls.set_content()
+    
+    def set_content(): ...
 
 # Match initial content -----------------------------------------------
 black = PlayerTeamUnit(
