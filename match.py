@@ -4,48 +4,6 @@ from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OE
 from board import row_of_
 from dataclasses import dataclass, field
 
-'''Anotaciones lógica núcleo
-
->> ThreatOn attacker/defender
-    kill-movement's *del enemigo* que caen en casillero rey TARGET o adyacencias legales.
-    Puede ser DIRECTO (jaque) o INDIRECTO (restringe king_legal_moves).
-
-    ANTES DE MOVER:
-        El atacante debe revisar, dentro de sus movimientos posible, si su movimiento -expone al rey-
-        al defensor.
-
-    DESPUES DE MOVER:
-        El defensor debe revisar si sus posibles movimiento exponen al rey al atacante, evaluando así
-        "con qué posibilidades de movimiento quedó".
-    
-    El threat puede MATARSE o BLOQUEARSE
-        A menos que haya más de un orígen de amenaza DIRECTA -> solo el rey moviendose puede escapar.
-
-    Threat de bishop, queen y tower pueden bloquearse
-    Threat de pawn y knight no pueden bloquearse
-
->> Color-King-legalMovements
-    Posición actual + posibles movimientos (bloqueos aliados / casilleros threat).
-
->> defender.legalMoves (kingSupport):
-    Actualizadas luego de que movió el atacante.
-    Exhibe "si alguien puede hacer algo", mas no "dónde".
-    Inexistentes si hay amenaza de orígen múltiple.
-
-    Para fabricarlas correctamente, debemos comprobar y desestimar
-        - Movimientos inv. por bloqueo.
-        - Movimientos inv.  por exposición al rey.
-
-Cuando existe origen de amenaza directa 'single':
-    Únicos movimientos posibles: bloquear o matar la amenaza.
-    > Bloquear una amenaza es movement coincidente en defender.direct_threat_trace
-    > Matar la amenaza es kill-movement coincidente en defender.single_threat_standpoint
-    NO verificar exposing-movements.
-
-El tiempo nos llega en forma de "minutos totales", pero debemos transformarlo
-a segundos y minutos por separado para finalmente  y correctamente visualizarlo.
-'''
-
 @dataclass
 class PlayerTeamUnit:
     name: str
