@@ -71,9 +71,10 @@ class Match:
         )
 
         # core game variables
-        self.gameClock_minutesLimit: int = 10 # default
+        
         # game halt reasons --------------------
         self.pause = False 
+        self.player_selecting_gameClockLimit = True # match opening
         self.player_deciding_match: bool = False 
         self.player_deciding_promotion: bool = False
         self.winner: bool = False 
@@ -98,23 +99,42 @@ class Match:
         self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {}
         self.kingValidCastling_posDisplay: dict[int, pygame.Rect] = {}
 
-        # turn clocks
+        # turn clocks (defaults)
+        self.gameClockLimit_minutes: int = 10
         self.whitetime_SNAP: int = pygame.time.get_ticks()
         self.blacktime_SNAP: int = pygame.time.get_ticks()
         self.pausetime_SNAP: int = 0
 
-        self.black_turn_time: int = self.gameClock_minutesLimit * 60
-        self.black_turn_minutes: str = str(int(self.black_turn_time/60))
+        self.black_turn_time: int = self.gameClockLimit_minutes * 60
+        self.black_turn_minutes: str = '00'
         self.black_turn_seconds: str = '00'
 
-        self.white_turn_time: int = self.gameClock_minutesLimit * 60
-        self.white_turn_minutes: str = str(int(self.white_turn_time/60))
+        self.white_turn_time: int = self.gameClockLimit_minutes * 60
+        self.white_turn_minutes: str = '00'
         self.white_turn_seconds: str = '00'
         # clock + or - remnants
         self.white_time_leftover: int = 0
         self.black_time_leftover: int = 0
         self.pause_time_leftover: int = 0
         # ---------------------------------------------------------------
+    
+    def set_turn_clocks(self, minutes: int):
+        self.gameClockLimit_minutes = minutes
+        self.whitetime_SNAP: int = pygame.time.get_ticks()
+        self.blacktime_SNAP: int = pygame.time.get_ticks()
+        self.pausetime_SNAP: int = 0
+
+        self.black_turn_time: int = self.gameClockLimit_minutes * 60
+        self.black_turn_minutes: str = str(int(self.black_turn_time/60))
+        self.black_turn_seconds: str = '00'
+
+        self.white_turn_time: int = self.gameClockLimit_minutes * 60
+        self.white_turn_minutes: str = str(int(self.white_turn_time/60))
+        self.white_turn_seconds: str = '00'
+        # clock + or - remnants
+        self.white_time_leftover: int = 0
+        self.black_time_leftover: int = 0
+        self.pause_time_leftover: int = 0
 
     def draw_text(self, text, color, x, y, center=True, font_size='large'):
         _font = font.large_font if font_size=='large' else font.medium_font
@@ -1861,8 +1881,9 @@ class Match:
             self.finish_turn = False
         
         # menus
-        #if self.player_selecting_starting_time:
-            #self.draw_starting_time_selection_menu()
+        if self.player_selecting_gameClockLimit: # match opening
+            self.game_halt = True
+            self.draw_starting_time_selection_menu()
 
         if self.pause:
             self.game_halt = True
@@ -1882,7 +1903,7 @@ class Match:
             self.game_halt = True
             self.draw_pawnPromotion_selection_menu()
         
-        if not self.pause and not self.winner and not self.stalemate and not self.player_deciding_promotion:
+        if not self.pause and not self.winner and not self.stalemate and not self.player_deciding_promotion and not self.player_selecting_gameClockLimit:
             self.game_halt = False
 
         # control release
@@ -2032,3 +2053,64 @@ class Match:
                 self.player_deciding_promotion = False
                 self.make_promotion('queen')
     # --------------------------------------------------------------------------------------------------------
+
+    def draw_starting_time_selection_menu(self, width=300, height=400):
+        # frame
+        pygame.draw.rect(self.screen, (100,100,100),
+                        pygame.Rect(self.mid_screen.x, self.mid_screen.y, width, height))
+        # tooltip
+        self.draw_text('Select clock limit', 'white', self.mid_screen.x, self.mid_screen.y, center=False)
+        # buttons
+        self.draw_threeMinOPT_btn()
+        self.draw_fiveMinOPT_btn()
+        self.draw_tenMinOPT_btn()
+        self.draw_fifteenMinOPN_btn()
+    
+    def draw_threeMinOPT_btn(self):
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 50
+        self.draw_text('3 mins', 'white', x, y, center=False)
+        selection_rect = pygame.Rect(x, y, 300, 50)
+        if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
+            #hover
+            pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
+            if self.control_input['click']:
+                self.set_turn_clocks(3)
+                self.player_selecting_gameClockLimit = False
+
+    def draw_fiveMinOPT_btn(self):
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 100
+        self.draw_text('5 mins', 'white', x, y, center=False)
+        selection_rect = pygame.Rect(x, y, 300, 50)
+        if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
+            #hover
+            pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
+            if self.control_input['click']:
+                self.set_turn_clocks(5)
+                self.player_selecting_gameClockLimit = False
+
+    def draw_tenMinOPT_btn(self):
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 150
+        self.draw_text('10 mins', 'white', x, y, center=False)
+        selection_rect = pygame.Rect(x, y, 300, 50)
+        if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
+            #hover
+            pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
+            if self.control_input['click']:
+                self.set_turn_clocks(10)
+                self.player_selecting_gameClockLimit = False
+
+    def draw_fifteenMinOPN_btn(self):
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 200
+        self.draw_text('15 mins', 'white', x, y, center=False)
+        selection_rect = pygame.Rect(x, y, 300, 50)
+        if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
+            #hover
+            pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
+            if self.control_input['click']:
+                self.set_turn_clocks(15)
+                self.player_selecting_gameClockLimit = False
+        
