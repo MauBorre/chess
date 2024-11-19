@@ -282,7 +282,7 @@ class Match:
         for _threats_list in self.turn_attacker.threat_on_enemy.values():
             if _king in _threats_list:
                 if self.turn_attacker.direct_threat_origin == 'single': # caso amenaza múltiple
-                    self.turn_attacker.direct_threat_origin = 'none'
+                    self.turn_attacker.direct_threat_origin = 'multiple'
                     self.turn_attacker.single_threat_standpoint = None
                     self.turn_attacker.direct_threat_trace.clear()
                     break
@@ -302,7 +302,7 @@ class Match:
         self.king_objectives(_king, perspective='defender') # genero/reviso defender.king_legal_moves.
 
         if self.turn_attacker.direct_threat_origin != 'multiple':
-            # Defender kingSupport (Revision de movimientos legales del defensor para ver si perdió, empató, o nada de eso)
+            # defender legal moves update
             pawn_standpoints = self.get_piece_standpoint(color=self.turn_defender.name, piece='pawn')
             for _pawn in pawn_standpoints:
                 self.pawn_objectives(_pawn, perspective='defender')
@@ -1764,7 +1764,7 @@ class Match:
 
     def match_clock(self):
 
-        if not self.pause:
+        if not self.pause and not self.game_halt:
             self.pausetime_SNAP = 0
             
             if self.turn_attacker.name == 'white':
@@ -1796,7 +1796,7 @@ class Match:
                     self.match_state = 'White gana.  -  Black se ha quedado sin tiempo.'
 
             self.pause_time_leftover = 0
-        else:
+        elif self.pause or self.player_deciding_promotion:
             #pause_time++
             if self.pausetime_SNAP == 0:
                 self.pausetime_SNAP = pygame.time.get_ticks()
