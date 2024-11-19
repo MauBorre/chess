@@ -138,7 +138,7 @@ class Match:
         # clock + or - remnants
         self.white_time_leftover: int = 0
         self.black_time_leftover: int = 0
-        self.pause_time_leftover: int = 0
+        self.pause_time_leftover: int = 3000 # default match count-down
 
     def draw_text(self, text, color, x, y, center=True, font_size='large'):
         _font = font.large_font if font_size=='large' else font.medium_font
@@ -1893,11 +1893,10 @@ class Match:
         
         if not self.player_selecting_gameClockLimit and self.showing_curtain:
             self.curtain_transparency -= 3
-            self.curtain.fill((255,255,255,self.curtain_transparency))
-            self.screen.blit(self.curtain, (0,0))
-            if self.curtain_transparency == 0:
-                self.curtain_transparency = 255
+            if self.curtain_transparency > 0:
                 self.curtain.fill((255,255,255,self.curtain_transparency))
+                self.screen.blit(self.curtain, (0,0))
+            if self.curtain_transparency <= 0:
                 self.showing_curtain = False
         # --------------------------------------------------------------------
 
