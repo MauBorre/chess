@@ -198,20 +198,6 @@ class Match:
     def update_turn_objectives(self):
         '''Llama a todas las funciones _objectives() con sus correctas perspectivas-de-turno.
         En este punto de la ejecución, el atacante ya hizo su acción.
-
-        Internamente se revisará:
-
-            >> attacker.threat_on_enemy
-            >> attacker.king_legal_moves
-            >> attacker.direct_threat_origin
-            >> attacker.single_threat_standpoint
-            >> attacker.direct_threat_trace
-            >> defender.direct_threat_trace
-            >> defender.threat_on_enemy
-            >> defender.king_legal_moves
-            >> defender.direct_threat_origin
-            >> defender.single_threat_standpoint
-            >> defender.legalMoves
         
         Antes de ser utilizadas, estas variables (excepto defender.threat_on_enemy que puede contener
         información del *jaque actual* y es resultado de transferencia/SWAP ) deben limpiarse para evitar
