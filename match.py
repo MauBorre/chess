@@ -69,8 +69,6 @@ class Match:
             king_banned_direction = None,
             legal_moves = set(),
         )
-
-        # core game variables
         
         # game halt reasons --------------------
         self.pause = False 
@@ -81,15 +79,17 @@ class Match:
         self.game_halt: bool = False
         self.stalemate: bool = False # Ahogado | draw
         # ---------------------------------------
+
+        # core game variables -------------------
         self.move_here: int | None = None
         self.match_state: str = '' # HUD info
         self.killing: bool = False
         self.finish_turn: bool = False # turn halt utility
-        # pawn promotion
         self.pawn_being_promoted: int | None = None
-        # king castling
         self.castling: bool = False
         self.castling_direction: str = ''
+        # ---------------------------------------
+
         # turn look-ups
         self.turn_attacker: PlayerTeamUnit = self.white
         self.turn_defender: PlayerTeamUnit = self.black
@@ -2054,6 +2054,7 @@ class Match:
                 self.make_promotion('queen')
     # --------------------------------------------------------------------------------------------------------
 
+    # Time selection Menu ------------------------------------------------------------------------------------
     def draw_starting_time_selection_menu(self, width=300, height=400):
         # frame
         pygame.draw.rect(self.screen, (100,100,100),
@@ -2113,4 +2114,4 @@ class Match:
             if self.control_input['click']:
                 self.set_turn_clocks(15)
                 self.player_selecting_gameClockLimit = False
-        
+    # --------------------------------------------------------------------------------------------------------
