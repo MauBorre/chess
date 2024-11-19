@@ -1,6 +1,6 @@
 import pygame
 import font, board, pieces
-from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE # piece directions
+from board import NORTE, NOR_ESTE, NOR_OESTE, SUR, SUR_OESTE, SUR_ESTE, ESTE, OESTE # piece movement directions
 from board import row_of_
 from dataclasses import dataclass, field
 
