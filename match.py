@@ -273,12 +273,6 @@ class Match:
             self.queen_objectives(_queen, perspective='attacker')
         # --------------------------------------------------------------------------------------------------
 
-        # TURN DEBUG ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        # print(f'El jugador {attacker} dejó estas amenazas:')
-        # for at, d in attacker.threat_on_enemy.items(): print(at, d)
-        # print('------------')
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
         # Defender -----------------------------------------------------------------------------------------
         king_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender.name, piece="king")
         if len(king_standpoints) != 0:
@@ -335,24 +329,6 @@ class Match:
         self.set_content()
 
     def turn_swap(self):
-        '''
-        Intercalaremos:
-        >> positions
-        >> threat_on_enemy
-        >> king_legal_moves
-        >> direct_threat_origin
-        >> direct_threat_trace
-        >> single_threat_standpoint
-        >> king_banned_direction
-        >> castling_enablers
-        >> relojes
-        
-        Match aplicará cambios siempre sobre conjuntos generalizados bajo attacker/defender,
-        entonces luego de realizados:
-
-        PRIMERO los volveremos a adjudicar a su variable de color-origen. "COMO ERAN"
-        LUEGO los intercambiamos por el color-equipo que corresponde. "COMO RESULTAN AHORA"
-        '''
 
         if self.turn_attacker == self.white:
 
@@ -361,71 +337,6 @@ class Match:
             else:
                 self.blacktime_SNAP = pygame.time.get_ticks() + self.black_time_leftover
 
-            # Target Transfer (white <- attacker | black <- defender) ---------------------
-            # > positions
-            self.white.positions = self.turn_attacker.positions
-            self.black.positions = self.turn_defender.positions
-
-            # > threatOn
-            self.white.threat_on_enemy = self.turn_attacker.threat_on_enemy
-            self.black.threat_on_enemy = self.turn_defender.threat_on_enemy
-
-            # > king_legal_moves
-            self.white.king_legal_moves = self.turn_attacker.king_legal_moves
-            self.black.king_legal_moves = self.turn_defender.king_legal_moves
-
-            # > direct_threat_origin
-            self.white.direct_threat_origin = self.turn_attacker.direct_threat_origin
-            self.black.direct_threat_origin = self.turn_defender.direct_threat_origin
-
-            # > direct_threat_trace
-            self.white.direct_threat_trace = self.turn_attacker.direct_threat_trace
-            self.black.direct_threat_trace = self.turn_defender.direct_threat_trace
-
-            # > singleOriginThreat standpoint
-            self.white.single_threat_standpoint = self.turn_attacker.single_threat_standpoint
-            self.black.single_threat_standpoint = self.turn_defender.single_threat_standpoint
-
-            # > king_banned_direction
-            self.white.king_banned_direction = self.turn_attacker.king_banned_direction
-            self.black.king_banned_direction = self.turn_defender.king_banned_direction
-
-            # > castling_enablers
-            self.white.castling_enablers = self.turn_attacker.castling_enablers
-            self.black.castling_enablers = self.turn_defender.castling_enablers
-
-            # Target Swap (attacker = black | defender = white ) ---------------------------
-            # # > positions
-            # self.turn_attacker.positions = self.black.positions
-            # self.turn_defender.positions = self.white.positions
-
-            # # > threatOn
-            # self.turn_attacker.threat_on_enemy = self.black.threat_on_enemy
-            # self.turn_defender.threat_on_enemy = self.white.threat_on_enemy
-
-            # # > king_legal_moves
-            # self.turn_attacker.king_legal_moves = self.black.king_legal_moves
-            # self.turn_defender.king_legal_moves = self.white.king_legal_moves
-
-            # # > direct_threat_origin
-            # self.turn_attacker.direct_threat_origin = self.black.direct_threat_origin
-            # self.turn_defender.direct_threat_origin = self.white.direct_threat_origin
-
-            # # > direct_threat_trace
-            # self.turn_attacker.direct_threat_trace = self.black.direct_threat_trace
-            # self.turn_defender.direct_threat_trace = self.white.direct_threat_trace
-
-            # # > SingleOriginThreat standpoint
-            # self.turn_attacker.single_threat_standpoint = self.black.single_threat_standpoint
-            # self.turn_defender.single_threat_standpoint = self.white.single_threat_standpoint
-
-            # # > king_banned_direction
-            # self.turn_attacker.king_banned_direction = self.black.king_banned_direction
-            # self.turn_defender.king_banned_direction = self.white.king_banned_direction
-
-            # # > castling_enablers
-            # self.turn_attacker.castling_enablers = self.black.castling_enablers
-            # self.turn_defender.castling_enablers = self.white.castling_enablers
             self.turn_attacker = self.black
             self.turn_defender = self.white
 
@@ -437,72 +348,6 @@ class Match:
                 self.whitetime_SNAP = pygame.time.get_ticks() - self.white_time_leftover
             else:
                 self.whitetime_SNAP = pygame.time.get_ticks() + self.white_time_leftover
-
-            # Target Transfer (white <- defender | black <- attacker) ----------------------
-            # > positions
-            self.white.positions = self.turn_defender.positions
-            self.black.positions = self.turn_attacker.positions
-
-            # > threatOn
-            self.white.threat_on_enemy = self.turn_defender.threat_on_enemy
-            self.black.threat_on_enemy = self.turn_attacker.threat_on_enemy
-
-            # > king_legal_moves
-            self.white.king_legal_moves = self.turn_defender.king_legal_moves
-            self.black.king_legal_moves = self.turn_attacker.king_legal_moves
-
-            # > direct_threat_origin
-            self.white.direct_threat_origin = self.turn_defender.direct_threat_origin
-            self.black.direct_threat_origin = self.turn_attacker.direct_threat_origin
-
-            # > direct_threat_trace
-            self.white.direct_threat_trace = self.turn_defender.direct_threat_trace
-            self.black.direct_threat_trace = self.turn_attacker.direct_threat_trace
-
-            # > singleOriginThreat standpoint
-            self.white.single_threat_standpoint = self.turn_defender.single_threat_standpoint
-            self.black.single_threat_standpoint = self.turn_attacker.single_threat_standpoint
-
-            # > king_banned_direction
-            self.white.king_banned_direction = self.turn_defender.king_banned_direction
-            self.black.king_banned_direction = self.turn_attacker.king_banned_direction
-
-            # > castling_enablers
-            self.white.castling_enablers = self.turn_defender.castling_enablers
-            self.black.castling_enablers = self.turn_attacker.castling_enablers
-
-            # Target Swap (attacker = white | defender = black) ----------------------------
-            # # > positions
-            # self.turn_attacker.positions = self.white.positions
-            # self.turn_defender.positions = self.black.positions
-
-            # # > threatOn
-            # self.turn_attacker.threat_on_enemy = self.white.threat_on_enemy
-            # self.turn_defender.threat_on_enemy = self.black.threat_on_enemy
-
-            # # > king_legal_moves
-            # self.turn_attacker.king_legal_moves = self.white.king_legal_moves
-            # self.turn_defender.king_legal_moves = self.black.king_legal_moves
-
-            # # > direct_threat_origin
-            # self.turn_attacker.direct_threat_origin = self.white.direct_threat_origin
-            # self.turn_defender.direct_threat_origin = self.black.direct_threat_origin
-
-            # # > direct_threat_trace
-            # self.turn_attacker.direct_threat_trace = self.white.direct_threat_trace
-            # self.turn_defender.direct_threat_trace = self.black.direct_threat_trace
-
-            # # > singleOriginThreat standpoint
-            # self.turn_attacker.single_threat_standpoint = self.white.single_threat_standpoint
-            # self.turn_defender.single_threat_standpoint = self.black.single_threat_standpoint
-
-            # # > king_banned_direction
-            # self.turn_attacker.king_banned_direction = self.white.king_banned_direction
-            # self.turn_defender.king_banned_direction = self.black.king_banned_direction
-
-            # # > castling_enablers
-            # self.turn_attacker.castling_enablers = self.white.castling_enablers
-            # self.turn_defender.castling_enablers = self.black.castling_enablers
 
             self.turn_attacker = self.white
             self.turn_defender = self.black
