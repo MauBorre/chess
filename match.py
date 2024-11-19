@@ -34,7 +34,10 @@ class Match:
     def __init__(self, screen, control_input):
         self.running = True
         self.screen = screen
-        self.curtain = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
+        self.curtain = pygame.Surface(self.screen.get_size(), flags=pygame.SRCALPHA)
+        self.curtain_transparency = 255
+        self.curtain.fill((255,255,255,self.curtain_transparency))
+        self.showing_curtain = True
         self.control_input = control_input
         self.mid_screen_coordinates = (self.screen.get_width()/2, self.screen.get_height()/2)
         self.mid_screen = pygame.Vector2(self.mid_screen_coordinates)
@@ -1865,11 +1868,11 @@ class Match:
 
         if self.control_input['escape']: self.pause = not self.pause
 
-        # hud
+        # HUD
         self.match_state_info()
         self.clock_display()
 
-        # core logic
+        # Core logic
         self.draw_board()
         self.match_clock()
         if self.move_here != None:
@@ -1881,17 +1884,22 @@ class Match:
             self.turn_swap()
             self.finish_turn = False
         
-        # menus
-        if self.player_selecting_gameClockLimit: # match opening
+        # Menus
+        # match opening ------------------------------------------------------
+        if self.player_selecting_gameClockLimit: 
             self.game_halt = True
-
-            # Creando una cortina blanca que desaparecerá luego
-            # de seleccionar el límite de tiempo deseado
-            self.curtain.fill((255,255,255))
-            self.curtain.blit(self.screen, (self.screen.get_width(), self.screen.get_height()))
-            
+            self.screen.blit(self.curtain, (0,0))    
             self.draw_starting_time_selection_menu()
-            
+        
+        if not self.player_selecting_gameClockLimit and self.showing_curtain:
+            self.curtain_transparency -= 3
+            self.curtain.fill((255,255,255,self.curtain_transparency))
+            self.screen.blit(self.curtain, (0,0))
+            if self.curtain_transparency == 0:
+                self.curtain_transparency = 255
+                self.curtain.fill((255,255,255,self.curtain_transparency))
+                self.showing_curtain = False
+        # --------------------------------------------------------------------
 
         if self.pause:
             self.game_halt = True
