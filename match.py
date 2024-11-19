@@ -11,24 +11,21 @@ class PlayerTeamUnit:
     single_threat_standpoint: int | None
     king_banned_direction: int | None
     legal_moves: set[str] 
-    direct_threat_trace: list[int] = field(default_factory=list)
+    direct_threatOnEnemy_trace: list[int] = field(default_factory=list)
     positions: dict[int, str] = field(default_factory=dict)
     pawns_in_origin: list[int] = field(default_factory=list)
-    threat_on_enemy: dict[str, int] = field(default_factory=dict)
+    pieces_threatening_enemy: dict[str, int] = field(default_factory=dict)
     king_legal_moves: list[int] = field(default_factory=list)
     castling_enablers: dict[int, str] = field(default_factory=dict)
     
     def clear(self):
-        self.threat_on_enemy.clear()
+        self.pieces_threatening_enemy.clear()
         self.king_legal_moves.clear()
-        self.direct_threat_trace.clear()
+        self.direct_threatOnEnemy_trace.clear()
         self.direct_threat_origin = 'none'
         self.single_threat_standpoint = None
         self.king_banned_direction = None
-        self.legal_moves.clear()        
-    
-    def __str__(cls):
-        return cls.name
+        self.legal_moves.clear()
 
 class Match:
     def __init__(self, screen, control_input):
@@ -46,10 +43,10 @@ class Match:
         self.black = PlayerTeamUnit(
             name = 'black',
             direct_threat_origin = 'none', 
-            direct_threat_trace = [],
+            direct_threatOnEnemy_trace = [],
             positions = pieces.black_positions.copy(),
             pawns_in_origin = [bpawn for bpawn in pieces.origins['black']['pawn']],
-            threat_on_enemy = {piece:[] for piece in pieces.origins['black']},
+            pieces_threatening_enemy = {piece:[] for piece in pieces.origins['black']},
             king_legal_moves = [],
             castling_enablers = {0: 'west-rook', 4: 'king', 7: 'east-rook'},
             single_threat_standpoint = None,
@@ -59,10 +56,10 @@ class Match:
         self.white = PlayerTeamUnit(
             name = 'white',
             direct_threat_origin = 'none',
-            direct_threat_trace = [],
+            direct_threatOnEnemy_trace = [],
             positions = pieces.white_positions.copy(),
             pawns_in_origin = [wpawn for wpawn in pieces.origins['white']['pawn']],
-            threat_on_enemy = {piece:[] for piece in pieces.origins['white']},
+            pieces_threatening_enemy = {piece:[] for piece in pieces.origins['white']},
             king_legal_moves = [],
             castling_enablers = {56: 'west-rook', 60: 'king', 63: 'east-rook'},
             single_threat_standpoint = None,
@@ -279,12 +276,12 @@ class Match:
             _king = king_standpoints.pop()
 
         # Revisión del estado de la amenaza del atacante sobre el rey defensor (jaque)
-        for _threats_list in self.turn_attacker.threat_on_enemy.values():
+        for _threats_list in self.turn_attacker.pieces_threatening_enemy.values():
             if _king in _threats_list:
                 if self.turn_attacker.direct_threat_origin == 'single': # caso amenaza múltiple
                     self.turn_attacker.direct_threat_origin = 'multiple'
                     self.turn_attacker.single_threat_standpoint = None
-                    self.turn_attacker.direct_threat_trace.clear()
+                    self.turn_attacker.direct_threatOnEnemy_trace.clear()
                     break
 
                 # amenaza directa simple
@@ -295,8 +292,8 @@ class Match:
                 self.turn_attacker.single_threat_standpoint = _threats_list[-1]
                 knight_walk_exception: str = self.turn_attacker.positions[_threats_list[-1]]
                 if knight_walk_exception != 'knight':
-                    self.turn_attacker.direct_threat_trace = self.trace_direction_walk(_king, _threats_list, _threats_list[-1])
-                else: self.turn_attacker.direct_threat_trace = []
+                    self.turn_attacker.direct_threatOnEnemy_trace = self.trace_direction_walk(_king, _threats_list, _threats_list[-1])
+                else: self.turn_attacker.direct_threatOnEnemy_trace = []
 
         self.remove_all_attacker_standpoints() # Necesario para que el rey pueda identificar piezas como -quizás matable-.
         self.king_objectives(_king, perspective='defender') # genero/reviso defender.king_legal_moves.
@@ -362,7 +359,7 @@ class Match:
         De esta forma aclaramos la visión al rey correspondiente en cuanto a amenazas
         matables y no-matables.
         '''
-        for _threats in self.turn_attacker.threat_on_enemy.values():
+        for _threats in self.turn_attacker.pieces_threatening_enemy.values():
             _threats.pop()
 
     def exposing_direction(self, standpoint: int, direction: int, request_from: str) -> bool:
@@ -502,7 +499,7 @@ class Match:
                             if not self.exposing_direction(piece_standpoint, direction=SUR, request_from="defender"):
                                 
                                 # 1st Movement -BLOCK saving position-
-                                if movement in self.turn_attacker.direct_threat_trace:
+                                if movement in self.turn_attacker.direct_threatOnEnemy_trace:
                                     self.turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
 
                                 # 2nd Movement
@@ -510,7 +507,7 @@ class Match:
                                     if movement+SUR not in self.turn_defender.positions:
 
                                         # 2nd Movement -BLOCK saving position-
-                                        if movement+SUR in self.turn_attacker.direct_threat_trace:
+                                        if movement+SUR in self.turn_attacker.direct_threatOnEnemy_trace:
                                             self.turn_defender.legal_moves.add(f'pawn{piece_standpoint}')    
                             else: pass
                         
@@ -567,7 +564,7 @@ class Match:
                             if not self.exposing_direction(piece_standpoint, direction=NORTE, request_from="defender"):
 
                                 # 1st Movement -BLOCK saving position-
-                                if movement in self.turn_attacker.direct_threat_trace:
+                                if movement in self.turn_attacker.direct_threatOnEnemy_trace:
                                     self.turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
                                 
                                 # 2nd Movement
@@ -575,7 +572,7 @@ class Match:
                                     if movement+NORTE not in self.turn_defender.positions:
                                         
                                         # 2nd Movement -BLOCK saving position-
-                                        if movement+NORTE in self.turn_attacker.direct_threat_trace:
+                                        if movement+NORTE in self.turn_attacker.direct_threatOnEnemy_trace:
                                             self.turn_defender.legal_moves.add(f'pawn{piece_standpoint}')
                             else: pass
                     
@@ -632,14 +629,14 @@ class Match:
                     if self.turn_defender.direct_threat_origin == 'single':
                         if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions: # piece block
                             if not self.exposing_direction(piece_standpoint, direction=SUR, request_from="attacker"):
-                                if movement in self.turn_defender.direct_threat_trace:
+                                if movement in self.turn_defender.direct_threatOnEnemy_trace:
                                     # BLOCK saving position
                                     mov_target_positions.update({movement: board.rects[movement]})
 
                                 #probamos con el 2do mov
                                 if piece_standpoint in self.black.pawns_in_origin:
                                     if movement+SUR not in self.turn_attacker.positions and movement+SUR not in self.turn_defender.positions: # piece block
-                                        if movement+SUR in self.turn_defender.direct_threat_trace:
+                                        if movement+SUR in self.turn_defender.direct_threatOnEnemy_trace:
                                             # BLOCK saving position
                                             mov_target_positions.update({movement+SUR: board.rects[movement+SUR]})
 
@@ -691,7 +688,7 @@ class Match:
                                 
                         # Threat on defender ------------------------
                         kill_positions.append(piece_standpoint)
-                        self.turn_attacker.threat_on_enemy.update({f'pawn{piece_standpoint}': kill_positions})
+                        self.turn_attacker.pieces_threatening_enemy.update({f'pawn{piece_standpoint}': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
 
@@ -704,14 +701,14 @@ class Match:
                     if self.turn_defender.direct_threat_origin == 'single':
                         if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions: # piece block
                             if not self.exposing_direction(piece_standpoint, direction=NORTE, request_from="attacker"):
-                                if movement in self.turn_defender.direct_threat_trace:
+                                if movement in self.turn_defender.direct_threatOnEnemy_trace:
                                     # BLOCK saving position
                                     mov_target_positions.update({movement: board.rects[movement]})
 
                                 #probamos con el 2do mov
                                 if piece_standpoint in self.white.pawns_in_origin:
                                     if movement+NORTE not in self.turn_attacker.positions and movement+NORTE not in self.turn_defender.positions:# piece block
-                                        if movement+NORTE in self.turn_defender.direct_threat_trace:
+                                        if movement+NORTE in self.turn_defender.direct_threatOnEnemy_trace:
                                             # BLOCK saving position
                                             mov_target_positions.update({movement+NORTE: board.rects[movement+NORTE]})
 
@@ -763,7 +760,7 @@ class Match:
 
                         # Threat on defender ------------------------
                         kill_positions.append(piece_standpoint)
-                        self.turn_attacker.threat_on_enemy.update({f'pawn{piece_standpoint}': kill_positions})
+                        self.turn_attacker.pieces_threatening_enemy.update({f'pawn{piece_standpoint}': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
                 
@@ -842,7 +839,7 @@ class Match:
                             if movement in self.turn_defender.positions:
                                 break
                             if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
-                                if movement in self.turn_attacker.direct_threat_trace:
+                                if movement in self.turn_attacker.direct_threatOnEnemy_trace:
                                     # block saving position
                                     self.turn_defender.legal_moves.add(f'rook{piece_standpoint}') 
                                 if movement == self.turn_attacker.single_threat_standpoint:
@@ -879,7 +876,7 @@ class Match:
 
                             if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
-                                    if movement in self.turn_defender.direct_threat_trace:
+                                    if movement in self.turn_defender.direct_threatOnEnemy_trace:
                                         # BLOCK saving position.
                                         mov_target_positions.update({movement: board.rects[movement]})
                                         break
@@ -914,14 +911,14 @@ class Match:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
                                     _threat_emission.append(movement)
                                     on_target_kill_positions.update({movement: board.rects[movement]})
-                                    self.turn_attacker.threat_on_enemy.update({f'rook{piece_standpoint}': _threat_emission})
+                                    self.turn_attacker.pieces_threatening_enemy.update({f'rook{piece_standpoint}': _threat_emission})
                                     break
                                 else: break
                             else: 
                                 _threat_emission.append(movement)
                                 break # chocamos contra un bloqueo - romper el mult
                 _threat_emission.append(piece_standpoint)
-                self.turn_attacker.threat_on_enemy.update({f'rook{piece_standpoint}': _threat_emission})
+                self.turn_attacker.pieces_threatening_enemy.update({f'rook{piece_standpoint}': _threat_emission})
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
         return
@@ -968,7 +965,7 @@ class Match:
                         
                         if movement not in self.turn_defender.positions:
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
-                                if movement in self.turn_attacker.direct_threat_trace:
+                                if movement in self.turn_attacker.direct_threatOnEnemy_trace:
                                     self.turn_defender.legal_moves.add(f'knight{piece_standpoint}')
                                 if movement == self.turn_attacker.single_threat_standpoint:
                                     self.turn_defender.legal_moves.add(f'knight{piece_standpoint}')
@@ -991,7 +988,7 @@ class Match:
 
                         if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions:
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from='attacker'):
-                                if movement in self.turn_defender.direct_threat_trace:
+                                if movement in self.turn_defender.direct_threatOnEnemy_trace:
                                     # BLOCK saving position.
                                     mov_target_positions.update({movement: board.rects[movement]})
                         elif movement == self.turn_defender.single_threat_standpoint:
@@ -1021,7 +1018,7 @@ class Match:
                             else: return {}, {}
                         else:  _threat_emission.append(movement)
                 _threat_emission.append(piece_standpoint)
-                self.turn_attacker.threat_on_enemy.update({f'knight{piece_standpoint}': _threat_emission})
+                self.turn_attacker.pieces_threatening_enemy.update({f'knight{piece_standpoint}': _threat_emission})
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
         return
@@ -1107,7 +1104,7 @@ class Match:
                             if movement in self.turn_defender.positions:
                                 break
                             if not self.exposing_direction(piece_standpoint, direction=movement, request_from="defender"):
-                                if movement in self.turn_attacker.direct_threat_trace:
+                                if movement in self.turn_attacker.direct_threatOnEnemy_trace:
                                     # block saving position
                                     self.turn_defender.legal_moves.add(f'bishop{piece_standpoint}')
                                 if movement == self.turn_attacker.single_threat_standpoint:
@@ -1149,7 +1146,7 @@ class Match:
 
                             if movement not in self.turn_attacker.positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
-                                    if movement in self.turn_defender.direct_threat_trace:
+                                    if movement in self.turn_defender.direct_threatOnEnemy_trace:
                                         # BLOCK saving position.
                                             mov_target_positions.update({movement: board.rects[movement]})
                                     elif movement == self.turn_defender.single_threat_standpoint:
@@ -1190,7 +1187,7 @@ class Match:
                                 _threat_emission.append(movement)
                                 break # chocamos contra un bloqueo - romper el mult
                 _threat_emission.append(piece_standpoint)
-                self.turn_attacker.threat_on_enemy.update({f'bishop{piece_standpoint}': _threat_emission})
+                self.turn_attacker.pieces_threatening_enemy.update({f'bishop{piece_standpoint}': _threat_emission})
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
 
@@ -1288,7 +1285,7 @@ class Match:
                             if movement in self.turn_defender.positions:
                                 break
                             if not self.exposing_direction(piece_standpoint, direction=direction, request_from="defender"):
-                                if movement in self.turn_attacker.direct_threat_trace:
+                                if movement in self.turn_attacker.direct_threatOnEnemy_trace:
                                     # block saving position
                                     self.turn_defender.legal_moves.add(f'queen{piece_standpoint}')
                                 if movement == self.turn_attacker.single_threat_standpoint:
@@ -1335,7 +1332,7 @@ class Match:
 
                             if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions:
                                 if not self.exposing_direction(piece_standpoint, direction=direction, request_from='attacker'):
-                                    if movement in self.turn_defender.direct_threat_trace:
+                                    if movement in self.turn_defender.direct_threatOnEnemy_trace:
                                         # BLOCK saving position.
                                         mov_target_positions.update({movement: board.rects[movement]})
                                         break
@@ -1383,7 +1380,7 @@ class Match:
                                 _threat_emission.append(movement)
                                 break # chocamos contra un bloqueo - romper el mult
                 _threat_emission.append(piece_standpoint)
-                self.turn_attacker.threat_on_enemy.update({'queen': _threat_emission})
+                self.turn_attacker.pieces_threatening_enemy.update({'queen': _threat_emission})
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions
 
@@ -1425,7 +1422,7 @@ class Match:
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    for threat in self.turn_attacker.threat_on_enemy.values():
+                    for threat in self.turn_attacker.pieces_threatening_enemy.values():
                         if movement in threat: movement = None
 
                     if movement != None:
@@ -1450,7 +1447,7 @@ class Match:
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    for threat in self.turn_defender.threat_on_enemy.values():
+                    for threat in self.turn_defender.pieces_threatening_enemy.values():
                         if movement in threat: movement = None
                         if _castling in threat: _castling = None
 
@@ -1490,7 +1487,7 @@ class Match:
                             _threat_emission.append(movement)
 
             _threat_emission.append(piece_standpoint)
-            self.turn_attacker.threat_on_enemy.update({'king': _threat_emission})
+            self.turn_attacker.pieces_threatening_enemy.update({'king': _threat_emission})
 
             return mov_target_positions, on_target_kill_positions, castling_positions
         return
