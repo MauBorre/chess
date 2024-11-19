@@ -114,25 +114,23 @@ class Match:
 
         # core game variables
         self.gameClock_minutesLimit: int = 10
-        self.pause = False
+        self.pause = False # game halt reason
+        self.player_deciding_match: bool = False # game halt reason
+        self.winner: bool = False # game halt reason
+        self.game_halt: bool = False
+        self.stalemate: bool = False # Ahogado | draw # game halt reason
         self.move_here: int | None = None
-        self.winner: bool = False
-        self.stalemate: bool = False # Ahogado | draw
         self.match_state: str = '' # HUD info
-        self.player_deciding_match: bool = False
         self.killing: bool = False
         self.finish_turn: bool = False # turn halt utility
         # pawn promotion
         self.player_deciding_promotion: bool = False
-        self.pawnPromotion_selection: str = ''
         self.promoting_pawn: int | None = None
         # king castling
         self.castling: bool = False
         self.castling_direction: str = ''
         self.turn_attacker: PlayerTeamUnit = self.white
         self.turn_defender: PlayerTeamUnit = self.black
-
-        # turn_defender.legal_moves: set[str] = set() # NO se considera en SWAP
 
         # board feedback utilities
         self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
@@ -182,7 +180,6 @@ class Match:
             for _pawn in pawn_standpoints:
                 if _pawn in row_of_(0): # NORTHMOST ROW
                     self.promoting_pawn = _pawn
-                    self.pause = True
                     self.player_deciding_promotion = True
                     self.finish_turn = False
         
@@ -191,19 +188,16 @@ class Match:
             for _pawn in pawn_standpoints:
                 if _pawn in row_of_(63): # SOUTHMOST ROW
                     self.promoting_pawn = _pawn
-                    self.pause = True
                     self.player_deciding_promotion = True
                     self.finish_turn = False
         
         # allows turn to finish
         if self.promoting_pawn == None: self.finish_turn = True
 
-    def make_promotion(self):
-        if self.pawnPromotion_selection != '':
-            self.turn_attacker.positions.update({self.promoting_pawn: self.pawnPromotion_selection})
-            self.pawnPromotion_selection == ''
-            self.promoting_pawn = None
-            self.finish_turn = True
+    def make_promotion(self, selected_piece: str):
+        self.turn_attacker.positions.update({self.promoting_pawn: selected_piece})
+        self.promoting_pawn = None
+        self.finish_turn = True
 
     def trace_direction_walk(
         self,
@@ -1767,9 +1761,10 @@ class Match:
                     self.draw_text(SQUARE_TYPE,(120,120,120),
                                                         SQUARE_RECT.left + board.square_width/2,
                                                         SQUARE_RECT.top + board.square_height/2)
-                    
+
             # hidden/visible elements upon pause/finished game state
-            if not self.pause and not self.winner and not self.stalemate and not self.player_deciding_promotion:
+            if not self.game_halt:
+
                 if SQUARE_RECT.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
 
                     # Hover -----------------------
@@ -1877,7 +1872,6 @@ class Match:
                 # Solo pueden ser los reyes, asi que es DRAW
                 self.match_state = 'Draw'
                 self.stalemate = True
-                self.pause = True
 
             if len(self.turn_defender.king_legal_moves) == 0 and len(self.turn_defender.legal_moves) == 0:
 
@@ -1886,12 +1880,10 @@ class Match:
                 if self.turn_attacker.name == 'black':
                     self.stalemate = True # repercute en render() - termina la partida
                     self.match_state = 'Rey White ahogado.  -  Empate.'
-                    self.pause = True
 
                 if self.turn_attacker.name == 'white':
                     self.stalemate = True # repercute en render() - termina la partida
                     self.match_state = 'Rey Black ahogado.  -  Empate.'
-                    self.pause = True
 
             else:
                 self.match_state = ''
@@ -1922,11 +1914,9 @@ class Match:
                 if self.turn_attacker.name == 'black':
                     self.winner = True # automaticamente repercutirá draw() 
                     self.match_state = 'Black gana.  -  White en jaque-mate.'
-                    self.pause = True
                 if self.turn_attacker.name == 'white':
                     self.winner = True # automaticamente repercutirá draw()
                     self.match_state = 'White gana  -  Black en jaque-mate.'
-                    self.pause = True
 
         if self.turn_attacker.direct_threat_origin == 'multiple': # múltiple origen de amenaza.
             if len(self.turn_defender.king_legal_moves) == 0:
@@ -1935,12 +1925,10 @@ class Match:
                 if self.turn_attacker.name == 'black':
                     self.winner = True # repercute en render() - termina la partida
                     self.match_state = 'Black gana.  -  White en jaque-mate.'
-                    self.pause = True
 
                 if self.turn_attacker.name == 'white':
                     self.winner = True # repercute en render() - termina la partida
                     self.match_state = 'White gana  -  Black en jaque-mate.'
-                    self.pause = True
             else:
                 # JAQUE
                 '''Notificar al jugador correspondiente.'''
@@ -2003,7 +1991,6 @@ class Match:
                 if self.white_turn_time == 0:
                     self.winner = True
                     self.match_state = 'Black gana.  -  White se ha quedado sin tiempo.'
-                    self.pause = True
             
             if self.turn_attacker.name == 'black':
                 self.blacktime_SNAP += self.pause_time_leftover
@@ -2018,7 +2005,6 @@ class Match:
                 if self.black_turn_time == 0:
                     self.winner = True
                     self.match_state = 'White gana.  -  Black se ha quedado sin tiempo.'
-                    self.pause = True
 
             self.pause_time_leftover = 0
         else:
@@ -2087,16 +2073,27 @@ class Match:
             self.finish_turn = False
         
         # menus
-        if self.pause or self.winner or self.stalemate: # debería ser si el jugador apreto la tecla ESC.
-            if not self.player_deciding_match and not self.winner and not self.stalemate:
+        if self.pause:
+            self.game_halt = True
+            if not self.player_deciding_match:
                 self.draw_pause_menu()
-            if self.winner or self.stalemate:
-                self.draw_post_game_menu()
-            elif self.player_deciding_match:
+            else:
                 self.draw_confirm_restart_menu()
+        
+        if self.winner or self.stalemate:
+            self.game_halt = True
+            if not self.player_deciding_match:
+                self.draw_post_game_menu()
+            else:
+                self.draw_confirm_restart_menu()
+
         if self.player_deciding_promotion:
+            self.game_halt = True
             self.draw_pawnPromotion_selection_menu()
         
+        if not self.pause and not self.winner and not self.stalemate and not self.player_deciding_promotion:
+            self.game_halt = False
+
         # control release
         self.control_input['escape'] = False
         self.control_input['click'] = False
@@ -2120,8 +2117,6 @@ class Match:
             pygame.draw.rect(self.screen,(255,0,0),confirm_match_rect,width=1)
             if self.control_input['click']:
                 self.reset_match()
-                self.player_deciding_match = False
-                self.pause = False
 
     def draw_cancel_restart_btn(self):
         self.draw_text('No','black',self.screen.get_width()-400,250,center=False)
@@ -2155,8 +2150,8 @@ class Match:
                 self.pause = False
 
     def draw_play_again_btn(self):
-        self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400, 400, center=False)
-        play_again_rect = pygame.Rect(self.screen.get_width()-400, 400, 200, 50)
+        self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400, 250, center=False)
+        play_again_rect = pygame.Rect(self.screen.get_width()-400, 250, 200, 50)
         if play_again_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), play_again_rect, width=1)
@@ -2164,8 +2159,8 @@ class Match:
                 self.player_deciding_match = True
 
     def draw_exit_game_btn(self):
-        self.draw_text('Salir del juego','white', self.screen.get_width()-400,320,center=False)
-        exit_game_rect = pygame.Rect(self.screen.get_width()-400,320,200,50)
+        self.draw_text('Salir del juego','white', self.screen.get_width()-400,310,center=False)
+        exit_game_rect = pygame.Rect(self.screen.get_width()-400,310,200,50)
         if exit_game_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), exit_game_rect, width=1)
@@ -2190,9 +2185,8 @@ class Match:
             #hover
             pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
             if self.control_input['click']:
-                self.pause = False
-                self.player_deciding_match = False
-                self.reset_match()
+                self.player_deciding_match = True
+                # self.reset_match()
     # --------------------------------------------------------------------------------------------------------
 
     # Pawn promotion menu ------------------------------------------------------------------------------------
@@ -2201,7 +2195,7 @@ class Match:
         pygame.draw.rect(self.screen, (100,100,100),
                         pygame.Rect(self.screen.get_width()-400, 150, width, height))
         # tooltip
-        self.draw_text('Elija su promoción', 'white', self.screen.get_width()-100, 400, center=True)
+        self.draw_text('Elija su promoción', 'black', self.screen.get_width()-400, 400, center=False)
         self.draw_rookOPT_btn()
         self.draw_knightOPT_btn()
         self.draw_queenOPT_btn()
@@ -2214,10 +2208,8 @@ class Match:
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
             if self.control_input['click']:
-                self.pawnPromotion_selection = 'rook'
                 self.player_deciding_promotion = False
-                self.pause = False
-                self.make_promotion()
+                self.make_promotion('rook')
 
     def draw_knightOPT_btn(self):
         self.draw_text('Knight', 'white', self.screen.get_width()-400, 300, center=False)
@@ -2226,10 +2218,8 @@ class Match:
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
             if self.control_input['click']:
-                self.pawnPromotion_selection = 'knight'
                 self.player_deciding_promotion = False
-                self.pause = False
-                self.make_promotion()
+                self.make_promotion('knight')
 
     def draw_bishopOPT_btn(self):
         self.draw_text('Bishop', 'white', self.screen.get_width()-400, 400, center=False)
@@ -2238,10 +2228,8 @@ class Match:
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
             if self.control_input['click']:
-                self.pawnPromotion_selection = 'bishop'
                 self.player_deciding_promotion = False
-                self.pause = False
-                self.make_promotion()
+                self.make_promotion('bishop')
 
     def draw_queenOPT_btn(self):
         self.draw_text('Queen', 'white', self.screen.get_width()-400, 500, center=False)
@@ -2250,8 +2238,6 @@ class Match:
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
             if self.control_input['click']:
-                self.pawnPromotion_selection = 'queen'
                 self.player_deciding_promotion = False
-                self.pause = False
-                self.make_promotion()
+                self.make_promotion('queen')
     # --------------------------------------------------------------------------------------------------------
