@@ -34,6 +34,7 @@ class Match:
     def __init__(self, screen, control_input):
         self.running = True
         self.screen = screen
+        self.curtain = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
         self.control_input = control_input
         self.mid_screen_coordinates = (self.screen.get_width()/2, self.screen.get_height()/2)
         self.mid_screen = pygame.Vector2(self.mid_screen_coordinates)
@@ -1883,7 +1884,14 @@ class Match:
         # menus
         if self.player_selecting_gameClockLimit: # match opening
             self.game_halt = True
+
+            # Creando una cortina blanca que desaparecerá luego
+            # de seleccionar el límite de tiempo deseado
+            self.curtain.fill((255,255,255))
+            self.curtain.blit(self.screen, (self.screen.get_width(), self.screen.get_height()))
+            
             self.draw_starting_time_selection_menu()
+            
 
         if self.pause:
             self.game_halt = True
