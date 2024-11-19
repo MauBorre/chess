@@ -1467,9 +1467,10 @@ class Match:
                                     if self.turn_defender.direct_threat_origin == 'none':       
                                         if _castling != None:
                                             if _castling not in self.turn_attacker.positions and not _castling in self.turn_defender.positions:
-                                                self.turn_attacker.king_legal_moves.append(_castling)
-                                                castling_positions.update({_castling: board.rects[_castling]})
-                                                self.castling_direction = 'west'
+                                                if _castling+direction not in self.turn_attacker.positions and _castling+direction not in self.turn_defender.positions:
+                                                    self.turn_attacker.king_legal_moves.append(_castling)
+                                                    castling_positions.update({_castling: board.rects[_castling]})
+                                                    self.castling_direction = 'west'
 
                             # castling -EAST-
                             if direction == ESTE:
