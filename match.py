@@ -1854,7 +1854,7 @@ class Match:
         
         # Menus
         # match opening ------------------------------------------------------
-        if self.player_selecting_gameClockLimit: 
+        if self.player_selecting_gameClockLimit: # menú no removible con ESC
             self.game_halt = True
             self.screen.blit(self.curtain, (0,0))    
             self.draw_starting_time_selection_menu()
@@ -1868,24 +1868,25 @@ class Match:
                 self.showing_curtain = False
         # --------------------------------------------------------------------
 
-        if self.pause:
+        if self.pause: # menú switcheable con ESC -SI NO HAY OTROS MENúES-
             self.game_halt = True
             if not self.player_deciding_match:
                 self.draw_pause_menu()
             else:
                 self.draw_confirm_restart_menu()
         
-        if self.winner or self.stalemate:
+        if self.winner or self.stalemate: # menú switcheable con ESC
             self.game_halt = True
             if not self.player_deciding_match:
                 self.draw_post_game_menu()
             else:
                 self.draw_confirm_restart_menu()
 
-        if self.player_deciding_promotion:
+        if self.player_deciding_promotion: # menú switcheable con ESC
             self.game_halt = True
             self.draw_pawnPromotion_selection_menu()
         
+        # clock/game_halt release
         if not self.pause and not self.winner:
             if not self.stalemate and not self.player_deciding_promotion:
                 if not self.player_selecting_gameClockLimit and not self.showing_curtain:
