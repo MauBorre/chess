@@ -1824,6 +1824,15 @@ class Match:
 
     def render(self):
 
+        # BUG hay casos en los que no queremos que este "switch" suceda, 
+        # por ejemplo si hay otro menú abierto. Actualmente el hecho de 
+        # que no tenga impedimentos nos esta dando errores en los menúes.
+        #
+        # Si hay otro menú abierto, NO debemos poder "switchear" entre pausa/no-pausa
+        # u otros estados.
+        #
+        # Ademas la tecla ESCAPE tiene distintas funciones dependiendo de "qué está
+        # pasando" en la pantalla/juego.
         if self.control_input['escape']: self.pause = not self.pause
 
         # HUD
@@ -1887,7 +1896,7 @@ class Match:
         self.control_input['click'] = False
     
     def hideORshow_current_menu(self):
-        # NO remueve game_halt
+        # NO remueve game_halt (o sí debería?...)
         # esconde/muestra menu pausa
         # esconde/muestra menu promocion
         # esconde/muestra menu reiniciar partida
@@ -1905,6 +1914,7 @@ class Match:
             pygame.draw.rect(self.screen,(255,0,0),btn_rect,width=1)
             # action
             if self.control_input['click']:
+                # self.hideORshow_current_menu()
                 self.pause = not self.pause
             
     # Confirm restart (pause menu children) ----------------------------------------------------------------
