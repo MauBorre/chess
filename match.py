@@ -288,8 +288,9 @@ class Match:
             self.knight_objectives(_knight, perspective='attacker')
 
         queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_attacker.name, piece="queen")
-        if len(queen_standpoint) != 0:
-            _queen = queen_standpoint.pop()
+        # if len(queen_standpoint) != 0:
+        #     _queen = queen_standpoint.pop()
+        for _queen in queen_standpoint:
             self.queen_objectives(_queen, perspective='attacker')
         # --------------------------------------------------------------------------------------------------
 
@@ -340,8 +341,9 @@ class Match:
                 self.knight_objectives(_knight, perspective='defender')
             
             queen_standpoint = self.get_piece_standpoint(color=self.turn_defender.name, piece="queen")
-            if len(queen_standpoint) != 0:
-                _queen = queen_standpoint.pop()
+            # if len(queen_standpoint) != 0:
+                # _queen = queen_standpoint.pop()
+            for _queen in queen_standpoint:
                 self.queen_objectives(_queen, perspective='defender')
         # -------------------------------------------------------------------------------------------------
 
@@ -423,56 +425,50 @@ class Match:
                     fake_positions.update({fake_move: self.turn_attacker.positions[ap]})
 
             if self.turn_defender.direct_threatOrigin_type == 'single':
-                '''Aquí debemos verificar si el ATACANTE está en jaque.
-                Si está en jaque, debemos filtrar y descartar la pieza DEFENSORA amenazante
-                (Torre, Alfil o Reina) o nunca obtendremos el resultado esperado,
-                nos dirá que SIEMPRE estamos exponiendo al rey porque ya está en jaque.'''
+                '''Si el ATACANTE está en jaque, debemos filtrar y descartar la pieza
+                DEFENSORA amenazante (Torre, Alfil o Reina) o nunca obtendremos el resultado
+                esperado, nos dirá SIEMPRE que estamos exponiendo al rey porque ya está en jaque.'''
                 # nombre de la pieza que NO debemos considerar
                 rejected_piece: str = self.turn_defender.positions[self.turn_defender.single_threat_standpoint]
 
                 if rejected_piece != 'rook':
                     rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender.name,piece="rook")
-                    if len(rook_standpoints) != 0:
-                        for _rook in rook_standpoints:
-                            if _rook != fake_move:
-                                if self.rook_objectives(_rook, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
-                                    return True
-                
-                if rejected_piece != 'bishop':
-                    bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender.name,piece="bishop")
-                    if len(bishop_standpoints) != 0:
-                        for _bishop in bishop_standpoints:
-                            if _bishop != fake_move:
-                                if self.bishop_objectives(_bishop, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
-                                    return True
-
-                if rejected_piece != 'queen':
-                    queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_defender.name, piece="queen")
-                    if len(queen_standpoint) != 0:
-                        _queen = queen_standpoint.pop()
-                        if _queen != fake_move:
-                            if self.queen_objectives(_queen, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
-                                return True
-
-            elif self.turn_defender.direct_threatOrigin_type == 'none':
-
-                rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender.name,piece="rook")
-                if len(rook_standpoints) != 0:
                     for _rook in rook_standpoints:
                         if _rook != fake_move:
                             if self.rook_objectives(_rook, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
                                 return True
-
-                bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender.name,piece="bishop")
-                if len(bishop_standpoints) != 0:
+                
+                if rejected_piece != 'bishop':
+                    bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender.name,piece="bishop")
                     for _bishop in bishop_standpoints:
                         if _bishop != fake_move:
                             if self.bishop_objectives(_bishop, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
                                 return True
 
+                if rejected_piece != 'queen':
+                    queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_defender.name, piece="queen")
+                    for _queen in queen_standpoint:
+                        if _queen != fake_move:
+                            if self.queen_objectives(_queen, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
+                                return True
+                return False
+
+            elif self.turn_defender.direct_threatOrigin_type == 'none':
+
+                rook_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender.name,piece="rook")
+                for _rook in rook_standpoints:
+                    if _rook != fake_move:
+                        if self.rook_objectives(_rook, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
+                            return True
+
+                bishop_standpoints: list[int] = self.get_piece_standpoint(color=self.turn_defender.name,piece="bishop")
+                for _bishop in bishop_standpoints:
+                    if _bishop != fake_move:
+                        if self.bishop_objectives(_bishop, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
+                            return True
+
                 queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_defender.name, piece="queen")
-                if len(queen_standpoint) != 0:
-                    _queen = queen_standpoint.pop()
+                for _queen in queen_standpoint:
                     if _queen != fake_move:
                         if self.queen_objectives(_queen, perspective='fake-attackerMov-toDef', fake_positions=fake_positions):
                             return True
@@ -499,8 +495,7 @@ class Match:
                         return True
 
             queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_attacker.name, piece="queen")
-            if len(queen_standpoint) != 0:
-                _queen = queen_standpoint.pop()
+            for _queen in queen_standpoint:
                 if _queen != fake_move:
                     if self.queen_objectives(_queen, perspective='fake-defenderMov-toAtt', fake_positions=fake_positions):
                         return True
@@ -548,7 +543,7 @@ class Match:
                                         if movement+SUR in self.turn_attacker.direct_threatOnEnemy_trace:
                                             self.turn_defender.legal_moves.add(f'pawn{piece_standpoint}')    
                             else: pass
-                        
+
                         # kill saving positions
                         # board limits check
                         if piece_standpoint+OESTE not in row_of_(piece_standpoint):
@@ -1356,7 +1351,7 @@ class Match:
                                 break
 
                 _threat_emission.append(piece_standpoint)
-                self.turn_attacker.pieces_threatening_enemy.update({'queen': _threat_emission})
+                self.turn_attacker.pieces_threatening_enemy.update({f'queen{piece_standpoint}': _threat_emission})
 
                 return mov_target_positions, on_target_kill_positions # illuminated positions
 
@@ -1598,9 +1593,7 @@ class Match:
             pygame.draw.rect(self.screen, 'BLUE', valid_castling_RECT, width=2)
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
-        '''
-        > Argumentar pieza exactamente igual que en pieces.origins
-        '''
+        '''Argumentar pieza exactamente igual que en pieces.origins'''
         _actual_standpoints: list[int] = []
         if color == 'black':
             for k,v in self.black.positions.items():
@@ -1610,7 +1603,6 @@ class Match:
             for k,v in self.white.positions.items():
                 if v == piece:
                     _actual_standpoints.append(k)
-
         return _actual_standpoints
 
     def decide_check(self):
