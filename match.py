@@ -1471,21 +1471,21 @@ class Match:
 
     def draw_board(self):
 
-        row = 1 # style util
+        styleAux_row = 1
         for board_index, SQUARE_RECT in enumerate(board.rects): #celdas que sirven por posición, índice y medida.
             
             # Square style
-            if board_index == 8*row: row+=1
+            if board_index == 8*styleAux_row: styleAux_row+=1
             # fill
             if board_index % 2 == 0:
-                if row % 2 == 1:
+                if styleAux_row % 2 == 1:
                     pygame.draw.rect(self.screen, board.light_square, SQUARE_RECT)
-                if row % 2 == 0:
+                if styleAux_row % 2 == 0:
                     pygame.draw.rect(self.screen, board.dark_square, SQUARE_RECT)
             if board_index % 2 == 1:
-                if row % 2 == 0:
+                if styleAux_row % 2 == 0:
                     pygame.draw.rect(self.screen, board.light_square, SQUARE_RECT)
-                if row % 2 == 1:
+                if styleAux_row % 2 == 1:
                     pygame.draw.rect(self.screen, board.dark_square, SQUARE_RECT)
             # grid
             pygame.draw.rect(self.screen, board.dark_square, SQUARE_RECT, width=1)
