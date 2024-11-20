@@ -1886,19 +1886,23 @@ class Match:
         self.control_input['click'] = False
             
     # Confirm restart (pause menu children) ----------------------------------------------------------------
-    def draw_confirm_restart_menu(self, width=300, height=300):
+    def draw_confirm_restart_menu(self, width=390, height=200):
+        x = self.mid_screen.x
+        y = self.mid_screen.y 
         # frame
         pygame.draw.rect(self.screen, (100,100,100),
-                        pygame.Rect(self.screen.get_width()-400, 150, width, height))
+                        pygame.Rect(x, y, width, height))
         #leyenda
-        self.draw_text('¿Está seguro que quiere reiniciar la partida?',
-            'black',self.screen.get_width()-400, 150, center=False)
+        self.draw_text('¿Seguro que quiere reiniciar la partida?',
+            'black',x, y, center=False)
         self.draw_confirm_match_restart_btn()
         self.draw_cancel_restart_btn()
         
     def draw_confirm_match_restart_btn(self):
-        self.draw_text('Si', 'black', self.screen.get_width()-400, 190, center=False)
-        confirm_match_rect = pygame.Rect(self.screen.get_width()-400, 190, 200, 50)
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 50
+        self.draw_text('Si', 'black', x, y, center=False)
+        confirm_match_rect = pygame.Rect(x, y, 200, 50)
         if confirm_match_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen,(255,0,0),confirm_match_rect,width=1)
@@ -1906,8 +1910,10 @@ class Match:
                 self.reset_match()
 
     def draw_cancel_restart_btn(self):
-        self.draw_text('No','black',self.screen.get_width()-400,250,center=False)
-        cancel_match_rect = pygame.Rect(self.screen.get_width()-400,250,200,50)
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 100
+        self.draw_text('No', 'black', x, y, center=False)
+        cancel_match_rect = pygame.Rect(x, y,200,50)
         if cancel_match_rect.collidepoint((self.control_input['mouse-x'],self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen,(255,0,0),cancel_match_rect,width=1)
@@ -1916,20 +1922,24 @@ class Match:
     # ------------------------------------------------------------------------------------------------------
 
     # Pause menu ---------------------------------------------------------------------------------------------
-    def draw_pause_menu(self, width=300, height=400):
+    def draw_pause_menu(self, width=300, height=250):
+        x = self.mid_screen.x
+        y = self.mid_screen.y
         # frame
         pygame.draw.rect(self.screen,(100,100,100),
-                        pygame.Rect(self.screen.get_width()-400,150,width,height))
+                        pygame.Rect(x, y, width,height))
         # tooltip
-        self.draw_text('Paused','black',self.screen.get_width()-400,150,center=False)
+        self.draw_text('Paused','black', x, y,center=False)
         # buttons
         self.draw_continue_btn()
         self.draw_play_again_btn()
         self.draw_exit_game_btn()
 
     def draw_continue_btn(self):
-        self.draw_text('Continuar','white', self.screen.get_width()-400, 190, center=False)
-        continue_match_rect = pygame.Rect(self.screen.get_width()-400, 190, 200, 50)
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 50
+        self.draw_text('Continuar','white', x, y, center=False)
+        continue_match_rect = pygame.Rect(x, y, 200, 50)
         if continue_match_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen,(255,0,0),continue_match_rect,width=1)
@@ -1937,8 +1947,10 @@ class Match:
                 self.pause = False
 
     def draw_play_again_btn(self):
-        self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400, 250, center=False)
-        play_again_rect = pygame.Rect(self.screen.get_width()-400, 250, 200, 50)
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 100
+        self.draw_text('Jugar de nuevo', 'white', x, y, center=False)
+        play_again_rect = pygame.Rect(x, y, 200, 50)
         if play_again_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), play_again_rect, width=1)
@@ -1946,8 +1958,10 @@ class Match:
                 self.player_deciding_match = True
 
     def draw_exit_game_btn(self):
-        self.draw_text('Salir del juego','white', self.screen.get_width()-400,310,center=False)
-        exit_game_rect = pygame.Rect(self.screen.get_width()-400,310,200,50)
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 150
+        self.draw_text('Salir del juego','white', x, y,center=False)
+        exit_game_rect = pygame.Rect(x, y, 200, 50)
         if exit_game_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), exit_game_rect, width=1)
@@ -1957,39 +1971,62 @@ class Match:
 
     # Post game menu -----------------------------------------------------------------------------------------
     def draw_post_game_menu(self, width=300,height=300):
+        x = self.mid_screen.x
+        y = self.mid_screen.y 
         # frame
         pygame.draw.rect(self.screen,(100,100,100),
-                        pygame.Rect(self.screen.get_width()-400, 150, width, height))
+                        pygame.Rect(x, y, width, height))
         # tooltip
-        self.draw_text('La partida ha finalizado.', 'black', self.screen.get_width()-400, 150, center=False)
+        self.draw_text('La partida ha finalizado.', 'black', x, y, center=False)
+        self.draw_show_board_btn()
         self.draw_postgame_again_btn()
-        #opciones de cambiar reglas...
+
+    def draw_show_board_btn(self):
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 50
+        self.draw_text('Mostrar tablero', 'white', x, y, center=False)
+        btn_rect = pygame.Rect(x, y, 200,50)
+        if btn_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
+            # hover
+            pygame.draw.rect(self.screen, (255,0,0), btn_rect, width=1)
+            # action
+            if self.control_input['click']:
+                print('escondiendo menu')
+                # self.hide_menus = True
+                ...
 
     def draw_postgame_again_btn(self):
-        self.draw_text('Jugar de nuevo', 'white', self.screen.get_width()-400, 400, center=False)
-        play_again_rect = pygame.Rect(self.screen.get_width()-400,400,200,50)
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 100
+        self.draw_text('Jugar de nuevo', 'white', x, y, center=False)
+        play_again_rect = pygame.Rect(x, y, 200,50)
         if play_again_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
             if self.control_input['click']:
-                self.player_deciding_match = True
+                #show curtain...
+                self.reset_match()
     # --------------------------------------------------------------------------------------------------------
 
     # Pawn promotion menu ------------------------------------------------------------------------------------
-    def draw_pawnPromotion_selection_menu(self, width=300, height=400):
+    def draw_pawnPromotion_selection_menu(self, width=300, height=250):
+        x = self.mid_screen.x
+        y = self.mid_screen.y 
         # frame
         pygame.draw.rect(self.screen, (100,100,100),
-                        pygame.Rect(self.screen.get_width()-400, 150, width, height))
+                        pygame.Rect(x, y, width, height))
         # tooltip
-        self.draw_text('Elija su promoción', 'black', self.screen.get_width()-400, 400, center=False)
+        self.draw_text('Elija su promoción', 'black', x, 400, center=False)
         self.draw_rookOPT_btn()
         self.draw_knightOPT_btn()
         self.draw_queenOPT_btn()
         self.draw_bishopOPT_btn()
 
     def draw_rookOPT_btn(self):
-        self.draw_text('Rook', 'white', self.screen.get_width()-400, 200, center=False)
-        selection_rect = pygame.Rect(self.screen.get_width()-400, 200, 200, 50)
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 50
+        self.draw_text('Rook', 'white', x, y, center=False)
+        selection_rect = pygame.Rect(x, y, 200, 50)
         if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
@@ -1998,8 +2035,10 @@ class Match:
                 self.make_promotion('rook')
 
     def draw_knightOPT_btn(self):
-        self.draw_text('Knight', 'white', self.screen.get_width()-400, 300, center=False)
-        selection_rect = pygame.Rect(self.screen.get_width()-400, 300, 300, 50)
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 100
+        self.draw_text('Knight', 'white', x, y, center=False)
+        selection_rect = pygame.Rect(x, y, 300, 50)
         if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
@@ -2008,8 +2047,10 @@ class Match:
                 self.make_promotion('knight')
 
     def draw_bishopOPT_btn(self):
-        self.draw_text('Bishop', 'white', self.screen.get_width()-400, 400, center=False)
-        selection_rect = pygame.Rect(self.screen.get_width()-400, 400, 300, 50)
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 150
+        self.draw_text('Bishop', 'white', x, y, center=False)
+        selection_rect = pygame.Rect(x, y, 300, 50)
         if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
@@ -2018,8 +2059,10 @@ class Match:
                 self.make_promotion('bishop')
 
     def draw_queenOPT_btn(self):
-        self.draw_text('Queen', 'white', self.screen.get_width()-400, 500, center=False)
-        selection_rect = pygame.Rect(self.screen.get_width()-400, 500, 300, 50)
+        x = self.mid_screen.x
+        y = self.mid_screen.y + 200
+        self.draw_text('Queen', 'white', x, y, center=False)
+        selection_rect = pygame.Rect(x, y, 300, 50)
         if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
@@ -2029,12 +2072,14 @@ class Match:
     # --------------------------------------------------------------------------------------------------------
 
     # Time selection Menu ------------------------------------------------------------------------------------
-    def draw_starting_time_selection_menu(self, width=300, height=400):
+    def draw_starting_time_selection_menu(self, width=300, height=250):
+        x = self.mid_screen.x
+        y = self.mid_screen.y 
         # frame
         pygame.draw.rect(self.screen, (100,100,100),
-                        pygame.Rect(self.mid_screen.x, self.mid_screen.y, width, height))
+                        pygame.Rect(x, y, width, height))
         # tooltip
-        self.draw_text('Select clock limit', 'white', self.mid_screen.x, self.mid_screen.y, center=False)
+        self.draw_text('Select clock limit', 'white', x, y, center=False)
         # buttons
         self.draw_threeMinOPT_btn()
         self.draw_fiveMinOPT_btn()
@@ -2050,7 +2095,7 @@ class Match:
             #hover
             pygame.draw.rect(self.screen, (255,0,0), selection_rect, width=1)
             if self.control_input['click']:
-                self.set_turn_clocks(3)
+                self.set_turn_clocks(1)
                 self.player_selecting_gameClockLimit = False
 
     def draw_fiveMinOPT_btn(self):
