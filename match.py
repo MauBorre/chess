@@ -724,6 +724,7 @@ class Match:
                         self.turn_attacker.pieces_threatening_enemy.update({f'pawn{piece_standpoint}': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
+                
 
             if self.turn_attacker.name == 'white': # Ataca hacia el NORTE
 
@@ -796,6 +797,7 @@ class Match:
                         self.turn_attacker.pieces_threatening_enemy.update({f'pawn{piece_standpoint}': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
+            return mov_target_positions, on_target_kill_positions # illuminated positions
 
     def rook_objectives(
         self,
@@ -934,6 +936,7 @@ class Match:
                 self.turn_attacker.pieces_threatening_enemy.update({f'rook{piece_standpoint}': _threat_emission})
 
                 return mov_target_positions, on_target_kill_positions
+            return mov_target_positions, on_target_kill_positions # illuminated positions
 
     def knight_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
         '''Movimiento Caballo:
@@ -1030,6 +1033,7 @@ class Match:
                 self.turn_attacker.pieces_threatening_enemy.update({f'knight{piece_standpoint}': _threat_emission})
 
                 return mov_target_positions, on_target_kill_positions
+            return mov_target_positions, on_target_kill_positions 
 
     def bishop_objectives(
         self,
@@ -1183,6 +1187,7 @@ class Match:
                 self.turn_attacker.pieces_threatening_enemy.update({f'bishop{piece_standpoint}': _threat_emission})
 
                 return mov_target_positions, on_target_kill_positions
+            return mov_target_positions, on_target_kill_positions 
 
     def queen_objectives(
         self,
@@ -1354,6 +1359,7 @@ class Match:
                 self.turn_attacker.pieces_threatening_enemy.update({f'queen{piece_standpoint}': _threat_emission})
 
                 return mov_target_positions, on_target_kill_positions # illuminated positions
+            return mov_target_positions, on_target_kill_positions # illuminated positions
 
     def king_objectives(self, piece_standpoint: int, perspective: str) -> dict[int, pygame.Rect]:
         '''Movimiento Rey:
@@ -1807,14 +1813,14 @@ class Match:
             else: self.white_turn_seconds = str(seconds) if len(str(seconds)) > 1 else '0'+str(seconds)
 
     def match_state_info(self):
-        self.draw_text(self.match_state, 'black', 400, 20, center=False)
-        self.draw_text(self.turn_attacker.name, 'black', self.mid_screen.x - 25, board.height+60, center=False)
+        self.draw_text(self.match_state, 'black', board.x, 20, center=False)
+        # self.draw_text(self.turn_attacker.name, 'black', self.mid_screen.x - 25, board.height+60, center=False)
 
     def clock_display(self):
         # black team clock
-        self.draw_text(f'{self.black_turn_minutes}:{self.black_turn_seconds}', 'black', self.mid_screen.x + board.width/2-20, 20, center=False)
+        self.draw_text(f'{self.black_turn_minutes}:{self.black_turn_seconds}', 'black', self.mid_screen.x , board.x-20, center=True)
         # white team clock
-        self.draw_text(f'{self.white_turn_minutes}:{self.white_turn_seconds}', 'black', self.mid_screen.x-100, 20, center=False)
+        self.draw_text(f'{self.white_turn_minutes}:{self.white_turn_seconds}', 'black', self.mid_screen.x, board.height+70, center=True)
 
     def render(self):
 
