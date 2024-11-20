@@ -1465,26 +1465,30 @@ class Match:
 
     def draw_board(self):
 
-        # main board frame
-        pygame.draw.rect(
-            self.screen,
-            (200,200,200),
-            pygame.Rect(
-                board.x,
-                board.y,
-                board.width,board.height
-            ),
-            width=3
-        )
-
+        row = 1 # style util
         for board_index, SQUARE_RECT in enumerate(board.rects): #celdas que sirven por posición, índice y medida.
+            
+            # Square style
+            if board_index == 8*row: row+=1
+            # fill
+            if board_index % 2 == 0:
+                if row % 2 == 1:
+                    pygame.draw.rect(self.screen, board.light_square, SQUARE_RECT)
+                if row % 2 == 0:
+                    pygame.draw.rect(self.screen, board.dark_square, SQUARE_RECT)
+            if board_index % 2 == 1:
+                if row % 2 == 0:
+                    pygame.draw.rect(self.screen, board.light_square, SQUARE_RECT)
+                if row % 2 == 1:
+                    pygame.draw.rect(self.screen, board.dark_square, SQUARE_RECT)
+            # grid
+            pygame.draw.rect(self.screen, board.dark_square, SQUARE_RECT, width=1)
 
-            # individual grid frame
-            pygame.draw.rect(self.screen, (200,200,200), SQUARE_RECT, width=1)
-            self.draw_text(f'{board_index}',(150,150,150),
-                            SQUARE_RECT.left +3,
-                            SQUARE_RECT.top + board.square_height -17,
-                            center=False, font_size='medium')
+            # debug tooltip
+            # self.draw_text(f'{board_index}',(150,150,150),
+            #                 SQUARE_RECT.left +3,
+            #                 SQUARE_RECT.top + board.square_height -17,
+            #                 center=False, font_size='medium')
             
             # Square types/subtypes -----------------------------------------------------------------------------
             if board_index in self.black.positions.keys():
@@ -1516,7 +1520,7 @@ class Match:
                     self.draw_text(SQUARE_TYPE,'black', SQUARE_RECT.left + board.square_width/2,
                                                         SQUARE_RECT.top + board.square_height/2)
                 if interacted_PColor == 'white':
-                    self.draw_text(SQUARE_TYPE,(120,120,120),
+                    self.draw_text(SQUARE_TYPE,(255,255,255),
                                                         SQUARE_RECT.left + board.square_width/2,
                                                         SQUARE_RECT.top + board.square_height/2)
 
@@ -1527,9 +1531,9 @@ class Match:
 
                     # Hover -----------------------
                     if interacted_PColor == self.turn_attacker.name:
-                        pygame.draw.rect(self.screen, 'GREEN', SQUARE_RECT, width=2) # PIECE hover
+                        pygame.draw.rect(self.screen, (100,230,100), SQUARE_RECT, width=2) # PIECE hover
                     else:
-                        pygame.draw.rect(self.screen, (150,150,150), SQUARE_RECT, width=2) # EMPTY hover
+                        pygame.draw.rect(self.screen, (230,230,230), SQUARE_RECT, width=2) # EMPTY hover
                     # Hover -----------------------
                 
                     if self.control_input['click']:
@@ -1582,15 +1586,20 @@ class Match:
                             if SQUARE_TYPE == "EMPTY":
                                 self.pieceValidMovement_posDisplay.clear()
                                 # self.kingValidCastling_posDisplay.clear()
-                                
+
+        # outer board frame
+        # pygame.draw.rect(self.screen,(0,0,0),pygame.Rect(board.x,board.y,board.width,board.height),width=1)
+
         # Pre-movements visual feedback
         if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0: # avoids highlighting pieces with no movement
             for valid_mov_RECT in self.pieceValidMovement_posDisplay.values():
-                pygame.draw.rect(self.screen, 'GREEN', valid_mov_RECT, width=2)
+                pygame.draw.rect(self.screen, (100,230,100), valid_mov_RECT, width=2)
         for valid_kill_RECT in self.pieceValidKill_posDisplay.values():
-            pygame.draw.rect(self.screen, 'RED', valid_kill_RECT, width=2)
+            pygame.draw.rect(self.screen, (230,100,100), valid_kill_RECT, width=2)
         for valid_castling_RECT in self.kingValidCastling_posDisplay.values():
-            pygame.draw.rect(self.screen, 'BLUE', valid_castling_RECT, width=2)
+            pygame.draw.rect(self.screen, (100,100,230), valid_castling_RECT, width=2)
+
+        
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''Argumentar pieza exactamente igual que en pieces.origins'''
@@ -1958,7 +1967,6 @@ class Match:
             pygame.draw.rect(self.screen,(255,0,0),play_again_rect,width=1)
             if self.control_input['click']:
                 self.player_deciding_match = True
-                # self.reset_match()
     # --------------------------------------------------------------------------------------------------------
 
     # Pawn promotion menu ------------------------------------------------------------------------------------
