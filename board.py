@@ -20,8 +20,8 @@ rects: list[pygame.Rect]
 x: int
 y: int
 
-light_square = (175,175,170)
-dark_square = (145,145,140)
+light_square = (170,170,160)
+dark_square = (150,150,145)
 
 def place(mid_screen_vector):
     global x, y, rects
