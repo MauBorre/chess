@@ -20,6 +20,9 @@ rects: list[pygame.Rect]
 x: int
 y: int
 
+light_square = (175,175,170)
+dark_square = (145,145,140)
+
 def place(mid_screen_vector):
     global x, y, rects
     # board placement on current screen display
