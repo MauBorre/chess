@@ -16,7 +16,7 @@ origins: dict[str,dict[str,list[int]]] = {
         'king':[60],
         'pawn':[55,54,53,52,51,50,49,48]
         }
-    }
+}
 
 def reverse_expand_origins(
     pieces_legible_origins: dict[str,dict[str,list[int]]]
