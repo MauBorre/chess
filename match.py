@@ -1819,15 +1819,23 @@ class Match:
         
         # black team clock
         if self.turn_attacker.name == 'black':
-            self.draw_text(f'{self.black_turn_minutes}:{self.black_turn_seconds}', (0,230,0), self.mid_screen.x , board.y-20, center=True)
+            self.draw_text(
+                f'{self.black_turn_minutes}:{self.black_turn_seconds}',
+                (0,200,0), self.mid_screen.x , board.y-20, center=True)
         else:
-            self.draw_text(f'{self.black_turn_minutes}:{self.black_turn_seconds}', 'black', self.mid_screen.x , board.y-20, center=True)
+            self.draw_text(
+                f'{self.black_turn_minutes}:{self.black_turn_seconds}',
+                'black', self.mid_screen.x , board.y-20, center=True)
 
         # white team clock
         if self.turn_attacker.name == 'white':
-            self.draw_text(f'{self.white_turn_minutes}:{self.white_turn_seconds}', (0,230,0), self.mid_screen.x, board.height+70, center=True)
+            self.draw_text(
+                f'{self.white_turn_minutes}:{self.white_turn_seconds}',
+                (0,200,0), self.mid_screen.x, board.height+70, center=True)
         else:
-            self.draw_text(f'{self.white_turn_minutes}:{self.white_turn_seconds}', 'black', self.mid_screen.x, board.height+70, center=True)
+            self.draw_text(
+                f'{self.white_turn_minutes}:{self.white_turn_seconds}',
+                'black', self.mid_screen.x, board.height+70, center=True)
 
     def render(self):
 
