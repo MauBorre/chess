@@ -74,7 +74,7 @@ class Match:
             legal_moves = set(),
         )
         
-        # game halt reasons --------------------
+        # menu spawn variables / game halt reasons
         self.pause = False 
         self.player_selecting_gameClockLimit = True # match opening
         self.player_deciding_match: bool = False 
@@ -82,6 +82,7 @@ class Match:
         self.winner: bool = False 
         self.game_halt: bool = False
         self.stalemate: bool = False # Ahogado | draw
+        self.show_switchable_menu = True
         # ---------------------------------------
 
         # core game variables -------------------
@@ -1824,16 +1825,8 @@ class Match:
 
     def render(self):
 
-        # BUG hay casos en los que no queremos que este "switch" suceda, 
-        # por ejemplo si hay otro menú abierto. Actualmente el hecho de 
-        # que no tenga impedimentos nos esta dando errores en los menúes.
-        #
-        # Si hay otro menú abierto, NO debemos poder "switchear" entre pausa/no-pausa
-        # u otros estados.
-        #
-        # Ademas la tecla ESCAPE tiene distintas funciones dependiendo de "qué está
-        # pasando" en la pantalla/juego.
-        if self.control_input['escape']: self.pause = not self.pause
+        if self.control_input['escape']:
+            self.menu_handler()
 
         # HUD
         self.match_state_info()
@@ -1876,15 +1869,17 @@ class Match:
                 self.draw_confirm_restart_menu()
         
         if self.winner or self.stalemate: # menú switcheable con ESC
-            self.game_halt = True
-            if not self.player_deciding_match:
-                self.draw_post_game_menu()
-            else:
-                self.draw_confirm_restart_menu()
+            if self.show_switchable_menu:
+                self.game_halt = True
+                if not self.player_deciding_match:
+                    self.draw_post_game_menu()
+                else:
+                    self.draw_confirm_restart_menu()
 
         if self.player_deciding_promotion: # menú switcheable con ESC
-            self.game_halt = True
-            self.draw_pawnPromotion_selection_menu()
+            if self.show_switchable_menu:
+                self.game_halt = True
+                self.draw_pawnPromotion_selection_menu()
         
         # clock/game_halt release
         if not self.pause and not self.winner:
@@ -1896,13 +1891,21 @@ class Match:
         self.control_input['escape'] = False
         self.control_input['click'] = False
     
-    def hideORshow_current_menu(self):
-        # NO remueve game_halt (o sí debería?...)
-        # esconde/muestra menu pausa
-        # esconde/muestra menu promocion
-        # esconde/muestra menu reiniciar partida
-        # esconde/muestra menu partida finalizada
-        ...
+    def menu_handler(self):
+        if not self.player_selecting_gameClockLimit and not self.player_deciding_promotion:
+            if not self.player_deciding_match:
+                if not self.winner or self.stalemate:
+                    print('a')
+                    self.pause = not self.pause
+        if self.player_deciding_promotion:
+            # hide/show menu
+            self.show_switchable_menu = not self.show_switchable_menu
+        if self.winner or self.stalemate:
+            # hide/show menu
+            self.show_switchable_menu = not self.show_switchable_menu
+        if self.player_deciding_match:
+            self.player_deciding_match = False
+            self.pause = False
     
     def menu_toggle_btn(self):
         x = self.mid_screen.x + board.width/2 - 73
@@ -1915,8 +1918,7 @@ class Match:
             pygame.draw.rect(self.screen,(255,0,0),btn_rect,width=1)
             # action
             if self.control_input['click']:
-                # self.hideORshow_current_menu()
-                self.pause = not self.pause
+                self.menu_handler()
             
     # Confirm restart (pause menu children) ----------------------------------------------------------------
     def draw_confirm_restart_menu(self, width=390, height=200):
@@ -2025,9 +2027,7 @@ class Match:
             pygame.draw.rect(self.screen, (255,0,0), btn_rect, width=1)
             # action
             if self.control_input['click']:
-                print('escondiendo menu')
-                # self.hide_menus = True
-                ...
+                self.show_switchable_menu = False
 
     def draw_postgame_again_btn(self):
         x = self.mid_screen.x
