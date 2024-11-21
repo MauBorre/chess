@@ -1648,7 +1648,7 @@ class Match:
         if self.turn_attacker.direct_threatOrigin_type == 'none':
             if len(self.turn_attacker.positions) == 1 and len(self.turn_defender.positions) == 1:
                 # Solo pueden ser los reyes, asi que es DRAW
-                self.match_state = 'Draw'
+                self.match_state = 'Draw.'
                 self.stalemate = True
 
             if len(self.turn_defender.king_legal_moves) == 0 and len(self.turn_defender.legal_moves) == 0:
@@ -1657,11 +1657,11 @@ class Match:
                 '''Termina el juego en empate.'''
                 if self.turn_attacker.name == 'black':
                     self.stalemate = True # repercute en render() - termina la partida
-                    self.match_state = 'Rey White ahogado.  -  Empate.'
+                    self.match_state = 'Stalemate.'
 
                 if self.turn_attacker.name == 'white':
                     self.stalemate = True # repercute en render() - termina la partida
-                    self.match_state = 'Rey Black ahogado.  -  Empate.'
+                    self.match_state = 'Stalemate.'
 
             else:
                 self.match_state = ''
@@ -1681,20 +1681,20 @@ class Match:
                 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 
                 if self.turn_attacker.name == 'black':
-                    self.match_state = 'White en jaque.'
+                    self.match_state = 'White is in check.'
 
                 if self.turn_attacker.name == 'white':
-                    self.match_state = 'Black en jaque.'
+                    self.match_state = 'Black is in check.'
 
             elif len(self.turn_defender.king_legal_moves) == 0 and len(self.turn_defender.legal_moves) == 0:
                 #JAQUE-MATE
                 '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
                 if self.turn_attacker.name == 'black':
                     self.winner = True # automaticamente repercutirá draw() 
-                    self.match_state = 'Black gana.'
+                    self.match_state = 'Black wins.'
                 if self.turn_attacker.name == 'white':
                     self.winner = True # automaticamente repercutirá draw()
-                    self.match_state = 'White gana.'
+                    self.match_state = 'White wins.'
 
         if self.turn_attacker.direct_threatOrigin_type == 'multiple': # múltiple origen de amenaza.
             if len(self.turn_defender.king_legal_moves) == 0:
@@ -1702,19 +1702,19 @@ class Match:
                 '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
                 if self.turn_attacker.name == 'black':
                     self.winner = True # repercute en render() - termina la partida
-                    self.match_state = 'Black gana.'
+                    self.match_state = 'Black wins.'
 
                 if self.turn_attacker.name == 'white':
                     self.winner = True # repercute en render() - termina la partida
-                    self.match_state = 'White gana.'
+                    self.match_state = 'White wins.'
             else:
                 # JAQUE
                 '''Notificar al jugador correspondiente.'''
                 if self.turn_attacker.name == 'black':
-                    self.match_state = 'White en jaque.'
+                    self.match_state = 'White is in check.'
                     
                 if self.turn_attacker.name == 'white':
-                    self.match_state = 'Black en jaque.'
+                    self.match_state = 'Black is in check.'
 
     def make_moves(self):
         # moving piece standpoint
@@ -1768,7 +1768,7 @@ class Match:
                 # out of time - white lose
                 if self.white_turn_time == 0:
                     self.winner = True
-                    self.match_state = 'Black gana.'
+                    self.match_state = 'Black wins.'
             
             if self.turn_attacker.name == 'black':
                 self.blacktime_SNAP += self.pause_time_leftover
@@ -1782,7 +1782,7 @@ class Match:
                 # out of time - black lose
                 if self.black_turn_time == 0:
                     self.winner = True
-                    self.match_state = 'White gana.'
+                    self.match_state = 'White wins.'
 
             self.pause_time_leftover = 0
         elif self.pause or self.player_deciding_promotion:
@@ -1967,7 +1967,7 @@ class Match:
         pygame.draw.rect(self.screen, (100,100,100),
                         pygame.Rect(x, y, width, height))
         # tooltip
-        self.draw_text('¿Seguro que quiere reiniciar la partida?',
+        self.draw_text('¿Are you sure you want to restart the game?',
             'black',self.mid_screen.x, y+15, x_center=True)
         self.draw_confirm_match_restart_btn(y)
         self.draw_cancel_restart_btn(y)
@@ -1975,7 +1975,7 @@ class Match:
     def draw_confirm_match_restart_btn(self, y):
         x = self.mid_screen.x
         y += 60
-        self.draw_text('Si', 'black', x, y, x_center=True)
+        self.draw_text('Yes', 'black', x, y, x_center=True)
         confirm_match_rect = pygame.Rect(x-390/2, y-15, 390, 50)
         if confirm_match_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             # hover
@@ -2004,7 +2004,7 @@ class Match:
         pygame.draw.rect(self.screen,(100,100,100),
                         pygame.Rect(x, y, width, height))
         # tooltip
-        self.draw_text('Paused','black', self.mid_screen.x, y+15, x_center=True)
+        self.draw_text('Paused','white', self.mid_screen.x, y+15, x_center=True)
         # buttons
         self.draw_continue_btn(y)
         self.draw_play_again_btn(y)
@@ -2013,7 +2013,7 @@ class Match:
     def draw_continue_btn(self, y):
         x = self.mid_screen.x
         y += 60
-        self.draw_text('Continuar','white', x, y, x_center=True)
+        self.draw_text('Continue','white', x, y, x_center=True)
         continue_match_rect = pygame.Rect(x-300/2, y-15, 300, 50)
         if continue_match_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
@@ -2024,7 +2024,7 @@ class Match:
     def draw_play_again_btn(self, y):
         x = self.mid_screen.x
         y += 120
-        self.draw_text('Jugar de nuevo', 'white', x, y, x_center=True)
+        self.draw_text('Play again', 'white', x, y, x_center=True)
         play_again_rect = pygame.Rect(x-300/2, y-15, 300, 50)
         if play_again_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
@@ -2035,7 +2035,7 @@ class Match:
     def draw_exit_game_btn(self, y):
         x = self.mid_screen.x
         y += 180
-        self.draw_text('Salir del juego','white', x, y, x_center=True)
+        self.draw_text('Exit game','white', x, y, x_center=True)
         exit_game_rect = pygame.Rect(x-300/2, y-15, 300, 50)
         if exit_game_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
@@ -2052,14 +2052,14 @@ class Match:
         pygame.draw.rect(self.screen,(100,100,100),
                         pygame.Rect(x, y, width, height))
         # tooltip
-        self.draw_text('La partida ha finalizado.', 'black', self.mid_screen.x, y+15, x_center=True)
+        self.draw_text('Game over', 'black', self.mid_screen.x, y+15, x_center=True)
         self.draw_show_board_btn(y)
         self.draw_postgame_again_btn(y)
 
     def draw_show_board_btn(self, y):
         x = self.mid_screen.x
         y += 60
-        self.draw_text('Mostrar tablero', 'white', x, y, x_center=True)
+        self.draw_text('Show board', 'white', x, y, x_center=True)
         btn_rect = pygame.Rect(x-300/2, y-15, 300, 50)
         if btn_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             # hover
@@ -2071,7 +2071,7 @@ class Match:
     def draw_postgame_again_btn(self, y):
         x = self.mid_screen.x
         y += 120
-        self.draw_text('Jugar de nuevo', 'white', x, y, x_center=True)
+        self.draw_text('Play again', 'white', x, y, x_center=True)
         play_again_rect = pygame.Rect(x-300/2, y-15, 300, 50)
         if play_again_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             #hover
@@ -2088,7 +2088,7 @@ class Match:
         pygame.draw.rect(self.screen, (100,100,100),
                         pygame.Rect(x, y, width, height))
         # tooltip
-        self.draw_text('Elija su promoción', 'black', self.mid_screen.x, y+15, x_center=True)
+        self.draw_text('Choose pawn promotion', 'black', self.mid_screen.x, y+15, x_center=True)
         self.draw_rookOPT_btn(y)
         self.draw_knightOPT_btn(y)
         self.draw_queenOPT_btn(y)
