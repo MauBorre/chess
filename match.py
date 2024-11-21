@@ -19,12 +19,12 @@ class PlayerTeamUnit:
     direct_threatOnEnemy_trace: list[int] = field(default_factory=list)
     positions: dict[int, str] = field(default_factory=dict)
     pawns_in_origin: list[int] = field(default_factory=list)
-    pieces_threatening_enemy: dict[str, int] = field(default_factory=dict)
+    all_threat_emissions: dict[str, int] = field(default_factory=dict)
     king_legal_moves: list[int] = field(default_factory=list)
     castling_enablers: dict[int, str] = field(default_factory=dict)
     
     def clear(self):
-        self.pieces_threatening_enemy.clear()
+        self.all_threat_emissions.clear()
         self.king_legal_moves.clear()
         self.direct_threatOnEnemy_trace.clear()
         self.direct_threatOrigin_type = 'none'
@@ -52,7 +52,7 @@ class Match:
             direct_threatOnEnemy_trace = [],
             positions = pieces.black_positions.copy(),
             pawns_in_origin = [bpawn for bpawn in pieces.origins['black']['pawn']],
-            pieces_threatening_enemy = {piece:[] for piece in pieces.origins['black']},
+            all_threat_emissions = {piece:[] for piece in pieces.origins['black']},
             king_legal_moves = [],
             castling_enablers = {0: 'west-rook', 4: 'king', 7: 'east-rook'},
             single_threat_standpoint = None,
@@ -65,7 +65,7 @@ class Match:
             direct_threatOnEnemy_trace = [],
             positions = pieces.white_positions.copy(),
             pawns_in_origin = [wpawn for wpawn in pieces.origins['white']['pawn']],
-            pieces_threatening_enemy = {piece:[] for piece in pieces.origins['white']},
+            all_threat_emissions = {piece:[] for piece in pieces.origins['white']},
             king_legal_moves = [],
             castling_enablers = {56: 'west-rook', 60: 'king', 63: 'east-rook'},
             single_threat_standpoint = None,
@@ -310,7 +310,7 @@ class Match:
             _king = king_standpoints.pop()
 
         # Revisión del estado de la amenaza del atacante sobre el rey defensor (jaque)
-        for _threats_list in self.turn_attacker.pieces_threatening_enemy.values():
+        for _threats_list in self.turn_attacker.all_threat_emissions.values():
             if _king in _threats_list:
                 if self.turn_attacker.direct_threatOrigin_type == 'single': # caso amenaza múltiple
                     self.turn_attacker.direct_threatOrigin_type = 'multiple'
@@ -385,13 +385,13 @@ class Match:
 
     def remove_all_attacker_standpoints(self):
         '''
-        Quita TODOS los standpoints de attacker.threat_on_enemy
+        Quita TODOS los standpoints de attacker.all_threat_emissions
         (y por consecuente su vuelta como def_threatOnAtt).
         Los standpoints coinciden SIEMPRE en el último item de la lista de amenazas.
         De esta forma aclaramos la visión al rey correspondiente en cuanto a amenazas
         matables y no-matables.
         '''
-        for _threats in self.turn_attacker.pieces_threatening_enemy.values():
+        for _threats in self.turn_attacker.all_threat_emissions.values():
             _threats.pop()
 
     def exposing_direction(self, standpoint: int, intended_move: int, request_from: str) -> bool:
@@ -728,7 +728,7 @@ class Match:
                                 
                         # Threat on defender ------------------------
                         kill_positions.append(piece_standpoint)
-                        self.turn_attacker.pieces_threatening_enemy.update({f'pawn{piece_standpoint}': kill_positions})
+                        self.turn_attacker.all_threat_emissions.update({f'pawn{piece_standpoint}': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
                 
@@ -801,7 +801,7 @@ class Match:
 
                         # Threat on defender ------------------------
                         kill_positions.append(piece_standpoint)
-                        self.turn_attacker.pieces_threatening_enemy.update({f'pawn{piece_standpoint}': kill_positions})
+                        self.turn_attacker.all_threat_emissions.update({f'pawn{piece_standpoint}': kill_positions})
 
                         return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions # illuminated positions
@@ -940,7 +940,7 @@ class Match:
                                 break
 
                 _threat_emission.append(piece_standpoint)
-                self.turn_attacker.pieces_threatening_enemy.update({f'rook{piece_standpoint}': _threat_emission})
+                self.turn_attacker.all_threat_emissions.update({f'rook{piece_standpoint}': _threat_emission})
 
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions # illuminated positions
@@ -1037,7 +1037,7 @@ class Match:
                         else:  _threat_emission.append(movement)
 
                 _threat_emission.append(piece_standpoint)
-                self.turn_attacker.pieces_threatening_enemy.update({f'knight{piece_standpoint}': _threat_emission})
+                self.turn_attacker.all_threat_emissions.update({f'knight{piece_standpoint}': _threat_emission})
 
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions 
@@ -1191,7 +1191,7 @@ class Match:
                                 break
 
                 _threat_emission.append(piece_standpoint)
-                self.turn_attacker.pieces_threatening_enemy.update({f'bishop{piece_standpoint}': _threat_emission})
+                self.turn_attacker.all_threat_emissions.update({f'bishop{piece_standpoint}': _threat_emission})
 
                 return mov_target_positions, on_target_kill_positions
             return mov_target_positions, on_target_kill_positions 
@@ -1363,7 +1363,7 @@ class Match:
                                 break
 
                 _threat_emission.append(piece_standpoint)
-                self.turn_attacker.pieces_threatening_enemy.update({f'queen{piece_standpoint}': _threat_emission})
+                self.turn_attacker.all_threat_emissions.update({f'queen{piece_standpoint}': _threat_emission})
 
                 return mov_target_positions, on_target_kill_positions # illuminated positions
             return mov_target_positions, on_target_kill_positions # illuminated positions
@@ -1406,7 +1406,7 @@ class Match:
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    for threat in self.turn_attacker.pieces_threatening_enemy.values():
+                    for threat in self.turn_attacker.all_threat_emissions.values():
                         if movement in threat: movement = None
 
                     if movement != None:
@@ -1431,7 +1431,7 @@ class Match:
                         continue
                 if 0 <= movement <= 63: # VALID SQUARE
 
-                    for threat in self.turn_defender.pieces_threatening_enemy.values():
+                    for threat in self.turn_defender.all_threat_emissions.values():
                         if movement in threat: movement = None
                         if _castling in threat: _castling = None
 
@@ -1471,7 +1471,7 @@ class Match:
                             _threat_emission.append(movement)
 
             _threat_emission.append(piece_standpoint)
-            self.turn_attacker.pieces_threatening_enemy.update({'king': _threat_emission})
+            self.turn_attacker.all_threat_emissions.update({'king': _threat_emission})
 
             return mov_target_positions, on_target_kill_positions, castling_positions
         return
@@ -1603,7 +1603,6 @@ class Match:
                                 
                             if SQUARE_TYPE == "EMPTY":
                                 self.pieceValidMovement_posDisplay.clear()
-                                # self.kingValidCastling_posDisplay.clear()
 
         # outer board frame
         # pygame.draw.rect(self.screen,(0,0,0),pygame.Rect(board.x,board.y,board.width,board.height),width=1)
@@ -1612,10 +1611,20 @@ class Match:
         if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0: # avoids highlighting pieces with no movement
             for valid_mov_RECT in self.pieceValidMovement_posDisplay.values():
                 pygame.draw.rect(self.screen, (100,230,100), valid_mov_RECT, width=2)
+
+            '''for kp in self.turn_attacker.legal_movements:
+                    pygame.draw.rect(self.screen, (100,230,100), board.rects[self.turn_attacker.legal_movements], width=2)'''
+
+        if self.turn_defender.single_threat_standpoint != None:
+            # for valid_threatStandpoint_RECT in self.make_visualFeedback_positions(self.turn_defender.single_threat_standpoint):
+            pygame.draw.rect(self.screen, 'yellow', board.rects[self.turn_defender.single_threat_standpoint], width=2)
+
         for valid_kill_RECT in self.pieceValidKill_posDisplay.values():
             pygame.draw.rect(self.screen, (230,100,100), valid_kill_RECT, width=2)
+
         for valid_castling_RECT in self.kingValidCastling_posDisplay.values():
             pygame.draw.rect(self.screen, (100,100,230), valid_castling_RECT, width=2)
+        
 
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''Argumentar pieza exactamente igual que en pieces.origins'''
@@ -1656,7 +1665,6 @@ class Match:
             if len(self.turn_defender.king_legal_moves) == 0 and len(self.turn_defender.legal_moves) == 0:
 
                 #STALE-MATE
-                '''Termina el juego en empate.'''
                 if self.turn_attacker.name == 'black':
                     self.stalemate = True # repercute en render() - termina la partida
                     self.match_state = 'Stalemate.'
@@ -1672,8 +1680,6 @@ class Match:
         if self.turn_attacker.direct_threatOrigin_type == 'single':
             if len(self.turn_defender.king_legal_moves) > 0 or len(self.turn_defender.legal_moves) > 0:
                 # JAQUE
-                '''Esto requiere solo una notificación al jugador correspondiente.
-                defender.color -> notificate CHECK (highlight possible solutions)'''
 
                 # TURN DEBUG ++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     # print('**JAQUE**')
@@ -1690,7 +1696,6 @@ class Match:
 
             elif len(self.turn_defender.king_legal_moves) == 0 and len(self.turn_defender.legal_moves) == 0:
                 #JAQUE-MATE
-                '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
                 if self.turn_attacker.name == 'black':
                     self.winner = True # automaticamente repercutirá draw() 
                     self.match_state = 'Black wins.'
@@ -1701,7 +1706,6 @@ class Match:
         if self.turn_attacker.direct_threatOrigin_type == 'multiple': # múltiple origen de amenaza.
             if len(self.turn_defender.king_legal_moves) == 0:
                 #JAQUE-MATE
-                '''Termina el juego con el actual atacante victorioso. -> Spawn OptionsMenu'''
                 if self.turn_attacker.name == 'black':
                     self.winner = True # repercute en render() - termina la partida
                     self.match_state = 'Black wins.'
@@ -1720,13 +1724,18 @@ class Match:
 
     def make_moves(self):
         # moving piece standpoint
-        ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0]
-
+        '''no deberíamos quitarla de una variable que usamos de utilidad de visualización...'''
+        ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0] 
         moving_piece = self.turn_attacker.positions.pop(ex_value)
-        if self.killing:
-            self.turn_defender.positions.pop(self.move_here)
 
-        # castling enablers
+        if self.killing:
+            # NORMAL KILLING
+            self.turn_defender.positions.pop(self.move_here)
+            # castling disablers (killed rook)
+            if self.move_here in self.turn_defender.castling_enablers.keys():
+                del self.turn_defender.castling_enablers[self.move_here]
+
+        # castling disablers (movement)
         if not self.castling:
             if ex_value in self.turn_attacker.castling_enablers.keys():
                 if self.turn_attacker.castling_enablers[ex_value] == 'king': # es ex_value posición de rey?
@@ -1823,7 +1832,7 @@ class Match:
             else: self.white_turn_seconds = str(seconds) if len(str(seconds)) > 1 else '0'+str(seconds)
 
     def match_state_info(self):
-        self.draw_text(self.match_state, 'white', board.x, 20, center=False)
+        self.draw_text(self.match_state, 'black', board.x, 20, center=False)
 
     def clock_display(self):
         
@@ -2084,7 +2093,7 @@ class Match:
             # action
             if self.control_input['click']:
                 self.show_switchable_menu = False
-        self.draw_text('Show board', text_color, x, y, x_center=True)
+        self.draw_text('Hide menu', text_color, x, y, x_center=True)
 
     def draw_postgame_again_btn(self, y):
         x = self.mid_screen.x
@@ -2177,7 +2186,7 @@ class Match:
     # --------------------------------------------------------------------------------------------------------
 
     # Time selection Menu ------------------------------------------------------------------------------------
-    def draw_starting_time_selection_menu(self, width=300, height=290):
+    def draw_starting_time_selection_menu(self, width=300, height=350):
         x = self.mid_screen.x - width/2
         y = self.mid_screen.y - height/2
         # frame
@@ -2186,12 +2195,13 @@ class Match:
         # tooltip
         self.draw_text('Select clock limit', 'white', self.mid_screen.x, y+15, x_center=True)
         # buttons
+        self.draw_oneMinOPT_btn(y)
         self.draw_threeMinOPT_btn(y)
         self.draw_fiveMinOPT_btn(y)
         self.draw_tenMinOPT_btn(y)
         self.draw_fifteenMinOPN_btn(y)
     
-    def draw_threeMinOPT_btn(self, y):
+    def draw_oneMinOPT_btn(self, y):
         x = self.mid_screen.x
         y += 60
         text_color = 'white'
@@ -2204,11 +2214,26 @@ class Match:
             if self.control_input['click']:
                 self.set_turn_clocks(1)
                 self.player_selecting_gameClockLimit = False
+        self.draw_text('1 min', text_color, x, y, x_center=True)
+
+    def draw_threeMinOPT_btn(self, y):
+        x = self.mid_screen.x
+        y += 120
+        text_color = 'white'
+        selection_rect = pygame.Rect(x-300/2, y-15, 300, 50)
+        if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
+            # hover
+            pygame.draw.rect(self.screen, GRAY_BTN_HOVER, selection_rect)
+            text_color = 'black'
+            # action
+            if self.control_input['click']:
+                self.set_turn_clocks(3)
+                self.player_selecting_gameClockLimit = False
         self.draw_text('3 mins', text_color, x, y, x_center=True)
 
     def draw_fiveMinOPT_btn(self, y):
         x = self.mid_screen.x
-        y += 120
+        y += 180
         text_color = 'white'
         selection_rect = pygame.Rect(x-300/2, y-15, 300, 50)
         if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
@@ -2223,7 +2248,7 @@ class Match:
 
     def draw_tenMinOPT_btn(self, y):
         x = self.mid_screen.x
-        y += 180
+        y += 240
         text_color = 'white'
         selection_rect = pygame.Rect(x-300/2, y-15, 300, 50)
         if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
@@ -2238,7 +2263,7 @@ class Match:
 
     def draw_fifteenMinOPN_btn(self, y):
         x = self.mid_screen.x
-        y += 240
+        y += 300
         text_color = 'white'
         selection_rect = pygame.Rect(x-300/2, y-15, 300, 50)
         if selection_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
