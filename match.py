@@ -1816,10 +1816,18 @@ class Match:
         self.draw_text(self.match_state, 'black', board.x, 20, center=False)
 
     def clock_display(self):
+        
         # black team clock
-        self.draw_text(f'{self.black_turn_minutes}:{self.black_turn_seconds}', 'black', self.mid_screen.x , board.y-20, center=True)
+        if self.turn_attacker.name == 'black':
+            self.draw_text(f'{self.black_turn_minutes}:{self.black_turn_seconds}', (0,230,0), self.mid_screen.x , board.y-20, center=True)
+        else:
+            self.draw_text(f'{self.black_turn_minutes}:{self.black_turn_seconds}', 'black', self.mid_screen.x , board.y-20, center=True)
+
         # white team clock
-        self.draw_text(f'{self.white_turn_minutes}:{self.white_turn_seconds}', 'black', self.mid_screen.x, board.height+70, center=True)
+        if self.turn_attacker.name == 'white':
+            self.draw_text(f'{self.white_turn_minutes}:{self.white_turn_seconds}', (0,230,0), self.mid_screen.x, board.height+70, center=True)
+        else:
+            self.draw_text(f'{self.white_turn_minutes}:{self.white_turn_seconds}', 'black', self.mid_screen.x, board.height+70, center=True)
 
     def render(self):
 
@@ -1923,15 +1931,15 @@ class Match:
     def menu_toggle_btn(self):
         x = self.mid_screen.x + board.width/2 - 73
         y = board.y-30
-        self.draw_text('Menu',
-            'black',x, y, center=False)
-        btn_rect = pygame.Rect(x-17, y-15, 90, 45)
+        btn_rect = pygame.Rect(x-16, y-15, 89, 45)
         if btn_rect.collidepoint((self.control_input['mouse-x'], self.control_input['mouse-y'])):
             # hover
-            pygame.draw.rect(self.screen,(255,0,0),btn_rect,width=1)
+            pygame.draw.rect(self.screen,(230,230,230),btn_rect,width=0)
             # action
             if self.control_input['click']:
                 self.menu_handler()
+        self.draw_text('Menu',
+            'black',x, y, center=False)
             
     # Confirm restart (pause menu children) ----------------------------------------------------------------
     def draw_confirm_restart_menu(self, width=390, height=200):
