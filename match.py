@@ -1605,8 +1605,6 @@ class Match:
         for valid_castling_RECT in self.kingValidCastling_posDisplay.values():
             pygame.draw.rect(self.screen, (100,100,230), valid_castling_RECT, width=2)
 
-        
-
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''Argumentar pieza exactamente igual que en pieces.origins'''
         _actual_standpoints: list[int] = []
