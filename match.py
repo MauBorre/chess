@@ -7,6 +7,9 @@ from board import (
     SUR, SUR_OESTE, SUR_ESTE,
     ESTE, OESTE) # piece movement directions
 
+LEGAL_MOV_HIGHLIGHT = (100,230,100)
+LEGAL_KILL_HIGHLIGHT = (230,100,100)
+CASTLING_HIGHLIGHT = (100,100,230)
 GRAY_BTN_HOVER = (230,230,230)
 
 @dataclass
@@ -108,9 +111,9 @@ class Match:
         self.turn_defender: PlayerTeamUnit = self.black
 
         # board feedback utilities
-        self.pieceValidMovement_posDisplay: dict[int, pygame.Rect] = {}
-        self.pieceValidKill_posDisplay: dict[int, pygame.Rect] = {}
-        self.kingValidCastling_posDisplay: dict[int, pygame.Rect] = {}
+        self.selectedPiece_legalMoves: list[int] = []
+        self.selectedPiece_killMoves: list[int] = []
+        self.selectedPiece_castlingMoves: list[int] = []
 
         # turn clocks (defaults)
         self.gameClockLimit_minutes: int = 10
@@ -302,8 +305,6 @@ class Match:
             self.knight_objectives(_knight, perspective='attacker')
 
         queen_standpoint: list[int] = self.get_piece_standpoint(color=self.turn_attacker.name, piece="queen")
-        # if len(queen_standpoint) != 0:
-        #     _queen = queen_standpoint.pop()
         for _queen in queen_standpoint:
             self.queen_objectives(_queen, perspective='attacker')
         # --------------------------------------------------------------------------------------------------
@@ -357,8 +358,6 @@ class Match:
                 self.knight_objectives(_knight, perspective='defender')
             
             queen_standpoint = self.get_piece_standpoint(color=self.turn_defender.name, piece="queen")
-            # if len(queen_standpoint) != 0:
-                # _queen = queen_standpoint.pop()
             for _queen in queen_standpoint:
                 self.queen_objectives(_queen, perspective='defender')
         # -------------------------------------------------------------------------------------------------
@@ -526,8 +525,8 @@ class Match:
         '''
 
         # Visual feedback utils
-        mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: board.rects[piece_standpoint]} # standpoint is always first pos 
-        on_target_kill_positions: dict[int, pygame.Rect] = {}
+        _legal_movements: list[int] = [piece_standpoint] # standpoint is always first pos 
+        on_target_kill_positions: list[int] = []
         
         # Objectives
         kill_positions: list[int] = []
@@ -677,14 +676,14 @@ class Match:
                             if not self.exposing_direction(piece_standpoint, intended_move=SUR, request_from="attacker"):
                                 if movement in self.turn_defender.single_directThreatOnEnemy_trace:
                                     # BLOCK saving position
-                                    mov_target_positions.update({movement: board.rects[movement]})
+                                    _legal_movements.append(movement)
 
                                 #probamos con el 2do mov
                                 if piece_standpoint in self.black.pawns_in_origin:
                                     if movement+SUR not in self.turn_attacker.positions and movement+SUR not in self.turn_defender.positions: # piece block
                                         if movement+SUR in self.turn_defender.single_directThreatOnEnemy_trace:
                                             # BLOCK saving position
-                                            mov_target_positions.update({movement+SUR: board.rects[movement+SUR]})
+                                            _legal_movements.update({movement+SUR: board.rects[movement+SUR]})
 
                         # kill-movements
                         # board limits check
@@ -699,20 +698,20 @@ class Match:
                             if kp not in self.turn_attacker.positions and kp == self.turn_defender.single_threat_standpoint: 
                                 if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
                                     # KILL saving position
-                                    on_target_kill_positions.update({kp: board.rects[kp]})
+                                    on_target_kill_positions.append(kp)
 
-                        return mov_target_positions, on_target_kill_positions
+                        return _legal_movements, on_target_kill_positions
 
                     elif self.turn_defender.direct_threatOrigin_type == 'none': 
 
                         if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions: # piece block
                             if not self.exposing_direction(piece_standpoint, intended_move=SUR, request_from="attacker"):
-                                mov_target_positions.update({movement: board.rects[movement]}) # 1st Movement
+                                _legal_movements.append(movement) # 1st Movement
 
                                 if piece_standpoint in self.black.pawns_in_origin:
                                     if movement+SUR <= 63: # board limit check
                                         if movement+SUR not in self.turn_attacker.positions and movement+SUR not in self.turn_defender.positions: # piece block
-                                            mov_target_positions.update({movement+SUR: board.rects[movement+SUR]}) # 2nd Movement 
+                                            _legal_movements.append(movement+SUR) # 2nd Movement 
                             else: pass
 
                         # kill-movements
@@ -730,13 +729,13 @@ class Match:
                             if kp not in self.turn_attacker.positions:
                                 if kp in self.turn_defender.positions:
                                     if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
-                                        on_target_kill_positions.update({kp: board.rects[kp]})
+                                        on_target_kill_positions.append(kp)
                                 
                         # Threat on defender ------------------------
                         kill_positions.append(piece_standpoint)
                         self.turn_attacker.all_threat_emissions.update({f'pawn{piece_standpoint}': kill_positions})
 
-                        return mov_target_positions, on_target_kill_positions
+                        return _legal_movements, on_target_kill_positions
                 
 
             if self.turn_attacker.name == 'white': # Ataca hacia el NORTE
@@ -750,14 +749,14 @@ class Match:
                             if not self.exposing_direction(piece_standpoint, intended_move=NORTE, request_from="attacker"):
                                 if movement in self.turn_defender.single_directThreatOnEnemy_trace:
                                     # BLOCK saving position
-                                    mov_target_positions.update({movement: board.rects[movement]})
+                                    _legal_movements.append(movement)
 
                                 #probamos con el 2do mov
                                 if piece_standpoint in self.white.pawns_in_origin:
                                     if movement+NORTE not in self.turn_attacker.positions and movement+NORTE not in self.turn_defender.positions:# piece block
                                         if movement+NORTE in self.turn_defender.single_directThreatOnEnemy_trace:
                                             # BLOCK saving position
-                                            mov_target_positions.update({movement+NORTE: board.rects[movement+NORTE]})
+                                            _legal_movements.append(movement+NORTE)
 
                         # kill-movements
                         # board limits check
@@ -772,20 +771,20 @@ class Match:
                             if kp not in self.turn_attacker.positions and kp == self.turn_defender.single_threat_standpoint:
                                 if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
                                     # KILL saving position
-                                    on_target_kill_positions.update({kp: board.rects[kp]})
+                                    on_target_kill_positions.append(kp)
                         
-                        return mov_target_positions, on_target_kill_positions
+                        return _legal_movements, on_target_kill_positions
                                     
                     elif self.turn_defender.direct_threatOrigin_type == 'none': # no jaque
 
                         if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions: # piece block
                             if not self.exposing_direction(piece_standpoint, intended_move=NORTE, request_from="attacker"):  
-                                mov_target_positions.update({movement:board.rects[movement]}) # 1st Movement
+                                _legal_movements.append(movement) # 1st Movement
 
                                 if piece_standpoint in self.white.pawns_in_origin:
                                     if movement+NORTE >= 0: # board limit check
                                         if movement+NORTE not in self.black.positions and movement+NORTE not in self.white.positions: # piece block
-                                            mov_target_positions.update({movement+NORTE:board.rects[movement+NORTE]}) # 2nd Movement
+                                            _legal_movements.append(movement+NORTE) # 2nd Movement
                             else: pass
                     
                         # kill-movements
@@ -803,14 +802,14 @@ class Match:
                             if kp not in self.turn_attacker.positions:
                                 if kp in self.turn_defender.positions:
                                     if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
-                                        on_target_kill_positions.update({kp:board.rects[kp]})
+                                        on_target_kill_positions.append(kp)
 
                         # Threat on defender ------------------------
                         kill_positions.append(piece_standpoint)
                         self.turn_attacker.all_threat_emissions.update({f'pawn{piece_standpoint}': kill_positions})
 
-                        return mov_target_positions, on_target_kill_positions
-            return mov_target_positions, on_target_kill_positions # illuminated positions
+                        return _legal_movements, on_target_kill_positions
+            return _legal_movements, on_target_kill_positions
 
     def rook_objectives(
         self,
@@ -827,8 +826,8 @@ class Match:
         '''
 
         # Visual feedback utils
-        mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: board.rects[piece_standpoint]} # standpoint is always first pos
-        on_target_kill_positions: dict[int, pygame.Rect] = {}
+        _legal_movements: list[int] = [piece_standpoint] # standpoint is always first pos
+        on_target_kill_positions: list[int] = []
         
         # Objectives
         _threat_emission: list[int] = []
@@ -913,14 +912,14 @@ class Match:
                             if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions:
                                 if movement in self.turn_defender.single_directThreatOnEnemy_trace:
                                     # BLOCK saving position.
-                                    mov_target_positions.update({movement: board.rects[movement]})
+                                    _legal_movements.append(movement)
                                     break
                             elif movement == self.turn_defender.single_threat_standpoint:
                                 # KILL saving position.
-                                on_target_kill_positions.update({movement: board.rects[movement]})
+                                on_target_kill_positions.append(movement)
                                 break
                             else: break # ally block
-                return mov_target_positions, on_target_kill_positions
+                return _legal_movements, on_target_kill_positions
                 
             elif self.turn_defender.direct_threatOrigin_type == 'none':
                 for direction in rook_directions:
@@ -935,11 +934,11 @@ class Match:
                                 break
                             if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions:
                                 _threat_emission.append(movement)
-                                mov_target_positions.update({movement: board.rects[movement]}) 
+                                _legal_movements.append(movement) 
                             # Kill-movement
                             elif movement in self.turn_defender.positions:
                                 _threat_emission.append(movement)
-                                on_target_kill_positions.update({movement: board.rects[movement]})
+                                on_target_kill_positions.append(movement)
                                 break
                             else: # ally block
                                 _threat_emission.append(movement)
@@ -948,8 +947,8 @@ class Match:
                 _threat_emission.append(piece_standpoint)
                 self.turn_attacker.all_threat_emissions.update({f'rook{piece_standpoint}': _threat_emission})
 
-                return mov_target_positions, on_target_kill_positions
-            return mov_target_positions, on_target_kill_positions # illuminated positions
+                return _legal_movements, on_target_kill_positions
+            return _legal_movements, on_target_kill_positions
 
     def knight_objectives(self, piece_standpoint: int, perspective: str) -> dict[int,pygame.Rect] | None:
         '''Movimiento Caballo:
@@ -966,8 +965,8 @@ class Match:
         '''
         
         # Visual feedback utils
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:board.rects[piece_standpoint]} # standpoint is always first pos
-        on_target_kill_positions: dict[int,pygame.Rect] = {}
+        _legal_movements: list[int] = [piece_standpoint] # standpoint is always first pos
+        on_target_kill_positions: list[int] = []
 
         # Objectives
         _threat_emission: list[int] = []
@@ -1017,13 +1016,12 @@ class Match:
                         if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions:
                             if movement in self.turn_defender.single_directThreatOnEnemy_trace:
                                 # BLOCK saving position.
-                                mov_target_positions.update({movement: board.rects[movement]})
+                                _legal_movements.append(movement)
                         elif movement == self.turn_defender.single_threat_standpoint:
                             # KILL saving position.
-                            on_target_kill_positions.update({movement: board.rects[movement]})
-                        else: break # ally block
+                            on_target_kill_positions.append(movement)
 
-                return mov_target_positions, on_target_kill_positions
+                return _legal_movements, on_target_kill_positions
             
             elif self.turn_defender.direct_threatOrigin_type == 'none':
                 for movement in knight_pre_movements:
@@ -1035,18 +1033,18 @@ class Match:
                         if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions:
                             # Movement
                             _threat_emission.append(movement)
-                            mov_target_positions.update({movement: board.rects[movement]}) 
+                            _legal_movements.append(movement) 
                         # Kill-movement
                         elif movement in self.turn_defender.positions:
                             _threat_emission.append(movement)
-                            on_target_kill_positions.update({movement:board.rects[movement]})
+                            on_target_kill_positions.append(movement)
                         else:  _threat_emission.append(movement)
 
                 _threat_emission.append(piece_standpoint)
                 self.turn_attacker.all_threat_emissions.update({f'knight{piece_standpoint}': _threat_emission})
 
-                return mov_target_positions, on_target_kill_positions
-            return mov_target_positions, on_target_kill_positions 
+                return _legal_movements, on_target_kill_positions
+            return _legal_movements, on_target_kill_positions 
 
     def bishop_objectives(
         self,
@@ -1061,9 +1059,9 @@ class Match:
         +SUR_ESTE
         '''
         
-        # Visual feedback utils <- deberíamos desacoplar esto de aquí
-        mov_target_positions: dict[int,pygame.Rect] = {piece_standpoint:board.rects[piece_standpoint]} # standpoint is always first pos
-        on_target_kill_positions: dict[int,pygame.Rect] = {}
+        # Visual feedback utils
+        _legal_movements: list[int] = [piece_standpoint] # standpoint is always first pos
+        on_target_kill_positions: list[int] = []
         
         # Objectives
         _threat_emission: list[int] = []
@@ -1161,14 +1159,14 @@ class Match:
                             if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions:
                                 if movement in self.turn_defender.single_directThreatOnEnemy_trace:
                                     # BLOCK saving position.
-                                    mov_target_positions.update({movement: board.rects[movement]})
+                                    _legal_movements.append(movement)
                                     break
                             elif movement == self.turn_defender.single_threat_standpoint:
                                 # KILL saving position.
-                                on_target_kill_positions.update({movement: board.rects[movement]})
+                                on_target_kill_positions.append(movement)
                                 break
                             else: break # ally block
-                return mov_target_positions, on_target_kill_positions
+                return _legal_movements, on_target_kill_positions
             
             elif self.turn_defender.direct_threatOrigin_type == 'none':
                 for direction in bishop_directions:
@@ -1186,11 +1184,11 @@ class Match:
                                 break
                             if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions:
                                 _threat_emission.append(movement)
-                                mov_target_positions.update({movement: board.rects[movement]})
+                                _legal_movements.append(movement)
                             # Kill-movement
                             elif movement in self.turn_defender.positions: 
                                 _threat_emission.append(movement)
-                                on_target_kill_positions.update({movement:board.rects[movement]})
+                                on_target_kill_positions.append(movement)
                                 break
                             else: # ally block
                                 _threat_emission.append(movement)
@@ -1199,8 +1197,8 @@ class Match:
                 _threat_emission.append(piece_standpoint)
                 self.turn_attacker.all_threat_emissions.update({f'bishop{piece_standpoint}': _threat_emission})
 
-                return mov_target_positions, on_target_kill_positions
-            return mov_target_positions, on_target_kill_positions 
+                return _legal_movements, on_target_kill_positions
+            return _legal_movements, on_target_kill_positions 
 
     def queen_objectives(
         self,
@@ -1220,8 +1218,8 @@ class Match:
         '''
 
         # Visual feedback utils
-        mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: board.rects[piece_standpoint]} # standpoint is always first pos
-        on_target_kill_positions: dict[int, pygame.Rect] = {}
+        _legal_movements: list[int] = [piece_standpoint] # standpoint is always first pos
+        on_target_kill_positions: list[int] = []
 
         # Objectives
         _threat_emission: list[int] = []
@@ -1330,14 +1328,14 @@ class Match:
                             if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions:
                                 if movement in self.turn_defender.single_directThreatOnEnemy_trace:
                                     # BLOCK saving position.
-                                    mov_target_positions.update({movement: board.rects[movement]})
+                                    _legal_movements.append(movement)
                                     break
                             elif movement == self.turn_defender.single_threat_standpoint:
                                 # KILL saving position.
-                                on_target_kill_positions.update({movement: board.rects[movement]})
+                                on_target_kill_positions.append(movement)
                                 break      
                             else: break # ally block
-                return mov_target_positions, on_target_kill_positions
+                return _legal_movements, on_target_kill_positions
                 
             elif self.turn_defender.direct_threatOrigin_type == 'none':
                 for direction in queen_directions:
@@ -1358,11 +1356,11 @@ class Match:
                                 break
                             if movement not in self.turn_attacker.positions and movement not in self.turn_defender.positions:
                                 _threat_emission.append(movement)
-                                mov_target_positions.update({movement: board.rects[movement]}) 
+                                _legal_movements.append(movement) 
                             # Kill-movement
                             elif movement in self.turn_defender.positions:
                                 _threat_emission.append(movement) 
-                                on_target_kill_positions.update({movement: board.rects[movement]})
+                                on_target_kill_positions.append(movement)
                                 break
                             else:  # ally block
                                 _threat_emission.append(movement)
@@ -1371,8 +1369,8 @@ class Match:
                 _threat_emission.append(piece_standpoint)
                 self.turn_attacker.all_threat_emissions.update({f'queen{piece_standpoint}': _threat_emission})
 
-                return mov_target_positions, on_target_kill_positions # illuminated positions
-            return mov_target_positions, on_target_kill_positions # illuminated positions
+                return _legal_movements, on_target_kill_positions
+            return _legal_movements, on_target_kill_positions
 
     def king_objectives(self, piece_standpoint: int, perspective: str) -> dict[int, pygame.Rect]:
         '''Movimiento Rey:
@@ -1387,9 +1385,9 @@ class Match:
         '''
         
         # Visual feedback utils
-        mov_target_positions: dict[int, pygame.Rect] = {piece_standpoint: board.rects[piece_standpoint]} # standpoint is always first pos
-        on_target_kill_positions: dict[int, pygame.Rect] = {}
-        castling_positions: dict[int, pygame.Rect] = {}
+        _legal_movements: list[int] = [piece_standpoint] # standpoint is always first pos
+        on_target_kill_positions: list[int] = []
+        castling_positions: list[int] = []
         
         # Objectives
         _threat_emission: list[int] = []
@@ -1446,7 +1444,7 @@ class Match:
                         if movement not in self.turn_attacker.positions and not movement in self.turn_defender.positions:
                             _threat_emission.append(movement)
                             self.turn_attacker.king_legal_moves.append(movement)
-                            mov_target_positions.update({movement: board.rects[movement]})
+                            _legal_movements.append(movement)
 
                             # castling -WEST-
                             if direction == OESTE:
@@ -1456,7 +1454,7 @@ class Match:
                                             if _castling not in self.turn_attacker.positions and not _castling in self.turn_defender.positions:
                                                 if _castling+direction not in self.turn_attacker.positions and _castling+direction not in self.turn_defender.positions:
                                                     self.turn_attacker.king_legal_moves.append(_castling)
-                                                    castling_positions.update({_castling: board.rects[_castling]})
+                                                    castling_positions.append(_castling)
                                                     self.castling_direction = 'west'
 
                             # castling -EAST-
@@ -1466,21 +1464,20 @@ class Match:
                                         if _castling != None:
                                             if _castling not in self.turn_attacker.positions and not _castling in self.turn_defender.positions:
                                                 self.turn_attacker.king_legal_moves.append(_castling)
-                                                castling_positions.update({_castling: board.rects[_castling]})
+                                                castling_positions.append(_castling)
                                                 self.castling_direction = 'east'
 
                         elif movement in self.turn_defender.positions:
                             _threat_emission.append(movement)
                             self.turn_attacker.king_legal_moves.append(movement)
-                            on_target_kill_positions.update({movement: board.rects[movement]})
+                            on_target_kill_positions.append(movement)
                         else:
                             _threat_emission.append(movement)
 
             _threat_emission.append(piece_standpoint)
             self.turn_attacker.all_threat_emissions.update({'king': _threat_emission})
 
-            return mov_target_positions, on_target_kill_positions, castling_positions
-        return
+            return _legal_movements, on_target_kill_positions, castling_positions
 
     def draw_board(self):
 
@@ -1503,7 +1500,7 @@ class Match:
             # grid
             pygame.draw.rect(self.screen, board.dark_square, SQUARE_RECT, width=1)
 
-            # debug tooltip
+            # debug square tooltip
             # self.draw_text(f'{board_index}',(150,150,150),
             #                 SQUARE_RECT.left +3,
             #                 SQUARE_RECT.top + board.square_height -17,
@@ -1511,21 +1508,23 @@ class Match:
             
             # Square types/subtypes -----------------------------------------------------------------------------
             if board_index in self.black.positions.keys():
-                SQUARE_SUBTYPE = "kill-movement" if board_index in self.pieceValidKill_posDisplay.keys() else ""
+                SQUARE_SUBTYPE = "kill-movement" if board_index in self.selectedPiece_killMoves else ""
                 SQUARE_TYPE =  self.black.positions[board_index]
                 interacted_PColor = "black"
 
             elif board_index in self.white.positions.keys():
-                SQUARE_SUBTYPE = "kill-movement" if board_index in self.pieceValidKill_posDisplay.keys() else ""
+                SQUARE_SUBTYPE = "kill-movement" if board_index in self.selectedPiece_killMoves else ""
                 SQUARE_TYPE = self.white.positions[board_index]
                 interacted_PColor = "white"
 
-            elif board_index in self.pieceValidMovement_posDisplay.keys():
+            # elif board_index in self.pieceValidMovement_posDisplay.keys():
+            elif board_index in self.selectedPiece_legalMoves:
                 SQUARE_SUBTYPE = "valid-movement"
                 SQUARE_TYPE = ""
                 interacted_PColor = ""
             
-            elif board_index in self.kingValidCastling_posDisplay.keys():
+            # elif board_index in self.kingValidCastling_posDisplay.keys():
+            elif board_index in self.selectedPiece_castlingMoves:
                 SQUARE_SUBTYPE = "castling-movement"
                 SQUARE_TYPE = ""
                 interacted_PColor = ""
@@ -1561,8 +1560,8 @@ class Match:
                     # Hover -----------------------
                 
                     if self.control_input['click']:
-                        self.pieceValidKill_posDisplay.clear()
-                        self.kingValidCastling_posDisplay.clear()
+                        self.selectedPiece_killMoves.clear()
+                        self.selectedPiece_castlingMoves.clear()
 
                         if SQUARE_SUBTYPE == "kill-movement":
                             self.killing = True
@@ -1577,59 +1576,51 @@ class Match:
 
                         else: 
                             if SQUARE_TYPE == 'pawn':
-                                
-                                self.pieceValidMovement_posDisplay.clear()
+                                self.selectedPiece_legalMoves.clear()
                                 if interacted_PColor == self.turn_attacker.name:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.pawn_objectives(board_index, perspective='attacker')
+                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves = self.pawn_objectives(board_index, perspective='attacker')
 
                             if SQUARE_TYPE == 'rook':
-                                self.pieceValidMovement_posDisplay.clear()
+                                self.selectedPiece_legalMoves.clear()
                                 if interacted_PColor == self.turn_attacker.name:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.rook_objectives(board_index, perspective='attacker')
+                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves = self.rook_objectives(board_index, perspective='attacker')
                             
                             if SQUARE_TYPE == 'knight':
-                                self.pieceValidMovement_posDisplay.clear()
+                                self.selectedPiece_legalMoves.clear()
                                 if interacted_PColor == self.turn_attacker.name:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.knight_objectives(board_index, perspective='attacker')
+                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves = self.knight_objectives(board_index, perspective='attacker')
                         
                             if SQUARE_TYPE == 'bishop':
-                                self.pieceValidMovement_posDisplay.clear()
+                                self.selectedPiece_legalMoves.clear()
                                 if interacted_PColor == self.turn_attacker.name:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.bishop_objectives(board_index, perspective='attacker')
+                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves = self.bishop_objectives(board_index, perspective='attacker')
                             
                             if SQUARE_TYPE == 'queen':
-                                self.pieceValidMovement_posDisplay.clear()
+                                self.selectedPiece_legalMoves.clear()
                                 if interacted_PColor == self.turn_attacker.name:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay = self.queen_objectives(board_index, perspective='attacker')
+                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves = self.queen_objectives(board_index, perspective='attacker')
 
                             if SQUARE_TYPE == 'king':
-                                self.pieceValidMovement_posDisplay.clear()
+                                self.selectedPiece_legalMoves.clear()
                                 if interacted_PColor == self.turn_attacker.name:
-                                    self.pieceValidMovement_posDisplay, self.pieceValidKill_posDisplay, self.kingValidCastling_posDisplay = self.king_objectives(board_index, perspective='attacker')
+                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves, self.selectedPiece_castlingMoves = self.king_objectives(board_index, perspective='attacker')
                                 
                             if SQUARE_TYPE == "EMPTY":
-                                self.pieceValidMovement_posDisplay.clear()
-
-        # outer board frame
-        # pygame.draw.rect(self.screen,(0,0,0),pygame.Rect(board.x,board.y,board.width,board.height),width=1)
+                                self.selectedPiece_legalMoves.clear()
 
         # Pre-movements visual feedback
-        if len(self.pieceValidMovement_posDisplay) > 1 or len(self.pieceValidKill_posDisplay) > 0: # avoids highlighting pieces with no movement
-            for valid_mov_RECT in self.pieceValidMovement_posDisplay.values():
-                pygame.draw.rect(self.screen, (100,230,100), valid_mov_RECT, width=2)
+        if len(self.selectedPiece_legalMoves) > 1 or len(self.selectedPiece_killMoves) > 0: # avoids highlighting pieces with no actual movement
+            for position_index in self.selectedPiece_legalMoves:
+                pygame.draw.rect(self.screen, LEGAL_MOV_HIGHLIGHT, board.rects[position_index], width=2)
 
-            '''for kp in self.turn_attacker.legal_movements:
-                    pygame.draw.rect(self.screen, (100,230,100), board.rects[self.turn_attacker.legal_movements], width=2)'''
+        for position_index in self.turn_defender.all_effectiveThreat_standpoints:
+            pygame.draw.rect(self.screen, 'yellow', board.rects[position_index], width=2)
 
-        if len(self.turn_defender.all_effectiveThreat_standpoints) > 0:
-            for position in self.turn_defender.all_effectiveThreat_standpoints:
-                pygame.draw.rect(self.screen, 'yellow', board.rects[position], width=2)
+        for position_index in self.selectedPiece_killMoves:
+            pygame.draw.rect(self.screen, LEGAL_KILL_HIGHLIGHT, board.rects[position_index], width=2)
 
-        for valid_kill_RECT in self.pieceValidKill_posDisplay.values():
-            pygame.draw.rect(self.screen, (230,100,100), valid_kill_RECT, width=2)
-
-        for valid_castling_RECT in self.kingValidCastling_posDisplay.values():
-            pygame.draw.rect(self.screen, (100,100,230), valid_castling_RECT, width=2)
+        for position_index in self.selectedPiece_castlingMoves:
+            pygame.draw.rect(self.screen, CASTLING_HIGHLIGHT, board.rects[position_index], width=2)
         
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''Argumentar pieza exactamente igual que en pieces.origins'''
@@ -1729,9 +1720,8 @@ class Match:
 
     def make_moves(self):
         # moving piece standpoint
-        '''no deberíamos quitarla de una variable que usamos de utilidad de visualización...'''
-        ex_value: int = list(self.pieceValidMovement_posDisplay.items())[0][0] 
-        moving_piece = self.turn_attacker.positions.pop(ex_value)
+        moving_piece_standpoint: int = self.selectedPiece_legalMoves[0]
+        moving_piece: str = self.turn_attacker.positions.pop(moving_piece_standpoint)
 
         if self.killing:
             # NORMAL KILLING
@@ -1742,11 +1732,11 @@ class Match:
 
         # castling disablers (movement)
         if not self.castling:
-            if ex_value in self.turn_attacker.castling_enablers.keys():
-                if self.turn_attacker.castling_enablers[ex_value] == 'king': # es ex_value posición de rey?
+            if moving_piece_standpoint in self.turn_attacker.castling_enablers.keys():
+                if self.turn_attacker.castling_enablers[moving_piece_standpoint] == 'king': # es ex_value posición de rey?
                     self.turn_attacker.castling_enablers = {} # no more castling
                 else:  # es ex_value posición de alguna torre?
-                    del self.turn_attacker.castling_enablers[ex_value]
+                    del self.turn_attacker.castling_enablers[moving_piece_standpoint]
             
             # NORMAL MOVEMENT
             self.turn_attacker.positions.update({self.move_here: moving_piece})
@@ -1756,12 +1746,12 @@ class Match:
             ex_rook: int = {k for k,_ in self.turn_attacker.castling_enablers.items() if self.turn_attacker.castling_enablers[k] == f'{self.castling_direction}-rook'}.pop()
             self.turn_attacker.positions.pop(ex_rook)
             _direction: int = ESTE if self.castling_direction == 'east' else OESTE
-            castling_rook_movement = ex_value+_direction # king_standpoint + dirección
+            castling_rook_movement = moving_piece_standpoint+_direction # king_standpoint + dirección
             self.turn_attacker.positions.update({castling_rook_movement: 'rook'}) # mueve a la torre
             self.turn_attacker.castling_enablers = {} # no more castling
         
-        self.pieceValidMovement_posDisplay.clear()
-        self.kingValidCastling_posDisplay.clear()
+        self.selectedPiece_legalMoves.clear()
+        self.selectedPiece_castlingMoves.clear()
         self.move_here = None
         self.killing = False
         self.castling = False
@@ -1774,9 +1764,10 @@ class Match:
             
             if self.turn_attacker.name == 'white':
                 self.whitetime_SNAP += self.pause_time_leftover
-                if pygame.time.get_ticks() - self.whitetime_SNAP > 1000:
+                if pygame.time.get_ticks() - self.whitetime_SNAP >= 1000:
                     self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP - 1000
-                    self.whitetime_SNAP += 1000 - self.white_time_leftover
+                    # self.whitetime_SNAP += 1000 - self.white_time_leftover
+                    self.whitetime_SNAP = pygame.time.get_ticks() - self.white_time_leftover
                     self.substract_time(color='white')
                 else:
                     self.white_time_leftover = pygame.time.get_ticks() - self.whitetime_SNAP
@@ -1790,7 +1781,8 @@ class Match:
                 self.blacktime_SNAP += self.pause_time_leftover
                 if pygame.time.get_ticks() - self.blacktime_SNAP > 1000: 
                     self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP - 1000
-                    self.blacktime_SNAP += 1000 - self.black_time_leftover
+                    # self.blacktime_SNAP += 1000 - self.black_time_leftover
+                    self.blacktime_SNAP = pygame.time.get_ticks() - self.black_time_leftover
                     self.substract_time(color='black')
                 else:
                     self.black_time_leftover = pygame.time.get_ticks() - self.blacktime_SNAP
