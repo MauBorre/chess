@@ -164,11 +164,11 @@ class Match:
         else: textrect.topleft = (x,y)
         self.screen.blit(textobj,textrect)
 
-    def make_visualFeedback_positions(self, square_values: list[int]) -> dict[int, pygame.Rect]:
-        d = {}
-        for sv in square_values:
-            d.update({sv: board.rects[sv]})
-        return d
+    # def make_visualFeedback_positions(self, square_values: list[int]) -> dict[int, pygame.Rect]:
+    #     d = {}
+    #     for sv in square_values:
+    #         d.update({sv: board.rects[sv]})
+    #     return d
 
     def check_pawn_promotion(self):
         # Obtener standpoints PAWN de attacker
@@ -1621,11 +1621,9 @@ class Match:
             '''for kp in self.turn_attacker.legal_movements:
                     pygame.draw.rect(self.screen, (100,230,100), board.rects[self.turn_attacker.legal_movements], width=2)'''
 
-        '''Esto está cerca de lo que queremos lograr, pero necesitamos
-        mejorar la ruta de estos direct-threat-standpoints.'''
         if len(self.turn_defender.all_effectiveThreat_standpoints) > 0:
-            for valid_threatStandpoint_RECT in self.make_visualFeedback_positions(self.turn_defender.all_effectiveThreat_standpoints).values():
-                pygame.draw.rect(self.screen, 'yellow', valid_threatStandpoint_RECT, width=2)
+            for position in self.turn_defender.all_effectiveThreat_standpoints:
+                pygame.draw.rect(self.screen, 'yellow', board.rects[position], width=2)
 
         for valid_kill_RECT in self.pieceValidKill_posDisplay.values():
             pygame.draw.rect(self.screen, (230,100,100), valid_kill_RECT, width=2)
@@ -1633,7 +1631,6 @@ class Match:
         for valid_castling_RECT in self.kingValidCastling_posDisplay.values():
             pygame.draw.rect(self.screen, (100,100,230), valid_castling_RECT, width=2)
         
-
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''Argumentar pieza exactamente igual que en pieces.origins'''
         _actual_standpoints: list[int] = []
