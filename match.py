@@ -530,6 +530,11 @@ class Match:
         
         # Objectives
         kill_positions: list[int] = []
+
+        '''Posición objetivo a ser PRE-evaluada por si expone, ¿etc? 
+        Cuando es aprobada, es adjudicada a en_passant_positions'''
+        _en_passant: int # 
+
         movement: int
 
         if perspective == 'defender' :
@@ -1390,7 +1395,7 @@ class Match:
         
         # Objectives
         _threat_emission: list[int] = []
-        _castling: int | None = None
+        _castling: int | None = None # pre-evaluated position
         king_directions = [NORTE,SUR,ESTE,OESTE,NOR_OESTE,NOR_ESTE,SUR_OESTE,SUR_ESTE]
 
         if perspective == 'defender':
@@ -1747,6 +1752,7 @@ class Match:
         
         si en-passant está habilitado pero NO se hace, entonces NO debe estar
         habilitado en el siguiente turno.'''
+        if self.en_passant: ...
 
         # castling disablers (movement)
         if not self.castling:
