@@ -811,6 +811,7 @@ class Match:
                                     if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
                                         on_target_kill_positions.append(kp)
                             #necesitamos desarrollar en-passant aquí
+                            #if kp in enPassant_enabler and piece_standpoint in enPassant_enabler: ...
 
                         # Threat on defender ------------------------
                         kill_positions.append(piece_standpoint)
@@ -1806,7 +1807,11 @@ class Match:
             cuando el otro peón pisa la trampa debería añadirlo
             de alguna forma muy poco invasiva a "cómo el peón que
             puso la trampa revisa sus kills".
-            
+
+            Debo agregar "MI" standpoint a enPassant_enabler
+
+            enPassant_enabler corresponde a PlayerTeamUnit
+
             '''
             if self.turn_attacker.name == 'black':
                 # row objetivo de black (4to desde arriba)
