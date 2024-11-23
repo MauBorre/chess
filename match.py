@@ -7,10 +7,13 @@ from board import (
     SUR, SUR_OESTE, SUR_ESTE,
     ESTE, OESTE) # piece movement directions
 
+# Game colors -------------------------
 LEGAL_MOV_HIGHLIGHT = (100,230,100)
 LEGAL_KILL_HIGHLIGHT = (230,100,100)
 CASTLING_HIGHLIGHT = (100,100,230)
+EMPTY_SQUARE_HIGHLIGHT = (230,230,230)
 GRAY_BTN_HOVER = (230,230,230)
+# -------------------------------------
 
 @dataclass
 class PlayerTeamUnit:
@@ -104,6 +107,7 @@ class Match:
         self.pawn_being_promoted: int | None = None
         self.castling: bool = False
         self.castling_direction: str = ''
+        self.en_passant: bool = False
         # ---------------------------------------
 
         # turn look-ups
@@ -114,6 +118,7 @@ class Match:
         self.selectedPiece_legalMoves: list[int] = []
         self.selectedPiece_killMoves: list[int] = []
         self.selectedPiece_castlingMoves: list[int] = []
+        self.selectedPiece_enPassantMoves: list[int] = []
 
         # turn clocks (defaults)
         self.gameClockLimit_minutes: int = 10
@@ -166,12 +171,6 @@ class Match:
         elif x_center: textrect.topleft = (x - text_width/2, y)
         else: textrect.topleft = (x,y)
         self.screen.blit(textobj,textrect)
-
-    # def make_visualFeedback_positions(self, square_values: list[int]) -> dict[int, pygame.Rect]:
-    #     d = {}
-    #     for sv in square_values:
-    #         d.update({sv: board.rects[sv]})
-    #     return d
 
     def check_pawn_promotion(self):
         # Obtener standpoints PAWN de attacker
@@ -527,6 +526,7 @@ class Match:
         # Visual feedback utils
         _legal_movements: list[int] = [piece_standpoint] # standpoint is always first pos 
         on_target_kill_positions: list[int] = []
+        en_passant_positions: list[int] = []
         
         # Objectives
         kill_positions: list[int] = []
@@ -700,7 +700,7 @@ class Match:
                                     # KILL saving position
                                     on_target_kill_positions.append(kp)
 
-                        return _legal_movements, on_target_kill_positions
+                        return _legal_movements, on_target_kill_positions, en_passant_positions
 
                     elif self.turn_defender.direct_threatOrigin_type == 'none': 
 
@@ -735,8 +735,7 @@ class Match:
                         kill_positions.append(piece_standpoint)
                         self.turn_attacker.all_threat_emissions.update({f'pawn{piece_standpoint}': kill_positions})
 
-                        return _legal_movements, on_target_kill_positions
-                
+                        return _legal_movements, on_target_kill_positions, en_passant_positions
 
             if self.turn_attacker.name == 'white': # Ataca hacia el NORTE
 
@@ -773,7 +772,7 @@ class Match:
                                     # KILL saving position
                                     on_target_kill_positions.append(kp)
                         
-                        return _legal_movements, on_target_kill_positions
+                        return _legal_movements, on_target_kill_positions, en_passant_positions
                                     
                     elif self.turn_defender.direct_threatOrigin_type == 'none': # no jaque
 
@@ -808,8 +807,8 @@ class Match:
                         kill_positions.append(piece_standpoint)
                         self.turn_attacker.all_threat_emissions.update({f'pawn{piece_standpoint}': kill_positions})
 
-                        return _legal_movements, on_target_kill_positions
-            return _legal_movements, on_target_kill_positions
+                        return _legal_movements, on_target_kill_positions, en_passant_positions
+            return _legal_movements, on_target_kill_positions, en_passant_positions
 
     def rook_objectives(
         self,
@@ -1517,15 +1516,18 @@ class Match:
                 SQUARE_TYPE = self.white.positions[board_index]
                 interacted_PColor = "white"
 
-            # elif board_index in self.pieceValidMovement_posDisplay.keys():
             elif board_index in self.selectedPiece_legalMoves:
                 SQUARE_SUBTYPE = "valid-movement"
                 SQUARE_TYPE = ""
                 interacted_PColor = ""
             
-            # elif board_index in self.kingValidCastling_posDisplay.keys():
             elif board_index in self.selectedPiece_castlingMoves:
                 SQUARE_SUBTYPE = "castling-movement"
+                SQUARE_TYPE = ""
+                interacted_PColor = ""
+            
+            elif board_index in self.selectedPiece_enPassantMoves:
+                SQUARE_SUBTYPE = "en-passant-movement"
                 SQUARE_TYPE = ""
                 interacted_PColor = ""
 
@@ -1554,14 +1556,15 @@ class Match:
 
                     # Hover -----------------------
                     if interacted_PColor == self.turn_attacker.name:
-                        pygame.draw.rect(self.screen, (100,230,100), SQUARE_RECT, width=2) # PIECE hover
+                        pygame.draw.rect(self.screen, LEGAL_MOV_HIGHLIGHT, SQUARE_RECT, width=2) # PIECE hover
                     else:
-                        pygame.draw.rect(self.screen, (230,230,230), SQUARE_RECT, width=2) # EMPTY hover
+                        pygame.draw.rect(self.screen, EMPTY_SQUARE_HIGHLIGHT, SQUARE_RECT, width=2) # EMPTY hover
                     # Hover -----------------------
                 
                     if self.control_input['click']:
                         self.selectedPiece_killMoves.clear()
                         self.selectedPiece_castlingMoves.clear()
+                        self.selectedPiece_enPassantMoves.clear()
 
                         if SQUARE_SUBTYPE == "kill-movement":
                             self.killing = True
@@ -1573,12 +1576,16 @@ class Match:
                         elif SQUARE_SUBTYPE == "castling-movement":
                             self.castling = True
                             self.move_here = board_index
+                        
+                        elif SQUARE_SUBTYPE == 'en-passant-movement':
+                            self.en_passant = True
+                            self.move_here = board_index
 
                         else: 
                             if SQUARE_TYPE == 'pawn':
                                 self.selectedPiece_legalMoves.clear()
                                 if interacted_PColor == self.turn_attacker.name:
-                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves = self.pawn_objectives(board_index, perspective='attacker')
+                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves, self.selectedPiece_enPassantMoves = self.pawn_objectives(board_index, perspective='attacker')
 
                             if SQUARE_TYPE == 'rook':
                                 self.selectedPiece_legalMoves.clear()
@@ -1621,6 +1628,9 @@ class Match:
 
         for position_index in self.selectedPiece_castlingMoves:
             pygame.draw.rect(self.screen, CASTLING_HIGHLIGHT, board.rects[position_index], width=2)
+        
+        for position_index in self.selectedPiece_enPassantMoves:
+            pygame.draw.rect(self.screen, LEGAL_KILL_HIGHLIGHT, board.rects[position_index], width=2)
         
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''Argumentar pieza exactamente igual que en pieces.origins'''
@@ -1730,6 +1740,9 @@ class Match:
             if self.move_here in self.turn_defender.castling_enablers.keys():
                 del self.turn_defender.castling_enablers[self.move_here]
 
+        '''Debemos agregar la lógica del movimiento en-passant en algún
+        lugar de aquí.'''
+
         # castling disablers (movement)
         if not self.castling:
             if moving_piece_standpoint in self.turn_attacker.castling_enablers.keys():
@@ -1752,10 +1765,12 @@ class Match:
         
         self.selectedPiece_legalMoves.clear()
         self.selectedPiece_castlingMoves.clear()
+        self.selectedPiece_enPassantMoves.clear()
         self.move_here = None
         self.killing = False
         self.castling = False
         self.castling_direction = ''
+        self.en_passant = False
 
     def match_clock(self):
 
