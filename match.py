@@ -1790,6 +1790,20 @@ class Match:
             self.turn_attacker.positions.update({castling_rook_movement: 'rook'}) # mueve a la torre
             self.turn_attacker.castling_enablers = {} # no more castling
         
+        # 1er habilitación en-passant
+        if moving_piece == 'pawn':
+            if self.turn_attacker.name == 'white':
+                # row objetivo de white (3er)
+                if self.move_here in row_of_(24): 
+                    #ENABLE EN-PASSANT "TRAP"
+                    ...
+            
+            if self.turn_attacker.name == 'black':
+                # row objetivo de black (4t0)
+                if self.move_here in row_of_(32): 
+                    #ENABLE EN-PASSANT "TRAP"
+                    ...
+        
         self.selectedPiece_legalMoves.clear()
         self.selectedPiece_castlingMoves.clear()
         self.selectedPiece_enPassantMoves.clear()
