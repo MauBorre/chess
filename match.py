@@ -704,6 +704,7 @@ class Match:
                                 if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
                                     # KILL saving position
                                     on_target_kill_positions.append(kp)
+                            #necesitamos desarrollar aquí el caso especial en-passant que puede salvar al rey
 
                         return _legal_movements, on_target_kill_positions, en_passant_positions
 
@@ -735,6 +736,7 @@ class Match:
                                 if kp in self.turn_defender.positions:
                                     if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
                                         on_target_kill_positions.append(kp)
+                            #necesitamos desarrollar en-passant aquí
                                 
                         # Threat on defender ------------------------
                         kill_positions.append(piece_standpoint)
@@ -776,6 +778,7 @@ class Match:
                                 if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
                                     # KILL saving position
                                     on_target_kill_positions.append(kp)
+                            #necesitamos desarrollar aquí el caso especial en-passant que puede salvar al rey
                         
                         return _legal_movements, on_target_kill_positions, en_passant_positions
                                     
@@ -807,6 +810,7 @@ class Match:
                                 if kp in self.turn_defender.positions:
                                     if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
                                         on_target_kill_positions.append(kp)
+                            #necesitamos desarrollar en-passant aquí
 
                         # Threat on defender ------------------------
                         kill_positions.append(piece_standpoint)
