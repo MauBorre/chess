@@ -1531,6 +1531,8 @@ class Match:
                 SQUARE_TYPE = ""
                 interacted_PColor = ""
             
+            # en-passant requiere dos habilitaciones, aquí me refiero
+            # a la primera o a la segunda?
             elif board_index in self.selectedPiece_enPassantMoves:
                 SQUARE_SUBTYPE = "en-passant-movement"
                 SQUARE_TYPE = ""
@@ -1634,6 +1636,9 @@ class Match:
         for position_index in self.selectedPiece_castlingMoves:
             pygame.draw.rect(self.screen, CASTLING_HIGHLIGHT, board.rects[position_index], width=2)
         
+        '''Creo que señalaremos el movimiento final como un kill
+        movement "normal" y ya, no necesitamos un selectedPiece
+        para enPassant...'''
         for position_index in self.selectedPiece_enPassantMoves:
             pygame.draw.rect(self.screen, LEGAL_KILL_HIGHLIGHT, board.rects[position_index], width=2)
         
@@ -1758,7 +1763,7 @@ class Match:
             #si cayó en la casilla enPassant_enabler
                 #entonces habilitar al peón que emitía el enabler
                 #solo en su siguiente turno el enPassant_killEnabler
-                
+
             ...
 
         # castling disablers (movement)
