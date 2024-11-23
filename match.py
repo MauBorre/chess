@@ -22,6 +22,7 @@ class PlayerTeamUnit:
     single_threat_standpoint: int | None
     king_banned_direction: int | None
     legal_moves: set[str] 
+    enPassant_enablers: set[int]
     all_effectiveThreat_standpoints: list[int] = field(default_factory=list)
     single_directThreatOnEnemy_trace: list[int] = field(default_factory=list)
     positions: dict[int, str] = field(default_factory=dict)
@@ -66,7 +67,8 @@ class Match:
             single_threat_standpoint = None,
             king_banned_direction = None,
             legal_moves = set(),
-            all_effectiveThreat_standpoints = []
+            all_effectiveThreat_standpoints = [],
+            enPassant_enablers = set()
         )
         self.white = PlayerTeamUnit(
             name = 'white',
@@ -80,7 +82,8 @@ class Match:
             single_threat_standpoint = None,
             king_banned_direction = None,
             legal_moves = set(),
-            all_effectiveThreat_standpoints = []
+            all_effectiveThreat_standpoints = [],
+            enPassant_enablers = set()
         )
         
         # menu spawn variables / game halt reasons
@@ -107,7 +110,7 @@ class Match:
         self.pawn_being_promoted: int | None = None
         self.castling: bool = False
         self.castling_direction: str = ''
-        self.en_passant: bool = False
+        self.en_passant_activated: bool = False
         # ---------------------------------------
 
         # turn look-ups
@@ -1589,8 +1592,9 @@ class Match:
                             self.castling = True
                             self.move_here = board_index
                         
+                        # mmm... creo que esto no va...
                         elif SQUARE_SUBTYPE == 'en-passant-movement':
-                            self.en_passant = True
+                            self.en_passant_activated = True
                             self.move_here = board_index
 
                         else: 
@@ -1754,22 +1758,7 @@ class Match:
             # castling disablers (killed rook)
             if self.move_here in self.turn_defender.castling_enablers.keys():
                 del self.turn_defender.castling_enablers[self.move_here]
-
-        '''Debemos agregar la lógica del movimiento en-passant en algún
-        lugar de aquí.
-        
-        en-passant es una forma de kill-movement pero de peón a peón
-        
-        si en-passant está habilitado pero NO se hace, entonces NO debe estar
-        habilitado en el siguiente turno.'''
-        if self.en_passant: 
-            #si movió un peón
-            #si hizo doble movimiento
-            #si cayó en la casilla enPassant_enabler
-                #entonces habilitar al peón que emitía el enabler
-                #solo en su siguiente turno el enPassant_killEnabler
-
-            ...
+            # esto puede ser killing por en-passant, cuidado...
 
         # castling disablers (movement)
         if not self.castling:
@@ -1795,29 +1784,28 @@ class Match:
         if moving_piece == 'pawn':
             if self.turn_attacker.name == 'white':
                 # row objetivo de white (3er desde arriba)
-                if self.move_here in row_of_(24): 
+                if self.move_here in row_of_(24):
+                    '''White cayendo aquí es PREPARAR la trampa,
+                    pero black cayendo aquí -CON DOBLE MOV.- es ACTIVARLA.'''
                     #ENABLE EN-PASSANT "TRAP"
+                    self.turn_attacker.enPassant_enablers = {self.move_here+ESTE, self.move_here+OESTE}
+                '''
+                si en-passant está ACTIVADO pero NO se hace, entonces NO debe estar
+                habilitado en el siguiente turno.
+                '''
+                if self.en_passant_activated: 
+                    #si movió un peón
+                    #si hizo doble movimiento
+                    #si cayó en la casilla enPassant_enabler
+                        #entonces habilitar al peón que emitía el enabler
+                        #solo en su siguiente turno el enPassant_killEnabler
                     ...
-            '''
-            Creo que lo ideal sería activar esta trampa
-            y dejar que el otro mueva normalmente.
-            En mi siguiente turno, YO que active la trampa
-            reviso si cayó un peón -por doble movimiento-.
 
-            cuando el otro peón pisa la trampa debería añadirlo
-            de alguna forma muy poco invasiva a "cómo el peón que
-            puso la trampa revisa sus kills".
-
-            Debo agregar "MI" standpoint a enPassant_enabler
-
-            enPassant_enabler corresponde a PlayerTeamUnit
-
-            '''
             if self.turn_attacker.name == 'black':
                 # row objetivo de black (4to desde arriba)
                 if self.move_here in row_of_(32): 
                     #ENABLE EN-PASSANT "TRAP"
-                    ...
+                    self.turn_attacker.enPassant_enablers = {self.move_here+ESTE, self.move_here+OESTE}
         
         self.selectedPiece_legalMoves.clear()
         self.selectedPiece_castlingMoves.clear()
@@ -1826,7 +1814,9 @@ class Match:
         self.killing = False
         self.castling = False
         self.castling_direction = ''
-        self.en_passant = False
+        # esto y limpiar enPassant_enablers debería ser suficiente para
+        # limitar su vigencia a un solo turno.
+        self.en_passant_activated = False 
 
     def match_clock(self):
 
