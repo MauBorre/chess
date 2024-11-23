@@ -22,7 +22,7 @@ class PlayerTeamUnit:
     single_threat_standpoint: int | None
     king_banned_direction: int | None
     legal_moves: set[str] 
-    enPassant_enablers: set[int]
+    
     all_effectiveThreat_standpoints: list[int] = field(default_factory=list)
     single_directThreatOnEnemy_trace: list[int] = field(default_factory=list)
     positions: dict[int, str] = field(default_factory=dict)
@@ -30,6 +30,7 @@ class PlayerTeamUnit:
     all_threat_emissions: dict[str, int] = field(default_factory=dict)
     king_legal_moves: list[int] = field(default_factory=list)
     castling_enablers: dict[int, str] = field(default_factory=dict)
+    enPassant_enablers: dict[str, int] = field(default_factory=dict)
     
     def clear(self):
         self.all_threat_emissions.clear()
@@ -68,7 +69,7 @@ class Match:
             king_banned_direction = None,
             legal_moves = set(),
             all_effectiveThreat_standpoints = [],
-            enPassant_enablers = set()
+            enPassant_enablers = dict()
         )
         self.white = PlayerTeamUnit(
             name = 'white',
@@ -83,7 +84,7 @@ class Match:
             king_banned_direction = None,
             legal_moves = set(),
             all_effectiveThreat_standpoints = [],
-            enPassant_enablers = set()
+            enPassant_enablers = dict()
         )
         
         # menu spawn variables / game halt reasons
@@ -1585,7 +1586,7 @@ class Match:
                             self.castling = True
                             self.move_here = board_index
                         
-                        elif SQUARE_SUBTYPE == 'pawn-double-movement':
+                        elif SQUARE_SUBTYPE == "pawn-double-movement":
                             self.pawn_doubleMove = True
                             self.move_here = board_index
 
@@ -1775,21 +1776,25 @@ class Match:
                 if self.move_here+ESTE in self.turn_defender.positions:
                     if self.turn_defender.positions[self.move_here+ESTE] == 'pawn':
                         #ENABLE EN-PASSANT
-                        self.turn_attacker.enPassant_enablers = {moving_piece_standpoint+NORTE}
+                        self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
+                        self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+NORTE})
                 if self.move_here+OESTE in self.turn_defender.positions:
                     if self.turn_defender.positions[self.move_here+OESTE] == 'pawn':
                         #ENABLE EN-PASSANT
-                        self.turn_attacker.enPassant_enablers = {moving_piece_standpoint+NORTE}
+                        self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
+                        self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+NORTE})
 
             if self.turn_attacker.name == 'black':
                 if self.move_here+ESTE in self.turn_defender.positions:
                     if self.turn_defender.positions[self.move_here+ESTE] == 'pawn':
                         #ENABLE EN-PASSANT
-                        self.turn_attacker.enPassant_enablers = {moving_piece_standpoint+SUR}
+                        self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
+                        self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+SUR})
                 if self.move_here+OESTE in self.turn_defender.positions:
                     if self.turn_defender.positions[self.move_here+OESTE] == 'pawn':
                         #ENABLE EN-PASSANT
-                        self.turn_attacker.enPassant_enablers = {moving_piece_standpoint+SUR}
+                        self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
+                        self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+SUR})
         else: self.turn_attacker.enPassant_enablers.clear() # deshabilitado en sig. turno
         
         self.selectedPiece_legalMoves.clear()
