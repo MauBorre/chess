@@ -1741,7 +1741,12 @@ class Match:
                 del self.turn_defender.castling_enablers[self.move_here]
 
         '''Debemos agregar la lógica del movimiento en-passant en algún
-        lugar de aquí.'''
+        lugar de aquí.
+        
+        en-passant es una forma de kill-movement pero de peón a peón
+        
+        si en-passant está habilitado pero NO se hace, entonces NO debe estar
+        habilitado en el siguiente turno.'''
 
         # castling disablers (movement)
         if not self.castling:
