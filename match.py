@@ -1752,7 +1752,14 @@ class Match:
         
         si en-passant está habilitado pero NO se hace, entonces NO debe estar
         habilitado en el siguiente turno.'''
-        if self.en_passant: ...
+        if self.en_passant: 
+            #si movió un peón
+            #si hizo doble movimiento
+            #si cayó en la casilla enPassant_enabler
+                #entonces habilitar al peón que emitía el enabler
+                #solo en su siguiente turno el enPassant_killEnabler
+                
+            ...
 
         # castling disablers (movement)
         if not self.castling:
