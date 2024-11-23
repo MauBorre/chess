@@ -110,7 +110,7 @@ class Match:
         self.pawn_being_promoted: int | None = None
         self.castling: bool = False
         self.castling_direction: str = ''
-        self.en_passant_activated: bool = False
+        self.pawn_doubleMove: bool = False
         # ---------------------------------------
 
         # turn look-ups
@@ -121,7 +121,7 @@ class Match:
         self.selectedPiece_legalMoves: list[int] = []
         self.selectedPiece_killMoves: list[int] = []
         self.selectedPiece_castlingMoves: list[int] = []
-        self.selectedPiece_enPassantMoves: list[int] = []
+        self.selectedPiece_pawnDoubleMove: list[int] = []
 
         # turn clocks (defaults)
         self.gameClockLimit_minutes: int = 10
@@ -529,15 +529,10 @@ class Match:
         # Visual feedback utils
         _legal_movements: list[int] = [piece_standpoint] # standpoint is always first pos 
         on_target_kill_positions: list[int] = []
-        en_passant_positions: list[int] = []
+        double_movement: list[int] = []
         
         # Objectives
         kill_positions: list[int] = []
-
-        '''Posición objetivo a ser PRE-evaluada por si expone, ¿etc? 
-        Cuando es aprobada, es adjudicada a en_passant_positions'''
-        _en_passant: int # 
-
         movement: int
 
         if perspective == 'defender' :
@@ -709,7 +704,7 @@ class Match:
                                     on_target_kill_positions.append(kp)
                             #necesitamos desarrollar aquí el caso especial en-passant que puede salvar al rey
 
-                        return _legal_movements, on_target_kill_positions, en_passant_positions
+                        return _legal_movements, on_target_kill_positions, double_movement
 
                     elif self.turn_defender.direct_threatOrigin_type == 'none': 
 
@@ -745,7 +740,7 @@ class Match:
                         kill_positions.append(piece_standpoint)
                         self.turn_attacker.all_threat_emissions.update({f'pawn{piece_standpoint}': kill_positions})
 
-                        return _legal_movements, on_target_kill_positions, en_passant_positions
+                        return _legal_movements, on_target_kill_positions, double_movement
 
             if self.turn_attacker.name == 'white': # Ataca hacia el NORTE
 
@@ -783,7 +778,7 @@ class Match:
                                     on_target_kill_positions.append(kp)
                             #necesitamos desarrollar aquí el caso especial en-passant que puede salvar al rey
                         
-                        return _legal_movements, on_target_kill_positions, en_passant_positions
+                        return _legal_movements, on_target_kill_positions, double_movement
                                     
                     elif self.turn_defender.direct_threatOrigin_type == 'none': # no jaque
 
@@ -820,8 +815,8 @@ class Match:
                         kill_positions.append(piece_standpoint)
                         self.turn_attacker.all_threat_emissions.update({f'pawn{piece_standpoint}': kill_positions})
 
-                        return _legal_movements, on_target_kill_positions, en_passant_positions
-            return _legal_movements, on_target_kill_positions, en_passant_positions
+                        return _legal_movements, on_target_kill_positions, double_movement
+            return _legal_movements, on_target_kill_positions, double_movement
 
     def rook_objectives(
         self,
@@ -1539,10 +1534,8 @@ class Match:
                 SQUARE_TYPE = ""
                 interacted_PColor = ""
             
-            # en-passant requiere dos habilitaciones, aquí me refiero
-            # a la primera o a la segunda?
-            elif board_index in self.selectedPiece_enPassantMoves:
-                SQUARE_SUBTYPE = "en-passant-movement"
+            elif board_index in self.selectedPiece_pawnDoubleMove:
+                SQUARE_SUBTYPE = "pawn-double-movement"
                 SQUARE_TYPE = ""
                 interacted_PColor = ""
 
@@ -1579,7 +1572,7 @@ class Match:
                     if self.control_input['click']:
                         self.selectedPiece_killMoves.clear()
                         self.selectedPiece_castlingMoves.clear()
-                        self.selectedPiece_enPassantMoves.clear()
+                        self.selectedPiece_pawnDoubleMove.clear()
 
                         if SQUARE_SUBTYPE == "kill-movement":
                             self.killing = True
@@ -1592,16 +1585,15 @@ class Match:
                             self.castling = True
                             self.move_here = board_index
                         
-                        # mmm... creo que esto no va...
-                        elif SQUARE_SUBTYPE == 'en-passant-movement':
-                            self.en_passant_activated = True
+                        elif SQUARE_SUBTYPE == 'pawn-double-movement':
+                            self.pawn_doubleMove = True
                             self.move_here = board_index
 
                         else: 
                             if SQUARE_TYPE == 'pawn':
                                 self.selectedPiece_legalMoves.clear()
                                 if interacted_PColor == self.turn_attacker.name:
-                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves, self.selectedPiece_enPassantMoves = self.pawn_objectives(board_index, perspective='attacker')
+                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves, self.selectedPiece_pawnDoubleMove = self.pawn_objectives(board_index, perspective='attacker')
 
                             if SQUARE_TYPE == 'rook':
                                 self.selectedPiece_legalMoves.clear()
@@ -1645,11 +1637,8 @@ class Match:
         for position_index in self.selectedPiece_castlingMoves:
             pygame.draw.rect(self.screen, CASTLING_HIGHLIGHT, board.rects[position_index], width=2)
         
-        '''Creo que señalaremos el movimiento final como un kill
-        movement "normal" y ya, no necesitamos un selectedPiece
-        para enPassant...'''
-        for position_index in self.selectedPiece_enPassantMoves:
-            pygame.draw.rect(self.screen, LEGAL_KILL_HIGHLIGHT, board.rects[position_index], width=2)
+        for position_index in self.selectedPiece_pawnDoubleMove:
+            pygame.draw.rect(self.screen, LEGAL_MOV_HIGHLIGHT, board.rects[position_index], width=2)
         
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''Argumentar pieza exactamente igual que en pieces.origins'''
@@ -1780,43 +1769,37 @@ class Match:
             self.turn_attacker.positions.update({castling_rook_movement: 'rook'}) # mueve a la torre
             self.turn_attacker.castling_enablers = {} # no more castling
         
-        # 1er habilitación en-passant
-        if moving_piece == 'pawn':
+        # en-passant
+        if self.pawn_doubleMove:
             if self.turn_attacker.name == 'white':
-                # row objetivo de white (3er desde arriba)
-                if self.move_here in row_of_(24):
-                    '''White cayendo aquí es PREPARAR la trampa,
-                    pero black cayendo aquí -CON DOBLE MOV.- es ACTIVARLA.'''
-                    #ENABLE EN-PASSANT "TRAP"
-                    self.turn_attacker.enPassant_enablers = {self.move_here+ESTE, self.move_here+OESTE}
-                '''
-                si en-passant está ACTIVADO pero NO se hace, entonces NO debe estar
-                habilitado en el siguiente turno.
-                '''
-                if self.en_passant_activated: 
-                    #si movió un peón
-                    #si hizo doble movimiento
-                    #si cayó en la casilla enPassant_enabler
-                        #entonces habilitar al peón que emitía el enabler
-                        #solo en su siguiente turno el enPassant_killEnabler
-                    ...
+                if self.move_here+ESTE in self.turn_defender.positions:
+                    if self.turn_defender.positions[self.move_here+ESTE] == 'pawn':
+                        #ENABLE EN-PASSANT
+                        self.turn_attacker.enPassant_enablers = {moving_piece_standpoint+NORTE}
+                if self.move_here+OESTE in self.turn_defender.positions:
+                    if self.turn_defender.positions[self.move_here+OESTE] == 'pawn':
+                        #ENABLE EN-PASSANT
+                        self.turn_attacker.enPassant_enablers = {moving_piece_standpoint+NORTE}
 
             if self.turn_attacker.name == 'black':
-                # row objetivo de black (4to desde arriba)
-                if self.move_here in row_of_(32): 
-                    #ENABLE EN-PASSANT "TRAP"
-                    self.turn_attacker.enPassant_enablers = {self.move_here+ESTE, self.move_here+OESTE}
+                if self.move_here+ESTE in self.turn_defender.positions:
+                    if self.turn_defender.positions[self.move_here+ESTE] == 'pawn':
+                        #ENABLE EN-PASSANT
+                        self.turn_attacker.enPassant_enablers = {moving_piece_standpoint+SUR}
+                if self.move_here+OESTE in self.turn_defender.positions:
+                    if self.turn_defender.positions[self.move_here+OESTE] == 'pawn':
+                        #ENABLE EN-PASSANT
+                        self.turn_attacker.enPassant_enablers = {moving_piece_standpoint+SUR}
+        else: self.turn_attacker.enPassant_enablers.clear() # deshabilitado en sig. turno
         
         self.selectedPiece_legalMoves.clear()
         self.selectedPiece_castlingMoves.clear()
-        self.selectedPiece_enPassantMoves.clear()
+        self.selectedPiece_pawnDoubleMove.clear()
         self.move_here = None
         self.killing = False
         self.castling = False
         self.castling_direction = ''
-        # esto y limpiar enPassant_enablers debería ser suficiente para
-        # limitar su vigencia a un solo turno.
-        self.en_passant_activated = False 
+        self.pawn_doubleMove = False 
 
     def match_clock(self):
 
