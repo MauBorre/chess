@@ -1793,13 +1793,23 @@ class Match:
         # 1er habilitación en-passant
         if moving_piece == 'pawn':
             if self.turn_attacker.name == 'white':
-                # row objetivo de white (3er)
+                # row objetivo de white (3er desde arriba)
                 if self.move_here in row_of_(24): 
                     #ENABLE EN-PASSANT "TRAP"
                     ...
+            '''
+            Creo que lo ideal sería activar esta trampa
+            y dejar que el otro mueva normalmente.
+            En mi siguiente turno, YO que active la trampa
+            reviso si cayó un peón -por doble movimiento-.
+
+            cuando el otro peón pisa la trampa debería añadirlo
+            de alguna forma muy poco invasiva a "cómo el peón que
+            puso la trampa revisa sus kills".
             
+            '''
             if self.turn_attacker.name == 'black':
-                # row objetivo de black (4t0)
+                # row objetivo de black (4to desde arriba)
                 if self.move_here in row_of_(32): 
                     #ENABLE EN-PASSANT "TRAP"
                     ...
