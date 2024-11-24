@@ -21,7 +21,7 @@ class PlayerTeamUnit:
     direct_threatOrigin_type: str # 'single' or 'multiple' or 'none'
     single_threat_standpoint: int | None
     king_banned_direction: int | None
-    legal_moves: set[str] 
+    legal_moves: set[str] # DEFENDER ONLY perspective util
     
     all_effectiveThreat_standpoints: list[int] = field(default_factory=list)
     single_directThreatOnEnemy_trace: list[int] = field(default_factory=list)
@@ -318,6 +318,9 @@ class Match:
             _king = king_standpoints.pop()
 
         # Revisión del estado de la amenaza del atacante sobre el rey defensor (jaque)
+        # La posición de orígen de la amenaza estará SIEMPRE en _threats_list[-1].
+        # attacker.single_directThreatOnEnemy_trace NO INCLUIRÁ STANDPOINT DE LA AMENAZA.
+        # Si la pieza amenazante es el caballo NO llamar a trace_direction_walk.
         for _threats_list in self.turn_attacker.all_threat_emissions.values():
             if _king in _threats_list:
 
@@ -330,9 +333,6 @@ class Match:
 
                 if self.turn_attacker.direct_threatOrigin_type == 'none':
                     self.turn_attacker.direct_threatOrigin_type = 'single'
-                    # La posición de orígen de la amenaza estará SIEMPRE en _threats_list[-1].
-                    # attacker.single_directThreatOnEnemy_trace NO INCLUIRÁ STANDPOINT DE LA AMENAZA.
-                    # Si la pieza amenazante es el caballo NO llamar a trace_direction_walk.
                     self.turn_attacker.single_threat_standpoint = _threats_list[-1]
                     knight_walk_exception: str = self.turn_attacker.positions[_threats_list[-1]]
                     if knight_walk_exception != 'knight':
@@ -983,16 +983,16 @@ class Match:
         # ESTE / OESTE LIMITS
         if piece_standpoint+ESTE in row_of_(piece_standpoint):
             knight_pre_movements.extend([piece_standpoint+NORTE+NOR_ESTE,
-                                    piece_standpoint+SUR+SUR_ESTE])
+                                        piece_standpoint+SUR+SUR_ESTE])
             if piece_standpoint+ESTE*2 in row_of_(piece_standpoint):
                 knight_pre_movements.extend([piece_standpoint+ESTE+NOR_ESTE,
-                                        piece_standpoint+ESTE+SUR_ESTE])
+                                            piece_standpoint+ESTE+SUR_ESTE])
         if piece_standpoint+OESTE in row_of_(piece_standpoint):
             knight_pre_movements.extend([piece_standpoint+NORTE+NOR_OESTE,
-                                    piece_standpoint+SUR+SUR_OESTE])
+                                        piece_standpoint+SUR+SUR_OESTE])
             if piece_standpoint+OESTE*2 in row_of_(piece_standpoint):
                 knight_pre_movements.extend([piece_standpoint+OESTE+NOR_OESTE,
-                                        piece_standpoint+OESTE+SUR_OESTE])
+                                            piece_standpoint+OESTE+SUR_OESTE])
         
         if perspective == 'defender':
             for movement in knight_pre_movements:
@@ -1003,8 +1003,10 @@ class Match:
                     
                     if self.turn_attacker.direct_threatOrigin_type == 'single':
                         if movement not in self.turn_defender.positions:
+
                             if movement in self.turn_attacker.single_directThreatOnEnemy_trace:
                                 self.turn_defender.legal_moves.add(f'knight{piece_standpoint}')
+
                             if movement == self.turn_attacker.single_threat_standpoint:
                                 self.turn_defender.legal_moves.add(f'knight{piece_standpoint}')
 
@@ -1772,29 +1774,20 @@ class Match:
         
         # en-passant
         if self.pawn_doubleMove:
-            if self.turn_attacker.name == 'white':
-                if self.move_here+ESTE in self.turn_defender.positions:
-                    if self.turn_defender.positions[self.move_here+ESTE] == 'pawn':
-                        #ENABLE EN-PASSANT
-                        self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
-                        self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+NORTE})
-                if self.move_here+OESTE in self.turn_defender.positions:
-                    if self.turn_defender.positions[self.move_here+OESTE] == 'pawn':
-                        #ENABLE EN-PASSANT
-                        self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
-                        self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+NORTE})
 
-            if self.turn_attacker.name == 'black':
-                if self.move_here+ESTE in self.turn_defender.positions:
-                    if self.turn_defender.positions[self.move_here+ESTE] == 'pawn':
-                        #ENABLE EN-PASSANT
-                        self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
-                        self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+SUR})
-                if self.move_here+OESTE in self.turn_defender.positions:
-                    if self.turn_defender.positions[self.move_here+OESTE] == 'pawn':
-                        #ENABLE EN-PASSANT
-                        self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
-                        self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+SUR})
+            # objective kill position
+            offset_position: int = SUR if self.turn_attacker.name == 'white' else NORTE
+
+            if self.move_here+ESTE in self.turn_defender.positions:
+                if self.turn_defender.positions[self.move_here+ESTE] == 'pawn':
+                    #ENABLE EN-PASSANT
+                    self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
+                    self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+offset_position})
+            if self.move_here+OESTE in self.turn_defender.positions:
+                if self.turn_defender.positions[self.move_here+OESTE] == 'pawn':
+                    #ENABLE EN-PASSANT
+                    self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
+                    self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+offset_position})
         else: self.turn_attacker.enPassant_enablers.clear() # deshabilitado en sig. turno
         
         self.selectedPiece_legalMoves.clear()
