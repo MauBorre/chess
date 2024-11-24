@@ -1778,16 +1778,18 @@ class Match:
             # objective kill position
             offset_position: int = SUR if self.turn_attacker.name == 'white' else NORTE
 
+            # east en passant
             if self.move_here+ESTE in self.turn_defender.positions:
-                if self.turn_defender.positions[self.move_here+ESTE] == 'pawn':
-                    #ENABLE EN-PASSANT
-                    self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
-                    self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+offset_position})
+                if self.turn_defender.positions[self.move_here+ESTE] == 'pawn': 
+                    self.turn_attacker.enPassant_enablers.update({'true-pos': self.move_here})
+                    self.turn_attacker.enPassant_enablers.update({'offset-kill-pos': moving_piece_standpoint+offset_position})
+
+            # west en passant
             if self.move_here+OESTE in self.turn_defender.positions:
-                if self.turn_defender.positions[self.move_here+OESTE] == 'pawn':
-                    #ENABLE EN-PASSANT
-                    self.turn_attacker.enPassant_enablers.update({'true-pos':self.move_here})
-                    self.turn_attacker.enPassant_enablers.update({'offset-kill-pos':moving_piece_standpoint+offset_position})
+                if self.turn_defender.positions[self.move_here+OESTE] == 'pawn': 
+                    self.turn_attacker.enPassant_enablers.update({'true-pos': self.move_here})
+                    self.turn_attacker.enPassant_enablers.update({'offset-kill-pos': moving_piece_standpoint+offset_position})
+
         else: self.turn_attacker.enPassant_enablers.clear() # deshabilitado en sig. turno
         
         self.selectedPiece_legalMoves.clear()
