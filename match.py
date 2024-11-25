@@ -123,6 +123,7 @@ class Match:
         self.selectedPiece_killMoves: list[int] = []
         self.selectedPiece_castlingMoves: list[int] = []
         self.selectedPiece_pawnDoubleMove: list[int] = []
+        self.selectedPiece_pawnKillingEnPassant: list[int] = []
 
         # turn clocks (defaults)
         self.gameClockLimit_minutes: int = 10
@@ -1545,6 +1546,11 @@ class Match:
                 SQUARE_SUBTYPE = "pawn-double-movement"
                 SQUARE_TYPE = ""
                 interacted_PColor = ""
+            
+            elif board_index in self.selectedPiece_pawnKillingEnPassant:
+                SQUARE_SUBTYPE = "pawn-killing-en-passant"
+                SQUARE_TYPE = ""
+                interacted_PColor = ""
 
             else: SQUARE_TYPE = "EMPTY"; interacted_PColor = ""; SQUARE_SUBTYPE = ""
             # ----------------------------------------------------------------------------------------------------
@@ -1580,6 +1586,7 @@ class Match:
                         self.selectedPiece_killMoves.clear()
                         self.selectedPiece_castlingMoves.clear()
                         self.selectedPiece_pawnDoubleMove.clear()
+                        self.selectedPiece_pawnKillingEnPassant.clear()
 
                         if SQUARE_SUBTYPE == "kill-movement":
                             self.killing = True
@@ -1594,6 +1601,10 @@ class Match:
                         
                         elif SQUARE_SUBTYPE == "pawn-double-movement":
                             self.pawn_doubleMove = True
+                            self.move_here = board_index
+                        
+                        elif SQUARE_SUBTYPE == "pawn-killing-en-passant":
+                            self.killing_enPassant = True
                             self.move_here = board_index
 
                         else: 
@@ -1646,6 +1657,9 @@ class Match:
         
         for position_index in self.selectedPiece_pawnDoubleMove:
             pygame.draw.rect(self.screen, LEGAL_MOV_HIGHLIGHT, board.rects[position_index], width=2)
+        
+        for position_index in self.selectedPiece_pawnKillingEnPassant:
+            pygame.draw.rect(self.screen, LEGAL_KILL_HIGHLIGHT, board.rects[position_index], width=2)
         
     def get_piece_standpoint(self, color:str, piece:str) -> list[int]:
         '''Argumentar pieza exactamente igual que en pieces.origins'''
@@ -1758,7 +1772,9 @@ class Match:
             # castling disablers (killed rook)
             if self.move_here in self.turn_defender.castling_enablers.keys():
                 del self.turn_defender.castling_enablers[self.move_here]
-            # esto puede ser killing por en-passant, cuidado...
+        
+        if self.killing_enPassant:
+            self.turn_defender.positions.pop(self.turn_defender.enPassant_enablers['true-pos'])
 
         # castling disablers (movement)
         if not self.castling:
@@ -1799,9 +1815,6 @@ class Match:
                     self.turn_attacker.enPassant_enablers.update({'offset-kill-pos': moving_piece_standpoint+offset_position})
 
         else: self.turn_attacker.enPassant_enablers.clear() # deshabilitado en sig. turno
-
-        if self.killing_enPassant:
-            self.turn_defender.positions.pop(self.turn_defender.enPassant_enablers['true-pos'])
         
         self.selectedPiece_legalMoves.clear()
         self.selectedPiece_castlingMoves.clear()
