@@ -1523,10 +1523,10 @@ class Match:
             pygame.draw.rect(self.screen, board.dark_square, SQUARE_RECT, width=1)
 
             # debug square tooltip
-            self.draw_text(f'{board_index}',(100,100,200),
-                            SQUARE_RECT.left +3,
-                            SQUARE_RECT.top + board.square_height -17,
-                            center=False, font_size='medium')
+            # self.draw_text(f'{board_index}',(100,100,200),
+            #                 SQUARE_RECT.left +3,
+            #                 SQUARE_RECT.top + board.square_height -17,
+            #                 center=False, font_size='medium')
             
             # Square types/subtypes -----------------------------------------------------------------------------
             if board_index in self.black.positions.keys():
@@ -1770,10 +1770,6 @@ class Match:
         moving_piece: str = self.turn_attacker.positions.pop(moving_piece_standpoint)
 
         if self.killing:
-            '''Hay alguna forma acá en que podría identificar que
-            un peón está matando a otro peón por en passant?
-            Otra que no sea habilitar una nueva variable y un nuevo tipo de
-            casillero.'''
             # NORMAL KILLING
             self.turn_defender.positions.pop(self.move_here)
             # castling disablers (killed rook)
