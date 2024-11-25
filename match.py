@@ -528,12 +528,13 @@ class Match:
         Peon BLANCO: NOR_OESTE, NOR_ESTE
         '''
 
-        # Visual feedback utils
+        # Objectives
         _legal_movements: list[int] = [piece_standpoint] # standpoint is always first pos 
         on_target_kill_positions: list[int] = []
         double_movement: list[int] = []
+        on_target_enPassant_killPositions = list[int] = []
         
-        # Objectives
+        # Pre-objectives
         kill_positions: list[int] = []
         movement: int
 
@@ -701,10 +702,16 @@ class Match:
                             kill_positions.extend([piece_standpoint+SUR_OESTE, piece_standpoint+SUR_ESTE])
                         
                         for kp in kill_positions:
-                            if kp not in self.turn_attacker.positions and kp == self.turn_defender.single_threat_standpoint: 
-                                if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
-                                    # KILL saving position
-                                    on_target_kill_positions.append(kp)
+                            if kp not in self.turn_attacker.positions:
+                                if kp == self.turn_defender.single_threat_standpoint: 
+                                    if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
+                                        # KILL saving position
+                                        on_target_kill_positions.append(kp)
+                                if kp == self.turn_defender.enPassant_enablers['offset-kill-pos']:
+                                    if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
+                                        # KILL saving position
+                                        on_target_enPassant_killPositions.append(kp)
+
                             #necesitamos desarrollar aquí el caso especial en-passant que puede salvar al rey
 
                         return _legal_movements, on_target_kill_positions, double_movement
@@ -738,6 +745,8 @@ class Match:
                                 if kp in self.turn_defender.positions:
                                     if not self.exposing_direction(piece_standpoint, intended_move=kp-piece_standpoint, request_from="attacker"):
                                         on_target_kill_positions.append(kp)
+                                elif kp == self.turn_defender.enPassant_enablers['offset-kill-pos']:
+                                    on_target_enPassant_killPositions.append(kp)
                             #necesitamos desarrollar en-passant aquí
                                 
                         # Threat on defender ------------------------
@@ -1814,7 +1823,9 @@ class Match:
                     self.turn_attacker.enPassant_enablers.update({'true-pos': self.move_here}) # necesario para remover la pieza
                     self.turn_attacker.enPassant_enablers.update({'offset-kill-pos': moving_piece_standpoint+offset_position})
 
-        else: self.turn_attacker.enPassant_enablers.clear() # deshabilitado en sig. turno
+        else: # disable en passant
+            self.turn_attacker.enPassant_enablers.update({'true-pos': None})
+            self.turn_attacker.enPassant_enablers.update({'offset-kill-pos': None}) 
         
         self.selectedPiece_legalMoves.clear()
         self.selectedPiece_castlingMoves.clear()
