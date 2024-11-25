@@ -687,7 +687,8 @@ class Match:
                                     if movement+SUR not in self.turn_attacker.positions and movement+SUR not in self.turn_defender.positions: # piece block
                                         if movement+SUR in self.turn_defender.single_directThreatOnEnemy_trace:
                                             # BLOCK saving position
-                                            _legal_movements.update({movement+SUR: board.rects[movement+SUR]})
+                                            # _legal_movements.update({movement+SUR: board.rects[movement+SUR]})
+                                            double_movement.append(movement+SUR)
 
                         # kill-movements
                         # board limits check
@@ -716,7 +717,8 @@ class Match:
                                 if piece_standpoint in self.black.pawns_in_origin:
                                     if movement+SUR <= 63: # board limit check
                                         if movement+SUR not in self.turn_attacker.positions and movement+SUR not in self.turn_defender.positions: # piece block
-                                            _legal_movements.append(movement+SUR) # 2nd Movement 
+                                            # _legal_movements.append(movement+SUR) # 2nd Movement 
+                                            double_movement.append(movement+SUR)
                             else: pass
 
                         # kill-movements
@@ -761,7 +763,8 @@ class Match:
                                     if movement+NORTE not in self.turn_attacker.positions and movement+NORTE not in self.turn_defender.positions:# piece block
                                         if movement+NORTE in self.turn_defender.single_directThreatOnEnemy_trace:
                                             # BLOCK saving position
-                                            _legal_movements.append(movement+NORTE)
+                                            # _legal_movements.append(movement+NORTE)
+                                            double_movement.append(movement+NORTE)
 
                         # kill-movements
                         # board limits check
@@ -790,7 +793,8 @@ class Match:
                                 if piece_standpoint in self.white.pawns_in_origin:
                                     if movement+NORTE >= 0: # board limit check
                                         if movement+NORTE not in self.black.positions and movement+NORTE not in self.white.positions: # piece block
-                                            _legal_movements.append(movement+NORTE) # 2nd Movement
+                                            # _legal_movements.append(movement+NORTE) # 2nd Movement
+                                            double_movement.append(movement+NORTE)
                             else: pass
                     
                         # kill-movements
@@ -1745,6 +1749,10 @@ class Match:
         moving_piece: str = self.turn_attacker.positions.pop(moving_piece_standpoint)
 
         if self.killing:
+            '''Hay alguna forma acá en que podría identificar que
+            un peón está matando a otro peón por en passant?
+            Otra que no sea habilitar una nueva variable y un nuevo tipo de
+            casillero.'''
             # NORMAL KILLING
             self.turn_defender.positions.pop(self.move_here)
             # castling disablers (killed rook)
@@ -1781,16 +1789,19 @@ class Match:
             # east en passant
             if self.move_here+ESTE in self.turn_defender.positions:
                 if self.turn_defender.positions[self.move_here+ESTE] == 'pawn': 
-                    self.turn_attacker.enPassant_enablers.update({'true-pos': self.move_here})
+                    self.turn_attacker.enPassant_enablers.update({'true-pos': self.move_here}) # necesario para remover la pieza
                     self.turn_attacker.enPassant_enablers.update({'offset-kill-pos': moving_piece_standpoint+offset_position})
 
             # west en passant
             if self.move_here+OESTE in self.turn_defender.positions:
                 if self.turn_defender.positions[self.move_here+OESTE] == 'pawn': 
-                    self.turn_attacker.enPassant_enablers.update({'true-pos': self.move_here})
+                    self.turn_attacker.enPassant_enablers.update({'true-pos': self.move_here}) # necesario para remover la pieza
                     self.turn_attacker.enPassant_enablers.update({'offset-kill-pos': moving_piece_standpoint+offset_position})
 
         else: self.turn_attacker.enPassant_enablers.clear() # deshabilitado en sig. turno
+
+        if self.killing_enPassant:
+            self.turn_defender.positions.pop(self.turn_defender.enPassant_enablers['true-pos'])
         
         self.selectedPiece_legalMoves.clear()
         self.selectedPiece_castlingMoves.clear()
