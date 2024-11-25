@@ -1611,7 +1611,7 @@ class Match:
                             if SQUARE_TYPE == 'pawn':
                                 self.selectedPiece_legalMoves.clear()
                                 if interacted_PColor == self.turn_attacker.name:
-                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves, self.selectedPiece_pawnDoubleMove = self.pawn_objectives(board_index, perspective='attacker')
+                                    self.selectedPiece_legalMoves, self.selectedPiece_killMoves, self.selectedPiece_pawnDoubleMove, self.selectedPiece_pawnKillingEnPassant = self.pawn_objectives(board_index, perspective='attacker')
 
                             if SQUARE_TYPE == 'rook':
                                 self.selectedPiece_legalMoves.clear()
